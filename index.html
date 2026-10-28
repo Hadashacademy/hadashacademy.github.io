@@ -75,6 +75,12 @@ details summary{cursor:pointer;font-weight:700}
 .bub{border:3px solid var(--line);border-radius:16px;padding:12px 16px;font-size:1.3rem;max-width:92%;overflow-wrap:anywhere}
 .bub.ai{background:var(--card);align-self:flex-start}
 .bub.me{background:var(--bg);align-self:flex-end;border-style:dashed}
+.forms{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:6px}
+.forms span{display:flex;flex-direction:column;background:var(--bg);border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:1.3rem;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.forms small{font-size:.85rem;color:var(--muted);font-weight:700}
+.word .ex2{font-size:1.2rem}
+.opts .btn[aria-disabled="true"]{cursor:default}
+@media (max-width:560px){.forms{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:560px){.opts{grid-template-columns:1fr} .word .en{font-size:2rem}}
 </style>
 
@@ -163,12 +169,16 @@ vbtn.onclick=toggleVoice;drawVoice();drawStars();
 function home(){
   view={name:"home"};
   app.innerHTML=`<h2>Elige tu nivel</h2>
-  <p class="sub">Presiona 1, 2 o 3 para elegir el nivel, 4 para el laboratorio de pronunciación o 5 para conversar con Sunny. Presiona H para escuchar la ayuda.</p>
+  <p class="sub">Presiona 1, 2 o 3 para elegir el nivel, 4 para pronunciación, 5 para conversar con Sunny, 6 para verbos, 7 para he, she, it, 8 para países o 9 para listening. Presiona H para escuchar la ayuda.</p>
   <ul class="list levels">${LEVELS.map((l,i)=>{const d=l.mods.filter(m=>done(m.id)).length;return `<li><button class="btn" data-l="${i}">
     <span class="big"><kbd>${i+1}</kbd>${esc(l.name)}</span><span>${esc(l.es)}</span><small>${esc(l.desc)}</small>
     <small>${d} de ${l.mods.length} módulos completados.</small><span class="bar" aria-hidden="true"><i style="width:${d/l.mods.length*100}%"></i></span></button></li>`}).join("")}
   <li><button class="btn" id="labBtn"><span class="big"><kbd>4</kbd>Pronunciación</span><span>Laboratorio de sonidos</span><small>Los sonidos del inglés que más cuestan a quienes hablan español, con prueba de oído y práctica con tu voz.</small></button></li>
-  <li><button class="btn" id="convBtn"><span class="big"><kbd>5</kbd>Conversación</span><span>Habla con Sunny</span><small>Conversa en inglés con voz, como en una llamada. Sunny te contesta y te da consejos en español.</small></button></li></ul>
+  <li><button class="btn" id="convBtn"><span class="big"><kbd>5</kbd>Conversación</span><span>Habla con Sunny</span><small>Conversa en inglés con voz, como en una llamada. Sunny te contesta y te da consejos en español.</small></button></li>
+  <li><button class="btn" id="vBtn"><span class="big"><kbd>6</kbd>Verbos</span><span>Los 250 más comunes</span><small>V1, V2, V3 y V4: go, went, gone, going. Escucha, pronuncia y haz la prueba.</small></button></li>
+  <li><button class="btn" id="tBtn"><span class="big"><kbd>7</kbd>He, she, it</span><span>Presente simple en tercera persona</span><small>150 verbos: she works, he watches. Pronuncia y haz tus propias oraciones.</small></button></li>
+  <li><button class="btn" id="cBtn"><span class="big"><kbd>8</kbd>Países</span><span>Países y nacionalidades</span><small>Brazil, Brazilian. 63 países por región, con prueba.</small></button></li>
+  <li><button class="btn" id="lBtn"><span class="big"><kbd>9</kbd>Listening</span><span>Escucha y responde</span><small>Historias y diálogos por nivel con preguntas de comprensión.</small></button></li></ul>
   <details class="panel"><summary>Para la profesora</summary>
     <p>Cada nivel es un libro de My English Adventure. Los módulos se abren en orden: para pasar al siguiente, el estudiante necesita 2 estrellas, es decir, 60 por ciento o más en la práctica.</p>
     <p>Atajos: 1, 2, 3 eligen nivel. C continúa con el siguiente módulo. Flechas cambian de palabra. Espacio escucha. D deletrea. R lee la regla. L abre la lectura. Q abre la práctica. P practica la pronunciación del módulo. G graba la voz. 4 abre el laboratorio de pronunciación. 5 abre la conversación con Sunny: Espacio para hablar, E repite, S más despacio, M manos libres, F termina y da consejos. Escape regresa. V enciende o apaga la voz guía. H es la ayuda.</p>
@@ -179,10 +189,11 @@ function home(){
   app.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>level(+b.dataset.l));
   document.getElementById("labBtn").onclick=()=>lab();
   document.getElementById("convBtn").onclick=()=>conv();
+  document.getElementById("vBtn").onclick=()=>verbsHub();document.getElementById("tBtn").onclick=()=>thirdHub();document.getElementById("cBtn").onclick=()=>countriesHub();document.getElementById("lBtn").onclick=()=>listenHub();
   document.getElementById("unlock").onclick=()=>{unlockAll=!unlockAll;store.set("hadash-unlock-all",unlockAll);announce(unlockAll?"Todos los módulos abiertos en este dispositivo.":"Módulos en orden otra vez.");home()};
   focusTitle();
 }
-function homeSpeech(){say([["Bienvenido a Hadash Study Island. Elige tu nivel.","es"],["1.","es"],["A1 Starter","en"],["2.","es"],["A2 Explorer","en"],["3.","es"],["B1 Adventurer","en"],["4. Laboratorio de pronunciación.","es"],["5. Conversación con Sunny.","es"],["Presiona H para la ayuda.","es"]])}
+function homeSpeech(){say([["Bienvenido a Hadash Study Island. Elige tu nivel.","es"],["1.","es"],["A1 Starter","en"],["2.","es"],["A2 Explorer","en"],["3.","es"],["B1 Adventurer","en"],["4. Laboratorio de pronunciación.","es"],["5. Conversación con Sunny. 6. Los 250 verbos. 7. Tercera persona. 8. Países y nacionalidades. 9. Listening.","es"],["Presiona H para la ayuda.","es"]])}
 
 /* ---------- Nivel: módulos ---------- */
 function level(li,focusId){
@@ -419,8 +430,8 @@ function pron(cfg,i,first){
   const it=cfg.items[i];const hasEar=cfg.si!=null&&(SOUNDS[cfg.si].pairs||SOUNDS[cfg.si].ear);
   app.innerHTML=`<p class="crumb">${esc(cfg.crumb)}</p><h2>${esc(cfg.title)}</h2>
   ${first&&cfg.tip?`<p class="tip">${esc(cfg.tip)}</p>`:""}
-  <p class="count">Palabra ${i+1} de ${cfg.items.length}</p>
-  <div class="word"><span class="en" lang="en">${esc(it.en)}</span>${it.es?`<span class="es">Significa: ${esc(it.es)}</span>`:""}</div>
+  <p class="count">${cfg.unit||"Palabra"} ${i+1} de ${cfg.items.length}</p>
+  <div class="word">${it.forms?`<span class="sr">${esc(it.en)}</span><div class="forms" lang="en" aria-hidden="true">${it.forms.map(f=>`<span><small>${f[0]}</small>${esc(f[1])}</span>`).join("")}</div>`:`<span class="en" lang="en">${esc(it.en)}</span>`}${it.es?`<span class="es">Significa: ${esc(it.es)}</span>`:""}${it.ex?`<span class="ex2" lang="en">${esc(it.ex)}</span>`:""}</div>
   <div class="row">
     <button class="btn primary" id="rec">${kb("G","Grabar mi voz")}</button>
     <button class="btn" id="listen">${kb("Espacio","Escuchar")}</button>
@@ -752,57 +763,145 @@ ${transcript}`;
 }
 
 /* ---------- Conversación guiada (sin internet de IA: solo el micrófono del navegador) ---------- */
-/* lv: 1 = A1, 2 = A2, 3 = B1. Cada nivel incluye las preguntas de los niveles anteriores. */
+/* lv: 1 = A1, 2 = A2, 3 = B1. first: va siempre de primera. grp: preguntas que van juntas y en orden. */
 const GUIDE=[
  [ // Free talk
-  {q:"Hi! How are you today?",es:"¡Hola! ¿Cómo estás hoy?",m:"I am fine, thank you. And you?",lv:1},
+  {q:"Hi! How are you today?",es:"¡Hola! ¿Cómo estás hoy?",m:"I am fine, thank you. And you?",lv:1,first:1},
   {q:"What is your favorite day of the week?",es:"¿Cuál es tu día favorito de la semana?",m:"My favorite day is Saturday.",lv:1},
   {q:"What do you like to do on weekends?",es:"¿Qué te gusta hacer los fines de semana?",m:"I like to play with my friends and watch movies.",lv:1},
+  {q:"What is your favorite animal?",es:"¿Cuál es tu animal favorito?",m:"My favorite animal is the dog.",lv:1},
+  {q:"Do you have a pet?",es:"¿Tienes una mascota?",m:"Yes, I have a cat. Her name is Luna.",lv:1},
+  {q:"What is your favorite season of the year?",es:"¿Cuál es tu estación del año favorita?",m:"My favorite season is summer.",lv:1},
+  {q:"What do you have in your bag today?",es:"¿Qué tienes en tu mochila o cartera hoy?",m:"I have a notebook, a pen and my phone.",lv:1},
+  {q:"What is your favorite movie?",es:"¿Cuál es tu película favorita?",m:"My favorite movie is Coco.",lv:1},
   {q:"What did you do yesterday?",es:"¿Qué hiciste ayer?",m:"Yesterday I went to school and I played with my brother.",lv:2,past:1},
   {q:"What are your plans for this weekend?",es:"¿Qué planes tienes para este fin de semana?",m:"I am going to visit my grandmother.",lv:2},
+  {q:"What was the best part of your week?",es:"¿Qué fue lo mejor de tu semana?",m:"The best part was my birthday party.",lv:2,past:1},
+  {q:"How do you usually celebrate your birthday?",es:"¿Cómo celebras normalmente tu cumpleaños?",m:"I usually eat cake with my family and friends.",lv:2},
+  {q:"What did you do last Christmas?",es:"¿Qué hiciste la Navidad pasada?",m:"Last Christmas I ate a big dinner with my family.",lv:2,past:1},
+  {q:"What new thing are you going to learn this year?",es:"¿Qué cosa nueva vas a aprender este año?",m:"I am going to learn to swim.",lv:2},
   {q:"What is something that makes you happy? Why?",es:"¿Qué cosa te hace feliz? ¿Por qué?",m:"Music makes me happy because it helps me relax.",lv:3},
-  {q:"If you could travel anywhere, where would you go?",es:"Si pudieras viajar a cualquier lugar, ¿a dónde irías?",m:"I would go to London because I want to practice my English.",lv:3}],
+  {q:"If you could travel anywhere, where would you go?",es:"Si pudieras viajar a cualquier lugar, ¿a dónde irías?",m:"I would go to London because I want to practice my English.",lv:3},
+  {q:"What is a goal you have for this year?",es:"¿Qué meta tienes para este año?",m:"My goal is to speak English with more confidence.",lv:3},
+  {q:"Who is a person you admire? Why?",es:"¿A qué persona admiras? ¿Por qué?",m:"I admire my mother because she works very hard.",lv:3},
+  {q:"Do you prefer to stay at home or go out? Why?",es:"¿Prefieres quedarte en casa o salir? ¿Por qué?",m:"I prefer to stay at home because it is quiet and comfortable.",lv:3},
+  {q:"What would you do if you won a lot of money?",es:"¿Qué harías si ganaras mucho dinero?",m:"I would buy a house for my family and travel the world.",lv:3}],
  [ // About me
-  {q:"What is your name?",es:"¿Cómo te llamas?",m:"My name is Ana.",lv:1,name:1},
+  {q:"What is your name?",es:"¿Cómo te llamas?",m:"My name is Ana.",lv:1,name:1,first:1},
   {q:"How old are you?",es:"¿Cuántos años tienes?",m:"I am twelve years old.",lv:1},
   {q:"Where do you live?",es:"¿Dónde vives?",m:"I live in Santo Domingo.",lv:1},
   {q:"Do you have brothers or sisters?",es:"¿Tienes hermanos o hermanas?",m:"Yes, I have one brother and one sister.",lv:1},
   {q:"What is your favorite color?",es:"¿Cuál es tu color favorito?",m:"My favorite color is blue.",lv:1},
+  {q:"When is your birthday?",es:"¿Cuándo es tu cumpleaños?",m:"My birthday is in May.",lv:1},
+  {q:"What languages do you speak?",es:"¿Qué idiomas hablas?",m:"I speak Spanish and a little English.",lv:1},
+  {q:"Are you a student?",es:"¿Eres estudiante?",m:"Yes, I am a student.",lv:1},
   {q:"Tell me about your best friend.",es:"Háblame de tu mejor amigo o amiga.",m:"My best friend is Luis. He is funny and he likes football.",lv:2},
   {q:"What do you want to be in the future?",es:"¿Qué quieres ser en el futuro?",m:"I want to be a doctor because I like to help people.",lv:2},
-  {q:"What is something special about you?",es:"¿Qué tienes tú de especial?",m:"I am very patient and I love learning languages.",lv:3}],
+  {q:"Who do you live with?",es:"¿Con quién vives?",m:"I live with my mother, my father and my sister.",lv:2},
+  {q:"What are you good at?",es:"¿En qué eres bueno o buena?",m:"I am good at drawing and singing.",lv:2},
+  {q:"Where were you born?",es:"¿Dónde naciste?",m:"I was born in La Romana.",lv:2,past:1},
+  {q:"Why are you learning English?",es:"¿Por qué estás aprendiendo inglés?",m:"I am learning English because I want to get a better job.",lv:2},
+  {q:"What is something special about you?",es:"¿Qué tienes tú de especial?",m:"I am very patient and I love learning languages.",lv:3},
+  {q:"How would your friends describe you?",es:"¿Cómo te describirían tus amigos?",m:"They would say I am kind and very funny.",lv:3},
+  {q:"What is the most important thing you learned from your family?",es:"¿Qué es lo más importante que aprendiste de tu familia?",m:"I learned to be honest and to help others.",lv:3,past:1},
+  {q:"What is a challenge you have overcome?",es:"¿Qué reto has superado?",m:"I was afraid to speak in public, but now I feel more confident.",lv:3},
+  {q:"Where do you see yourself in five years?",es:"¿Dónde te ves en cinco años?",m:"In five years I see myself working and speaking English very well.",lv:3}],
  [ // My day
   {q:"What time do you wake up?",es:"¿A qué hora te levantas?",m:"I wake up at six thirty.",lv:1},
   {q:"What do you eat for breakfast?",es:"¿Qué comes en el desayuno?",m:"I eat bread and eggs for breakfast.",lv:1},
+  {q:"How do you go to school or work?",es:"¿Cómo vas a la escuela o al trabajo?",m:"I go to school by bus.",lv:1},
   {q:"What do you do after school or work?",es:"¿Qué haces después de la escuela o del trabajo?",m:"I do my homework and I listen to music.",lv:1},
+  {q:"What time do you have lunch?",es:"¿A qué hora almuerzas?",m:"I have lunch at twelve o'clock.",lv:1},
+  {q:"Do you help at home? What do you do?",es:"¿Ayudas en la casa? ¿Qué haces?",m:"Yes, I wash the dishes and clean my room.",lv:1},
+  {q:"What do you do in the evening?",es:"¿Qué haces en la noche?",m:"In the evening I eat dinner and talk with my family.",lv:1},
   {q:"What time do you go to bed?",es:"¿A qué hora te acuestas?",m:"I go to bed at nine o'clock.",lv:1},
   {q:"What did you do yesterday afternoon?",es:"¿Qué hiciste ayer en la tarde?",m:"Yesterday afternoon I studied English and I watched TV.",lv:2,past:1},
   {q:"How often do you exercise?",es:"¿Con qué frecuencia haces ejercicio?",m:"I exercise three times a week.",lv:2},
-  {q:"What is your favorite part of the day? Why?",es:"¿Cuál es tu parte favorita del día? ¿Por qué?",m:"My favorite part is the evening because I can rest with my family.",lv:3}],
+  {q:"What time did you wake up this morning?",es:"¿A qué hora te levantaste esta mañana?",m:"This morning I woke up at seven.",lv:2,past:1},
+  {q:"What do you usually do on Sundays?",es:"¿Qué haces normalmente los domingos?",m:"On Sundays I usually go to church and visit my family.",lv:2},
+  {q:"What are you going to do tonight?",es:"¿Qué vas a hacer esta noche?",m:"Tonight I am going to read a book.",lv:2},
+  {q:"Is your day busy or relaxed?",es:"¿Tu día es ocupado o tranquilo?",m:"My day is very busy because I study and work.",lv:2},
+  {q:"What is your favorite part of the day? Why?",es:"¿Cuál es tu parte favorita del día? ¿Por qué?",m:"My favorite part is the evening because I can rest with my family.",lv:3},
+  {q:"How is a weekday different from a weekend for you?",es:"¿En qué se diferencia para ti un día de semana de un fin de semana?",m:"On weekdays I am busy, but on weekends I can sleep late and relax.",lv:3},
+  {q:"What would you change about your daily routine?",es:"¿Qué cambiarías de tu rutina diaria?",m:"I would wake up earlier to exercise in the morning.",lv:3},
+  {q:"What do you do when you feel tired or stressed?",es:"¿Qué haces cuando te sientes cansado o estresado?",m:"When I feel stressed, I listen to music and take a walk.",lv:3},
+  {q:"Describe your perfect day.",es:"Describe tu día perfecto.",m:"My perfect day starts at the beach and ends with dinner with my family.",lv:3}],
  [ // Food
   {q:"What is your favorite food?",es:"¿Cuál es tu comida favorita?",m:"My favorite food is rice and beans.",lv:1},
   {q:"Do you like fruit? Which fruit?",es:"¿Te gustan las frutas? ¿Cuál?",m:"Yes, I like mango and pineapple.",lv:1},
-  {q:"Welcome to Sunny's Café! What would you like to eat?",es:"¡Bienvenido al café de Sunny! ¿Qué te gustaría comer?",m:"I would like a sandwich, please.",lv:1},
-  {q:"And what would you like to drink?",es:"¿Y qué te gustaría tomar?",m:"I would like a glass of orange juice, please.",lv:1},
+  {q:"Welcome to Sunny's Café! What would you like to eat?",es:"¡Bienvenido al café de Sunny! ¿Qué te gustaría comer?",m:"I would like a sandwich, please.",lv:1,grp:"cafe"},
+  {q:"And what would you like to drink?",es:"¿Y qué te gustaría tomar?",m:"I would like a glass of orange juice, please.",lv:1,grp:"cafe"},
+  {q:"Do you like vegetables?",es:"¿Te gustan los vegetales?",m:"Yes, I like carrots and tomatoes.",lv:1},
+  {q:"What do you drink in the morning?",es:"¿Qué tomas en la mañana?",m:"I drink coffee with milk.",lv:1},
+  {q:"Do you like sweet or salty food?",es:"¿Te gusta más la comida dulce o salada?",m:"I like sweet food, especially chocolate.",lv:1},
+  {q:"What food don't you like?",es:"¿Qué comida no te gusta?",m:"I don't like fish.",lv:1},
   {q:"What did you eat for dinner last night?",es:"¿Qué cenaste anoche?",m:"Last night I ate chicken and salad.",lv:2,past:1},
   {q:"Can you cook? What can you make?",es:"¿Sabes cocinar? ¿Qué sabes preparar?",m:"Yes, I can make rice and fried eggs.",lv:2},
-  {q:"What Dominican food would you recommend to a tourist? Why?",es:"¿Qué comida dominicana le recomendarías a un turista? ¿Por qué?",m:"I would recommend mangú because it is delicious and very Dominican.",lv:3}],
+  {q:"Who cooks in your house?",es:"¿Quién cocina en tu casa?",m:"My mother cooks, but sometimes my father cooks too.",lv:2},
+  {q:"What is a typical Dominican lunch?",es:"¿Cómo es un almuerzo típico dominicano?",m:"A typical lunch is rice, beans, meat and salad.",lv:2},
+  {q:"How often do you eat at a restaurant?",es:"¿Con qué frecuencia comes en un restaurante?",m:"I eat at a restaurant once a month.",lv:2},
+  {q:"What did you eat at your last party?",es:"¿Qué comiste en tu última fiesta?",m:"I ate cake and pastelitos.",lv:2,past:1},
+  {q:"What Dominican food would you recommend to a tourist? Why?",es:"¿Qué comida dominicana le recomendarías a un turista? ¿Por qué?",m:"I would recommend mangú because it is delicious and very Dominican.",lv:3},
+  {q:"Explain how to make your favorite dish.",es:"Explica cómo se prepara tu plato favorito.",m:"First you boil the plantains, then you mash them with butter.",lv:3},
+  {q:"Is fast food good or bad? Why?",es:"¿La comida rápida es buena o mala? ¿Por qué?",m:"Fast food is tasty, but it is not healthy if you eat it every day.",lv:3},
+  {q:"What would you serve at a special dinner?",es:"¿Qué servirías en una cena especial?",m:"I would serve roast chicken, rice and a chocolate dessert.",lv:3},
+  {q:"What is a food you tried for the first time recently?",es:"¿Qué comida probaste por primera vez hace poco?",m:"I tried sushi for the first time and I liked it.",lv:3,past:1}],
  [ // Hobbies and music
   {q:"What do you like to do in your free time?",es:"¿Qué te gusta hacer en tu tiempo libre?",m:"I like to read and listen to music.",lv:1},
   {q:"Do you like music? What kind of music?",es:"¿Te gusta la música? ¿Qué tipo de música?",m:"Yes, I like bachata and pop music.",lv:1},
   {q:"Who is your favorite singer?",es:"¿Quién es tu cantante favorito?",m:"My favorite singer is Juan Luis Guerra.",lv:1},
   {q:"Do you play a sport?",es:"¿Practicas algún deporte?",m:"Yes, I play baseball.",lv:1},
+  {q:"Can you play an instrument?",es:"¿Sabes tocar algún instrumento?",m:"Yes, I can play the piano.",lv:1},
+  {q:"Do you like to dance?",es:"¿Te gusta bailar?",m:"Yes, I love to dance merengue.",lv:1},
+  {q:"Do you like to read? What do you read?",es:"¿Te gusta leer? ¿Qué lees?",m:"Yes, I like to read stories.",lv:1},
+  {q:"Do you play video games?",es:"¿Juegas videojuegos?",m:"Yes, I play on my phone sometimes.",lv:1},
   {q:"When did you start your favorite hobby?",es:"¿Cuándo empezaste tu pasatiempo favorito?",m:"I started playing the guitar when I was ten.",lv:2,past:1},
   {q:"How often do you practice it?",es:"¿Con qué frecuencia lo practicas?",m:"I practice every day after school.",lv:2},
-  {q:"Why is your hobby important to you?",es:"¿Por qué tu pasatiempo es importante para ti?",m:"It is important because it helps me feel calm and creative.",lv:3}],
+  {q:"What song do you listen to a lot these days?",es:"¿Qué canción escuchas mucho estos días?",m:"These days I listen to a song by Prince Royce.",lv:2},
+  {q:"Who is your favorite athlete?",es:"¿Quién es tu atleta favorito?",m:"My favorite athlete is a Dominican baseball player.",lv:2},
+  {q:"Did you go to a concert or a game? Tell me about it.",es:"¿Fuiste a un concierto o a un juego? Cuéntame.",m:"I went to a baseball game and it was very exciting.",lv:2,past:1},
+  {q:"What hobby would you like to try?",es:"¿Qué pasatiempo te gustaría probar?",m:"I would like to try painting.",lv:2},
+  {q:"Why is your hobby important to you?",es:"¿Por qué tu pasatiempo es importante para ti?",m:"It is important because it helps me feel calm and creative.",lv:3},
+  {q:"How does music make you feel?",es:"¿Cómo te hace sentir la música?",m:"Music makes me feel happy and full of energy.",lv:3},
+  {q:"Do you think sports are important for children? Why?",es:"¿Crees que los deportes son importantes para los niños? ¿Por qué?",m:"Yes, because they help children stay healthy and make friends.",lv:3},
+  {q:"Is it better to have a hobby alone or with friends?",es:"¿Es mejor tener un pasatiempo solo o con amigos?",m:"I think it is better with friends because it is more fun.",lv:3},
+  {q:"How much time do you spend on your phone? Is it too much?",es:"¿Cuánto tiempo pasas en el celular? ¿Es demasiado?",m:"I spend about three hours a day, and I think it is too much.",lv:3}],
  [ // Travel
   {q:"What city do you live in?",es:"¿En qué ciudad vives?",m:"I live in Santiago.",lv:1},
   {q:"What is the weather like today?",es:"¿Cómo está el clima hoy?",m:"It is sunny and hot today.",lv:1},
   {q:"Do you like the beach or the mountains?",es:"¿Te gusta más la playa o la montaña?",m:"I like the beach because I love to swim.",lv:1},
   {q:"What is your favorite place in the Dominican Republic?",es:"¿Cuál es tu lugar favorito de la República Dominicana?",m:"My favorite place is Samaná.",lv:1},
+  {q:"Do you like to travel by car, bus or plane?",es:"¿Te gusta viajar en carro, guagua o avión?",m:"I like to travel by plane.",lv:1},
+  {q:"Is your city big or small?",es:"¿Tu ciudad es grande o pequeña?",m:"My city is big and very busy.",lv:1},
+  {q:"What can you see near your house?",es:"¿Qué puedes ver cerca de tu casa?",m:"I can see a park and a small store.",lv:1},
+  {q:"Do you like rain?",es:"¿Te gusta la lluvia?",m:"Yes, I like rain because it is cool.",lv:1},
   {q:"Where did you go on your last trip?",es:"¿A dónde fuiste en tu último viaje?",m:"I went to Punta Cana with my family.",lv:2,past:1},
+  {q:"What did you pack for that trip?",es:"¿Qué empacaste para ese viaje?",m:"I packed clothes, sandals and sunscreen.",lv:2,past:1},
+  {q:"Excuse me, where is the bus station?",es:"Disculpe, ¿dónde está la estación de autobuses? Explícale el camino a Sunny.",m:"Go straight and turn left. It is next to the bank.",lv:2},
+  {q:"What is the weather like in December in your country?",es:"¿Cómo es el clima en diciembre en tu país?",m:"In December it is a little cooler, but still warm.",lv:2},
+  {q:"Have you ever been on a plane?",es:"¿Alguna vez has viajado en avión?",m:"Yes, I have been on a plane two times.",lv:2},
+  {q:"Where are you going to go on your next vacation?",es:"¿A dónde vas a ir en tus próximas vacaciones?",m:"I am going to go to Jarabacoa.",lv:2},
   {q:"Where would you like to travel? Why?",es:"¿A dónde te gustaría viajar? ¿Por qué?",m:"I would like to travel to New York because I want to see the city.",lv:3},
-  {q:"What would you show a tourist in your city?",es:"¿Qué le mostrarías a un turista en tu ciudad?",m:"I would show them the Colonial Zone and a good restaurant.",lv:3}]];
+  {q:"What would you show a tourist in your city?",es:"¿Qué le mostrarías a un turista en tu ciudad?",m:"I would show them the Colonial Zone and a good restaurant.",lv:3},
+  {q:"What are the good and bad things about living in a big city?",es:"¿Qué tiene de bueno y de malo vivir en una ciudad grande?",m:"There are many jobs, but there is a lot of traffic.",lv:3},
+  {q:"Is it better to travel alone or with others? Why?",es:"¿Es mejor viajar solo o acompañado? ¿Por qué?",m:"I prefer to travel with my family because we share good moments.",lv:3},
+  {q:"What advice would you give to someone visiting the Dominican Republic?",es:"¿Qué consejo le darías a alguien que visita la República Dominicana?",m:"I would tell them to try the food and to use sunscreen.",lv:3}]];
+const SESSION_LEN=[6,8,10];
+function guidedQs(ti,li){
+  const pool=GUIDE[ti].filter(x=>x.lv<=li+1),n=Math.min(SESSION_LEN[li],pool.length);
+  const first=pool.filter(x=>x.first);
+  // agrupa las preguntas que van juntas
+  const units=[],seen={};
+  pool.filter(x=>!x.first).forEach(x=>{if(x.grp){if(!seen[x.grp]){seen[x.grp]=[];units.push(seen[x.grp])}seen[x.grp].push(x)}else units.push([x])});
+  const top=shuffle(units.filter(u=>u[0].lv===li+1)),low=shuffle(units.filter(u=>u[0].lv<li+1));
+  const pick=[];let count=first.length;
+  const take=(list,limit)=>{for(const u of list){if(count>=limit)break;if(count+u.length>n)continue;pick.push(u);count+=u.length}};
+  if(li>0)take(top,first.length+Math.ceil(n/2));
+  take(low,n);take(top,n);
+  pick.sort((a,b)=>a[0].lv-b[0].lv);
+  return [...first,...pick.flat()];
+}
+
 const PRAISE=["Great!","Nice!","Good job!","Cool!","Wonderful!","Thanks for sharing!","Very good!","Awesome!"];
 const PAST={go:"went",eat:"ate",have:"had",do:"did",see:"saw",play:"played",watch:"watched",visit:"visited",study:"studied",make:"made",buy:"bought",come:"came",take:"took",drink:"drank",start:"started",read:"read",swim:"swam",listen:"listened",cook:"cooked",travel:"traveled"};
 const THIRD={have:"has",like:"likes",want:"wants",go:"goes",live:"lives",play:"plays",eat:"eats",work:"works",do:"does",study:"studies",watch:"watches",need:"needs",love:"loves"};
@@ -821,7 +920,6 @@ function grammarTip(said,q){
   if(/^ (is|are) /.test(t))return 'En inglés siempre ponemos el sujeto: "It is..." o "They are...".';
   return "";
 }
-function guidedQs(ti,li){return GUIDE[ti].filter(x=>x.lv<=li+1)}
 function guidedStart(){
   const v=view;v.guided=true;v.qs=guidedQs(v.ti,v.li);v.k=0;v.tips=[];v.answers=0;
   const hi=`Hi! I am Sunny. Let's practice English together. `;
@@ -858,20 +956,478 @@ function guidedFinish(v){
   return t;
 }
 
+/* ---------- Datos: verbos, tercera persona, países ---------- */
+const VERBS=["be|was / were|been|being|ser, estar|i", "have|had|had|having|tener|i", "do|did|done|doing|hacer|i", "say|said|said|saying|decir|i", "go|went|gone|going|ir|i", "get|got|gotten|getting|obtener, conseguir|i", "make|made|made|making|hacer, fabricar|i", "know|knew|known|knowing|saber, conocer|i", "think|thought|thought|thinking|pensar|i", "take|took|taken|taking|tomar, llevar|i", "see|saw|seen|seeing|ver|i", "come|came|come|coming|venir|i", "give|gave|given|giving|dar|i", "find|found|found|finding|encontrar|i", "tell|told|told|telling|decir, contar|i", "become|became|become|becoming|convertirse en|i", "leave|left|left|leaving|irse, dejar|i", "feel|felt|felt|feeling|sentir|i", "bring|brought|brought|bringing|traer|i", "begin|began|begun|beginning|empezar|i", "keep|kept|kept|keeping|mantener, guardar|i", "hold|held|held|holding|sostener|i", "write|wrote|written|writing|escribir|i", "stand|stood|stood|standing|estar de pie|i", "hear|heard|heard|hearing|oír|i", "let|let|let|letting|dejar, permitir|i", "mean|meant|meant|meaning|significar|i", "set|set|set|setting|poner, establecer|i", "meet|met|met|meeting|conocer, reunirse|i", "run|ran|run|running|correr|i", "pay|paid|paid|paying|pagar|i", "sit|sat|sat|sitting|sentarse|i", "speak|spoke|spoken|speaking|hablar|i", "lead|led|led|leading|guiar, dirigir|i", "read|read|read|reading|leer|i", "grow|grew|grown|growing|crecer|i", "lose|lost|lost|losing|perder|i", "fall|fell|fallen|falling|caer|i", "send|sent|sent|sending|enviar|i", "build|built|built|building|construir|i", "understand|understood|understood|understanding|entender|i", "draw|drew|drawn|drawing|dibujar|i", "break|broke|broken|breaking|romper|i", "spend|spent|spent|spending|gastar, pasar tiempo|i", "cut|cut|cut|cutting|cortar|i", "rise|rose|risen|rising|subir, levantarse|i", "drive|drove|driven|driving|manejar|i", "buy|bought|bought|buying|comprar|i", "wear|wore|worn|wearing|llevar puesto|i", "choose|chose|chosen|choosing|elegir|i", "sell|sold|sold|selling|vender|i", "teach|taught|taught|teaching|enseñar|i", "catch|caught|caught|catching|atrapar|i", "fight|fought|fought|fighting|pelear|i", "throw|threw|thrown|throwing|lanzar, tirar|i", "eat|ate|eaten|eating|comer|i", "drink|drank|drunk|drinking|beber|i", "sleep|slept|slept|sleeping|dormir|i", "swim|swam|swum|swimming|nadar|i", "sing|sang|sung|singing|cantar|i", "ring|rang|rung|ringing|sonar, timbrar|i", "fly|flew|flown|flying|volar|i", "forget|forgot|forgotten|forgetting|olvidar|i", "forgive|forgave|forgiven|forgiving|perdonar|i", "freeze|froze|frozen|freezing|congelar|i", "hide|hid|hidden|hiding|esconder|i", "hit|hit|hit|hitting|golpear|i", "hurt|hurt|hurt|hurting|lastimar, doler|i", "put|put|put|putting|poner|i", "quit|quit|quit|quitting|renunciar, dejar de|i", "ride|rode|ridden|riding|montar|i", "shake|shook|shaken|shaking|sacudir|i", "shine|shone|shone|shining|brillar|i", "shoot|shot|shot|shooting|disparar|i", "show|showed|shown|showing|mostrar|i", "shut|shut|shut|shutting|cerrar|i", "steal|stole|stolen|stealing|robar|i", "wake|woke|woken|waking|despertar|i", "win|won|won|winning|ganar|i", "bite|bit|bitten|biting|morder|i", "blow|blew|blown|blowing|soplar|i", "dig|dug|dug|digging|cavar|i", "feed|fed|fed|feeding|alimentar|i", "hang|hung|hung|hanging|colgar|i", "lend|lent|lent|lending|prestar|i", "cost|cost|cost|costing|costar|i", "sweep|swept|swept|sweeping|barrer|i", "beat|beat|beaten|beating|vencer, golpear|i", "stick|stuck|stuck|sticking|pegar|i", "bend|bent|bent|bending|doblar|i", "light|lit|lit|lighting|encender|i", "bet|bet|bet|betting|apostar|i", "spread|spread|spread|spreading|esparcir, untar|i", "want|wanted|wanted|wanting|querer", "use|used|used|using|usar", "work|worked|worked|working|trabajar", "call|called|called|calling|llamar", "try|tried|tried|trying|intentar", "ask|asked|asked|asking|preguntar", "need|needed|needed|needing|necesitar", "seem|seemed|seemed|seeming|parecer", "help|helped|helped|helping|ayudar", "talk|talked|talked|talking|hablar, conversar", "turn|turned|turned|turning|girar, voltear", "start|started|started|starting|empezar", "play|played|played|playing|jugar, tocar", "move|moved|moved|moving|mover, mudarse", "like|liked|liked|liking|gustar", "live|lived|lived|living|vivir", "believe|believed|believed|believing|creer", "happen|happened|happened|happening|suceder", "provide|provided|provided|providing|proveer", "include|included|included|including|incluir", "continue|continued|continued|continuing|continuar", "change|changed|changed|changing|cambiar", "watch|watched|watched|watching|mirar, ver", "follow|followed|followed|following|seguir", "stop|stopped|stopped|stopping|parar", "create|created|created|creating|crear", "open|opened|opened|opening|abrir", "walk|walked|walked|walking|caminar", "offer|offered|offered|offering|ofrecer", "remember|remembered|remembered|remembering|recordar", "love|loved|loved|loving|amar", "consider|considered|considered|considering|considerar", "appear|appeared|appeared|appearing|aparecer", "wait|waited|waited|waiting|esperar", "serve|served|served|serving|servir", "die|died|died|dying|morir", "expect|expected|expected|expecting|esperar, suponer", "stay|stayed|stayed|staying|quedarse", "reach|reached|reached|reaching|alcanzar", "remain|remained|remained|remaining|permanecer", "suggest|suggested|suggested|suggesting|sugerir", "raise|raised|raised|raising|levantar, criar", "pass|passed|passed|passing|pasar, aprobar", "require|required|required|requiring|requerir", "report|reported|reported|reporting|reportar", "decide|decided|decided|deciding|decidir", "pull|pulled|pulled|pulling|halar", "return|returned|returned|returning|regresar, devolver", "explain|explained|explained|explaining|explicar", "hope|hoped|hoped|hoping|esperar, tener esperanza", "develop|developed|developed|developing|desarrollar", "carry|carried|carried|carrying|cargar, llevar", "receive|received|received|receiving|recibir", "agree|agreed|agreed|agreeing|estar de acuerdo", "support|supported|supported|supporting|apoyar", "produce|produced|produced|producing|producir", "look|looked|looked|looking|mirar", "listen|listened|listened|listening|escuchar", "learn|learned|learned|learning|aprender", "add|added|added|adding|añadir, sumar", "plan|planned|planned|planning|planear", "cook|cooked|cooked|cooking|cocinar", "clean|cleaned|cleaned|cleaning|limpiar", "close|closed|closed|closing|cerrar", "finish|finished|finished|finishing|terminar", "visit|visited|visited|visiting|visitar", "travel|traveled|traveled|traveling|viajar", "study|studied|studied|studying|estudiar", "enjoy|enjoyed|enjoyed|enjoying|disfrutar", "dance|danced|danced|dancing|bailar", "answer|answered|answered|answering|responder", "arrive|arrived|arrived|arriving|llegar", "borrow|borrowed|borrowed|borrowing|tomar prestado", "brush|brushed|brushed|brushing|cepillar", "check|checked|checked|checking|revisar", "climb|climbed|climbed|climbing|escalar, subir", "collect|collected|collected|collecting|coleccionar, recoger", "count|counted|counted|counting|contar números", "cry|cried|cried|crying|llorar", "decorate|decorated|decorated|decorating|decorar", "deliver|delivered|delivered|delivering|entregar", "describe|described|described|describing|describir", "design|designed|designed|designing|diseñar", "discover|discovered|discovered|discovering|descubrir", "dress|dressed|dressed|dressing|vestirse", "drop|dropped|dropped|dropping|dejar caer", "earn|earned|earned|earning|ganar dinero", "end|ended|ended|ending|terminar, acabar", "enter|entered|entered|entering|entrar", "fill|filled|filled|filling|llenar", "fix|fixed|fixed|fixing|arreglar", "guess|guessed|guessed|guessing|adivinar", "hate|hated|hated|hating|odiar", "hug|hugged|hugged|hugging|abrazar", "hurry|hurried|hurried|hurrying|apurarse", "imagine|imagined|imagined|imagining|imaginar", "improve|improved|improved|improving|mejorar", "invite|invited|invited|inviting|invitar", "join|joined|joined|joining|unirse", "jump|jumped|jumped|jumping|saltar", "kiss|kissed|kissed|kissing|besar", "laugh|laughed|laughed|laughing|reírse", "lock|locked|locked|locking|cerrar con llave", "marry|married|married|marrying|casarse", "miss|missed|missed|missing|extrañar, perder", "order|ordered|ordered|ordering|pedir, ordenar", "paint|painted|painted|painting|pintar", "pick|picked|picked|picking|escoger, recoger", "prefer|preferred|preferred|preferring|preferir", "prepare|prepared|prepared|preparing|preparar", "practice|practiced|practiced|practicing|practicar", "print|printed|printed|printing|imprimir", "promise|promised|promised|promising|prometer", "protect|protected|protected|protecting|proteger", "push|pushed|pushed|pushing|empujar", "rain|rained|rained|raining|llover", "relax|relaxed|relaxed|relaxing|relajarse", "repeat|repeated|repeated|repeating|repetir", "rest|rested|rested|resting|descansar", "save|saved|saved|saving|ahorrar, salvar", "share|shared|shared|sharing|compartir", "shop|shopped|shopped|shopping|ir de compras", "shout|shouted|shouted|shouting|gritar", "smile|smiled|smiled|smiling|sonreír", "smell|smelled|smelled|smelling|oler", "solve|solved|solved|solving|resolver", "spell|spelled|spelled|spelling|deletrear", "taste|tasted|tasted|tasting|probar el sabor", "thank|thanked|thanked|thanking|agradecer", "touch|touched|touched|touching|tocar", "train|trained|trained|training|entrenar", "trust|trusted|trusted|trusting|confiar", "type|typed|typed|typing|escribir en teclado", "wash|washed|washed|washing|lavar", "waste|wasted|wasted|wasting|desperdiciar", "wish|wished|wished|wishing|desear", "worry|worried|worried|worrying|preocuparse", "accept|accepted|accepted|accepting|aceptar", "allow|allowed|allowed|allowing|permitir", "apply|applied|applied|applying|aplicar, solicitar", "attend|attended|attended|attending|asistir", "avoid|avoided|avoided|avoiding|evitar", "bake|baked|baked|baking|hornear", "belong|belonged|belonged|belonging|pertenecer", "boil|boiled|boiled|boiling|hervir", "book|booked|booked|booking|reservar", "celebrate|celebrated|celebrated|celebrating|celebrar", "chat|chatted|chatted|chatting|chatear, charlar", "compare|compared|compared|comparing|comparar", "complain|complained|complained|complaining|quejarse", "complete|completed|completed|completing|completar", "connect|connected|connected|connecting|conectar", "copy|copied|copied|copying|copiar", "cover|covered|covered|covering|cubrir", "cross|crossed|crossed|crossing|cruzar", "dream|dreamed|dreamed|dreaming|soñar", "dry|dried|dried|drying|secar"].map(s=>{const p=s.split("|");return {v1:p[0],v2:p[1],v3:p[2],v4:p[3],es:p[4],irr:p[5]==="i"}});
+const THIRDV=["have|has|z|She has two brothers.|tener", "do|does|z|He does his homework every night.|hacer", "go|goes|z|She goes to school by bus.|ir", "say|says|z|My teacher says good morning every day.|decir", "get|gets|s|He gets up at six o'clock.|obtener, conseguir", "make|makes|s|My mother makes delicious rice.|hacer, fabricar", "know|knows|z|She knows the answer.|saber, conocer", "think|thinks|s|He thinks English is fun.|pensar", "take|takes|s|She takes a shower every morning.|tomar, llevar", "see|sees|z|He sees his grandmother on Sundays.|ver", "come|comes|z|My cousin comes to my house on Fridays.|venir", "give|gives|z|The teacher gives us homework.|dar", "find|finds|z|She always finds her keys.|encontrar", "tell|tells|z|My grandfather tells funny stories.|decir, contar", "feel|feels|z|He feels happy today.|sentir", "bring|brings|z|She brings her lunch to school.|traer", "begin|begins|z|The class begins at eight.|empezar", "keep|keeps|s|He keeps his room clean.|mantener, guardar", "write|writes|s|She writes in her notebook.|escribir", "hear|hears|z|He hears the birds in the morning.|oír", "meet|meets|s|She meets her friends at the park.|conocer, reunirse", "run|runs|z|My dog runs very fast.|correr", "pay|pays|z|My father pays the bills.|pagar", "sit|sits|s|He sits next to the window.|sentarse", "speak|speaks|s|She speaks Spanish and English.|hablar", "read|reads|z|He reads a book every week.|leer", "grow|grows|z|The tree grows very fast.|crecer", "lose|loses|iz|He always loses his pencil.|perder", "send|sends|z|She sends messages to her friends.|enviar", "build|builds|z|My uncle builds houses.|construir", "understand|understands|z|She understands the lesson.|entender", "draw|draws|z|He draws beautiful pictures.|dibujar", "spend|spends|z|She spends a lot of time on her phone.|gastar, pasar tiempo", "drive|drives|z|My father drives a red car.|manejar", "buy|buys|z|She buys bread every morning.|comprar", "wear|wears|z|He wears a blue shirt.|llevar puesto", "choose|chooses|iz|She chooses the red dress.|elegir", "sell|sells|z|The man sells fruit in the market.|vender", "teach|teaches|iz|My mother teaches English.|enseñar", "catch|catches|iz|The cat catches mice.|atrapar", "eat|eats|s|He eats rice and beans for lunch.|comer", "drink|drinks|s|She drinks coffee in the morning.|beber", "sleep|sleeps|s|The baby sleeps all afternoon.|dormir", "swim|swims|z|He swims in the river.|nadar", "sing|sings|z|She sings in the church choir.|cantar", "fly|flies|z|The bird flies over the house.|volar", "forget|forgets|s|He forgets his homework sometimes.|olvidar", "hide|hides|z|The cat hides under the bed.|esconder", "put|puts|s|She puts her books on the table.|poner", "ride|rides|z|He rides his bike to the park.|montar", "win|wins|z|Our team always wins.|ganar", "wake|wakes|s|She wakes up early.|despertar", "show|shows|z|He shows me his new phone.|mostrar", "cost|costs|s|The ticket costs ten dollars.|costar", "want|wants|s|She wants a new phone.|querer", "use|uses|iz|He uses the computer every day.|usar", "work|works|s|My father works in a bank.|trabajar", "call|calls|z|She calls her mother every night.|llamar", "try|tries|z|He tries to speak English.|intentar", "ask|asks|s|The teacher asks a lot of questions.|preguntar", "need|needs|z|She needs a new backpack.|necesitar", "help|helps|s|He helps his mother at home.|ayudar", "talk|talks|s|She talks with her friends after class.|hablar, conversar", "start|starts|s|The movie starts at seven.|empezar", "play|plays|z|He plays baseball on Saturdays.|jugar, tocar", "move|moves|z|She moves her chair closer.|mover, mudarse", "like|likes|s|He likes pizza.|gustar", "live|lives|z|She lives in Santo Domingo.|vivir", "believe|believes|z|He believes in himself.|creer", "happen|happens|z|It happens every year.|suceder", "change|changes|iz|The weather changes a lot.|cambiar", "watch|watches|iz|She watches TV after dinner.|mirar, ver", "follow|follows|z|The dog follows me everywhere.|seguir", "stop|stops|s|The bus stops in front of my house.|parar", "open|opens|z|The store opens at nine.|abrir", "walk|walks|s|He walks to work.|caminar", "remember|remembers|z|She remembers my birthday.|recordar", "love|loves|z|He loves his family.|amar", "wait|waits|s|She waits for the bus.|esperar", "stay|stays|z|He stays at home on rainy days.|quedarse", "return|returns|z|She returns home at five.|regresar, devolver", "explain|explains|z|The teacher explains the lesson.|explicar", "hope|hopes|s|He hopes to visit New York.|esperar, tener esperanza", "carry|carries|z|She carries her baby.|cargar, llevar", "receive|receives|z|He receives many gifts on his birthday.|recibir", "agree|agrees|z|She agrees with me.|estar de acuerdo", "look|looks|s|He looks tired today.|mirar", "listen|listens|z|She listens to music every day.|escuchar", "learn|learns|z|He learns new words every week.|aprender", "cook|cooks|s|My grandmother cooks every Sunday.|cocinar", "clean|cleans|z|She cleans the kitchen.|limpiar", "close|closes|iz|He closes the door.|cerrar", "finish|finishes|iz|The class finishes at noon.|terminar", "visit|visits|s|She visits her aunt in Santiago.|visitar", "travel|travels|z|He travels a lot for work.|viajar", "study|studies|z|She studies at the university.|estudiar", "enjoy|enjoys|z|He enjoys the beach.|disfrutar", "dance|dances|iz|She dances merengue very well.|bailar", "answer|answers|z|He answers the phone.|responder", "arrive|arrives|z|The train arrives at ten.|llegar", "brush|brushes|iz|She brushes her teeth after breakfast.|cepillar", "check|checks|s|He checks his email every morning.|revisar", "cry|cries|z|The baby cries at night.|llorar", "fix|fixes|iz|My uncle fixes cars.|arreglar", "guess|guesses|iz|She guesses the answer.|adivinar", "hate|hates|s|He hates cold weather.|odiar", "hurry|hurries|z|She hurries to catch the bus.|apurarse", "invite|invites|s|He invites his friends to the party.|invitar", "jump|jumps|s|The frog jumps into the water.|saltar", "kiss|kisses|iz|She kisses her son goodnight.|besar", "laugh|laughs|s|He laughs at my jokes.|reírse", "miss|misses|iz|She misses her family.|extrañar, perder", "order|orders|z|He orders a hamburger.|pedir, ordenar", "paint|paints|s|She paints pictures of the sea.|pintar", "prefer|prefers|z|He prefers tea.|preferir", "prepare|prepares|z|She prepares dinner for the family.|preparar", "practice|practices|iz|He practices the piano every day.|practicar", "push|pushes|iz|She pushes the door.|empujar", "rain|rains|z|It rains a lot in May.|llover", "relax|relaxes|iz|He relaxes on Sundays.|relajarse", "repeat|repeats|s|The teacher repeats the question.|repetir", "rest|rests|s|She rests after work.|descansar", "save|saves|z|He saves money every month.|ahorrar, salvar", "share|shares|z|She shares her food with me.|compartir", "shop|shops|s|My aunt shops at the mall.|ir de compras", "smile|smiles|z|The baby smiles at me.|sonreír", "taste|tastes|s|This soup tastes good.|probar el sabor", "touch|touches|iz|He touches the screen.|tocar", "wash|washes|iz|She washes the dishes.|lavar", "wish|wishes|iz|He wishes for a new bike.|desear", "worry|worries|z|My mother worries about me.|preocuparse", "fry|fries|z|He fries the plantains.|freír", "mix|mixes|iz|She mixes the eggs and the flour.|mezclar", "kick|kicks|s|He kicks the ball.|patear", "knock|knocks|s|Someone knocks on the door.|tocar la puerta", "pack|packs|s|She packs her suitcase.|empacar", "pray|prays|z|My grandmother prays every night.|rezar", "reply|replies|z|He replies to my message.|responder", "search|searches|iz|She searches for her glasses.|buscar", "pass|passes|iz|The bus passes my house.|pasar, aprobar", "plant|plants|s|He plants flowers in the garden.|sembrar", "water|waters|z|She waters the plants.|regar", "fall|falls|z|The leaf falls from the tree.|caer", "cut|cuts|s|He cuts the bread.|cortar", "break|breaks|s|The glass breaks easily.|romper", "throw|throws|z|He throws the ball to his dog.|lanzar, tirar", "leave|leaves|z|She leaves the house at seven.|irse, dejar", "become|becomes|z|He becomes nervous before exams.|convertirse en", "mean|means|z|This word means happy.|significar", "lend|lends|z|She lends me her pen.|prestar"].map(s=>{const p=s.split("|");return {b:p[0],f:p[1],snd:p[2],ex:p[3],es:p[4]}});
+const COUNTRIES=["the Dominican Republic|Dominican|República Dominicana|dominicano|Caribe", "Puerto Rico|Puerto Rican|Puerto Rico|puertorriqueño|Caribe", "Cuba|Cuban|Cuba|cubano|Caribe", "Haiti|Haitian|Haití|haitiano|Caribe", "Jamaica|Jamaican|Jamaica|jamaiquino|Caribe", "the United States|American|Estados Unidos|estadounidense|América del Norte", "Canada|Canadian|Canadá|canadiense|América del Norte", "Mexico|Mexican|México|mexicano|América del Norte", "Guatemala|Guatemalan|Guatemala|guatemalteco|Centroamérica", "Honduras|Honduran|Honduras|hondureño|Centroamérica", "El Salvador|Salvadoran|El Salvador|salvadoreño|Centroamérica", "Nicaragua|Nicaraguan|Nicaragua|nicaragüense|Centroamérica", "Costa Rica|Costa Rican|Costa Rica|costarricense|Centroamérica", "Panama|Panamanian|Panamá|panameño|Centroamérica", "Colombia|Colombian|Colombia|colombiano|América del Sur", "Venezuela|Venezuelan|Venezuela|venezolano|América del Sur", "Ecuador|Ecuadorian|Ecuador|ecuatoriano|América del Sur", "Peru|Peruvian|Perú|peruano|América del Sur", "Bolivia|Bolivian|Bolivia|boliviano|América del Sur", "Brazil|Brazilian|Brasil|brasileño|América del Sur", "Chile|Chilean|Chile|chileno|América del Sur", "Argentina|Argentinian|Argentina|argentino|América del Sur", "Uruguay|Uruguayan|Uruguay|uruguayo|América del Sur", "Paraguay|Paraguayan|Paraguay|paraguayo|América del Sur", "Spain|Spanish|España|español|Europa", "Portugal|Portuguese|Portugal|portugués|Europa", "France|French|Francia|francés|Europa", "Italy|Italian|Italia|italiano|Europa", "Germany|German|Alemania|alemán|Europa", "England|English|Inglaterra|inglés|Europa", "the United Kingdom|British|Reino Unido|británico|Europa", "Ireland|Irish|Irlanda|irlandés|Europa", "Scotland|Scottish|Escocia|escocés|Europa", "the Netherlands|Dutch|Países Bajos|neerlandés, holandés|Europa", "Belgium|Belgian|Bélgica|belga|Europa", "Switzerland|Swiss|Suiza|suizo|Europa", "Austria|Austrian|Austria|austriaco|Europa", "Sweden|Swedish|Suecia|sueco|Europa", "Norway|Norwegian|Noruega|noruego|Europa", "Denmark|Danish|Dinamarca|danés|Europa", "Finland|Finnish|Finlandia|finlandés|Europa", "Poland|Polish|Polonia|polaco|Europa", "Greece|Greek|Grecia|griego|Europa", "Russia|Russian|Rusia|ruso|Europa", "Ukraine|Ukrainian|Ucrania|ucraniano|Europa", "Turkey|Turkish|Turquía|turco|Asia", "China|Chinese|China|chino|Asia", "Japan|Japanese|Japón|japonés|Asia", "South Korea|South Korean|Corea del Sur|surcoreano|Asia", "India|Indian|India|indio|Asia", "the Philippines|Filipino|Filipinas|filipino|Asia", "Vietnam|Vietnamese|Vietnam|vietnamita|Asia", "Thailand|Thai|Tailandia|tailandés|Asia", "Indonesia|Indonesian|Indonesia|indonesio|Asia", "Israel|Israeli|Israel|israelí|Asia", "Saudi Arabia|Saudi|Arabia Saudita|saudí|Asia", "Egypt|Egyptian|Egipto|egipcio|África", "Morocco|Moroccan|Marruecos|marroquí|África", "Nigeria|Nigerian|Nigeria|nigeriano|África", "Kenya|Kenyan|Kenia|keniano|África", "South Africa|South African|Sudáfrica|sudafricano|África", "Australia|Australian|Australia|australiano|Oceanía", "New Zealand|New Zealander|Nueva Zelanda|neozelandés|Oceanía"].map(s=>{const p=s.split("|");return {c:p[0],n:p[1],ces:p[2],nes:p[3],r:p[4]}});
+/* Historias y diálogos originales de Hadash Academy. La primera opción de cada pregunta es la correcta (la app las mezcla). */
+const LISTEN=[
+ {t:"Nice to meet you",lv:1,es:"Dos estudiantes se conocen el primer día de clase.",lines:[
+  ["Ana","Hi! My name is Ana. What's your name?"],
+  ["Leo","Hello, Ana. I'm Leo. Nice to meet you."],
+  ["Ana","Nice to meet you too. Where are you from?"],
+  ["Leo","I'm from Santiago. And you?"],
+  ["Ana","I'm from Santo Domingo. How old are you, Leo?"],
+  ["Leo","I'm fourteen. This is my first day at this school."],
+  ["Ana","Welcome! Our English teacher is very nice."]],
+ qs:[{q:"What is the boy's name?",o:["Leo","Luis","Leonardo"]},
+  {q:"Where is Leo from?",o:["Santiago","Santo Domingo","La Romana"]},
+  {q:"How old is Leo?",o:["Fourteen","Forty","Fifteen"]},
+  {q:"Who is very nice?",o:["The English teacher","Leo's mother","Ana's brother"]}]},
+ {t:"My family",lv:1,es:"Una niña habla de su familia.",lines:[
+  ["","Hello! My name is Sofia. I am ten years old."],
+  ["","I live in a small house with my family."],
+  ["","My mother is a nurse. My father is a taxi driver."],
+  ["","I have one brother. His name is Marco. He is seven."],
+  ["","We have a dog. His name is Coco. He is brown and white."],
+  ["","On Sundays, we eat lunch at my grandmother's house."]],
+ qs:[{q:"How old is Sofia?",o:["Ten","Seven","Twelve"]},
+  {q:"What is her mother's job?",o:["A nurse","A teacher","A taxi driver"]},
+  {q:"What is the dog's name?",o:["Coco","Marco","Sofia"]},
+  {q:"Where do they eat lunch on Sundays?",o:["At her grandmother's house","At a restaurant","At school"]}]},
+ {t:"At the fruit stand",lv:1,es:"Una señora compra frutas en el mercado.",lines:[
+  ["Seller","Good morning! Can I help you?"],
+  ["Rosa","Yes, please. How much are the mangoes?"],
+  ["Seller","They are twenty pesos each."],
+  ["Rosa","OK. I want four mangoes and one pineapple."],
+  ["Seller","Here you are. That's one hundred and fifty pesos."],
+  ["Rosa","Here you go. Thank you!"],
+  ["Seller","Thank you. Have a nice day!"]],
+ qs:[{q:"How much is one mango?",o:["Twenty pesos","Fifty pesos","Four pesos"]},
+  {q:"How many mangoes does Rosa want?",o:["Four","One","Twenty"]},
+  {q:"What other fruit does she buy?",o:["A pineapple","A banana","An orange"]},
+  {q:"What time of day is it?",o:["Morning","Afternoon","Night"]}]},
+ {t:"My Saturday",lv:1,es:"Un niño cuenta lo que hace los sábados.",lines:[
+  ["","On Saturday I wake up at eight o'clock."],
+  ["","I eat breakfast with my family. I like eggs and bread."],
+  ["","At ten, I play baseball with my friends in the park."],
+  ["","In the afternoon, I help my father wash the car."],
+  ["","At night, we watch a movie and eat popcorn."],
+  ["","I love Saturdays!"]],
+ qs:[{q:"What time does he wake up?",o:["At eight","At ten","At seven"]},
+  {q:"What sport does he play?",o:["Baseball","Basketball","Soccer"]},
+  {q:"Who does he help in the afternoon?",o:["His father","His mother","His teacher"]},
+  {q:"What do they eat at night?",o:["Popcorn","Pizza","Eggs and bread"]}]},
+ {t:"A phone call",lv:2,es:"Dos amigas hacen planes por teléfono.",lines:[
+  ["Carla","Hi, Mia! What are you doing?"],
+  ["Mia","Hi, Carla. I'm doing my homework. What's up?"],
+  ["Carla","Do you want to go to the movies on Friday?"],
+  ["Mia","I'd love to, but I'm visiting my aunt on Friday. How about Saturday?"],
+  ["Carla","Saturday is perfect. The movie starts at six thirty."],
+  ["Mia","Great. Let's meet at the mall at six."],
+  ["Carla","OK. See you on Saturday!"]],
+ qs:[{q:"What is Mia doing when Carla calls?",o:["Her homework","Watching a movie","Visiting her aunt"]},
+  {q:"Why can't Mia go on Friday?",o:["She is visiting her aunt","She is sick","She has to work"]},
+  {q:"What time does the movie start?",o:["At six thirty","At six","At seven thirty"]},
+  {q:"Where are they going to meet?",o:["At the mall","At school","At Carla's house"]}]},
+ {t:"The lost wallet",lv:2,es:"Un hombre pierde su cartera en la guagua.",lines:[
+  ["","Last Tuesday, Pedro took the bus to work, like every day."],
+  ["","When he arrived at his office, he looked for his wallet, but it wasn't in his pocket."],
+  ["","He was very worried. His money and his ID card were in it."],
+  ["","At lunch time, his phone rang. It was a woman named Gloria."],
+  ["","She said, I found your wallet on the bus. Your phone number was inside."],
+  ["","Pedro met Gloria in front of the bank. He thanked her and bought her a coffee."]],
+ qs:[{q:"When did Pedro lose his wallet?",o:["Last Tuesday","Last Sunday","Yesterday morning"]},
+  {q:"Where did he lose it?",o:["On the bus","At his office","At the bank"]},
+  {q:"How did Gloria find Pedro?",o:["His phone number was in the wallet","She saw him on the street","She works with him"]},
+  {q:"What did Pedro buy for Gloria?",o:["A coffee","Lunch","A new wallet"]}]},
+ {t:"At the doctor's office",lv:2,es:"Un paciente habla con la doctora.",lines:[
+  ["Doctor","Good afternoon. What's the problem?"],
+  ["Mario","I have a headache and a sore throat."],
+  ["Doctor","When did it start?"],
+  ["Mario","Two days ago. I also feel very tired."],
+  ["Doctor","Let me check. You have a small fever. I think it's a cold."],
+  ["Doctor","Drink a lot of water, rest at home, and take this medicine three times a day."],
+  ["Mario","Thank you, doctor. Can I go to work tomorrow?"],
+  ["Doctor","No, stay home for two days."]],
+ qs:[{q:"What are Mario's problems?",o:["A headache and a sore throat","A stomachache and a cough","A broken arm"]},
+  {q:"When did it start?",o:["Two days ago","Yesterday","Last week"]},
+  {q:"How many times a day does he take the medicine?",o:["Three","Two","One"]},
+  {q:"Can Mario go to work tomorrow?",o:["No, he has to stay home","Yes, in the morning","Yes, but only for two hours"]}]},
+ {t:"A trip to Samaná",lv:2,es:"Una familia viaja a Samaná.",lines:[
+  ["","Last summer, the Pérez family went to Samaná for a long weekend."],
+  ["","They left very early in the morning and drove for three hours."],
+  ["","On the first day, they swam at a beautiful beach and ate fried fish with tostones."],
+  ["","On the second day, they took a boat to see the whales. The children were very excited."],
+  ["","It rained on the last day, so they stayed at the hotel and played cards."],
+  ["","Everybody said it was the best trip of the year."]],
+ qs:[{q:"How long did they drive?",o:["Three hours","One hour","Five hours"]},
+  {q:"What did they eat on the first day?",o:["Fried fish with tostones","Pizza","Chicken and rice"]},
+  {q:"What did they see from the boat?",o:["Whales","Dolphins","Turtles"]},
+  {q:"Why did they stay at the hotel on the last day?",o:["Because it rained","Because they were sick","Because the beach was closed"]}]},
+ {t:"The job interview",lv:3,es:"Una joven tiene una entrevista de trabajo en un hotel.",lines:[
+  ["Manager","Thank you for coming, Laura. Can you tell me a little about yourself?"],
+  ["Laura","Of course. I studied tourism at the university, and I have worked at a travel agency for two years."],
+  ["Manager","Why do you want to work at our hotel?"],
+  ["Laura","I enjoy helping people, and I would like to use my English every day. Your hotel receives many international guests."],
+  ["Manager","What would you do if a guest was angry about his room?"],
+  ["Laura","I would listen carefully, apologize, and try to find a solution quickly, like offering a different room."],
+  ["Manager","Excellent answer. We will call you on Monday with our decision."]],
+ qs:[{q:"What did Laura study?",o:["Tourism","Medicine","Accounting"]},
+  {q:"How long has she worked at a travel agency?",o:["Two years","Six months","Five years"]},
+  {q:"Why does she want to work at the hotel?",o:["To help people and use her English","Because it pays more money","Because it is near her house"]},
+  {q:"When will the manager call her?",o:["On Monday","Tomorrow","Next month"]}]},
+ {t:"The community garden",lv:3,es:"Un barrio crea un huerto comunitario.",lines:[
+  ["","A few years ago, there was an empty lot full of trash in the middle of our neighborhood."],
+  ["","Doña Carmen, a retired teacher, had an idea: why not turn it into a garden?"],
+  ["","At first, many neighbors thought it was impossible, but she didn't give up."],
+  ["","She organized meetings, and little by little, families started to help on weekends."],
+  ["","Today, the garden produces tomatoes, peppers, herbs and even bananas."],
+  ["","The food is shared among the families, and children learn how to take care of plants."],
+  ["","Most importantly, neighbors who never talked before are now good friends."]],
+ qs:[{q:"What was in the lot before the garden?",o:["Trash","A school","A parking lot"]},
+  {q:"Who had the idea for the garden?",o:["Doña Carmen, a retired teacher","The mayor","A group of children"]},
+  {q:"How did the neighbors react at first?",o:["Many thought it was impossible","Everyone helped immediately","They were angry"]},
+  {q:"According to the story, what is the most important result?",o:["Neighbors became friends","They sell a lot of bananas","Children stopped playing in the street"]}]},
+ {t:"Studying online",lv:3,es:"Dos amigos discuten si es mejor estudiar en línea o en persona.",lines:[
+  ["Daniel","I'm thinking about taking my next English course online. What do you think?"],
+  ["Paula","It depends. Online classes are flexible, so you can study after work."],
+  ["Daniel","That's true. I usually get home at seven, so I can't go to an institute."],
+  ["Paula","The problem is that you need a lot of discipline. When I studied online, I sometimes skipped lessons."],
+  ["Daniel","Maybe I could make a schedule and study every night from eight to nine."],
+  ["Paula","Good idea. And try to find a conversation partner, because speaking is the hardest part online."]],
+ qs:[{q:"What is Daniel thinking about?",o:["Taking an English course online","Changing his job","Moving to another city"]},
+  {q:"Why can't Daniel go to an institute?",o:["He gets home at seven","It is too expensive","He doesn't have a car"]},
+  {q:"What problem did Paula have when she studied online?",o:["She sometimes skipped lessons","Her internet was slow","The teacher was bad"]},
+  {q:"What does Paula recommend at the end?",o:["Finding a conversation partner","Buying a new computer","Studying in the morning"]}]},
+ {t:"An unexpected guest",lv:3,es:"Una historia corta con un final sorpresa.",lines:[
+  ["","It was a stormy night, and the electricity had gone out in the whole town."],
+  ["","Marta was reading by candlelight when she heard a soft noise at the kitchen door."],
+  ["","At first she thought it was the wind, but the noise continued, louder each time."],
+  ["","Nervous, she took her flashlight and slowly opened the door."],
+  ["","There, shaking and completely wet, was a small gray kitten looking up at her."],
+  ["","Marta laughed with relief, dried the kitten with a towel and gave it some warm milk."],
+  ["","That night, she decided to keep it, and she named it Storm."]],
+ qs:[{q:"Why was Marta reading by candlelight?",o:["The electricity had gone out","She liked candles","Her lamp was broken"]},
+  {q:"What did she think the noise was at first?",o:["The wind","A thief","Her neighbor"]},
+  {q:"What was at the door?",o:["A small kitten","A dog","A lost child"]},
+  {q:"What name did she give it?",o:["Storm","Rain","Gray"]}]}];
+/* ---------- Herramientas comunes de los módulos nuevos ---------- */
+const chunk=(a,n)=>{const out=[];for(let i=0;i<a.length;i+=n)out.push(a.slice(i,i+n));return out};
+const drillScores=store.get("hadash-drills",{});
+function saveDrill(key,pct){drillScores[key]=Math.max(pct,drillScores[key]||0);store.set("hadash-drills",drillScores)}
+const scoreNote=key=>drillScores[key]!=null?` Mejor prueba: ${drillScores[key]} por ciento.`:"";
+/* Menú de una lista: practicar, prueba y (opcional) oraciones */
+function listMenu(cfg){
+  view={name:"menu",back:cfg.back};
+  app.innerHTML=`<p class="crumb">${esc(cfg.crumb)}</p><h2>${esc(cfg.title)}</h2>
+  ${cfg.tip?`<p class="tip">${esc(cfg.tip)}</p>`:""}
+  <p class="sub">${esc(cfg.preview)}</p>
+  <ul class="list">${cfg.opts.map(o=>`<li><button class="btn" data-k="${o.k}"><span><kbd>${o.k.toUpperCase()}</kbd>${esc(o.t)}</span><small>${esc(o.d)}</small></button></li>`).join("")}</ul>
+  <div class="row"><button class="btn" id="back">${kb("Esc","Volver")}</button></div>`;
+  view.keys={};cfg.opts.forEach(o=>view.keys[o.k]=o.go);
+  app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>view.keys[b.dataset.k]());
+  document.getElementById("back").onclick=cfg.back;
+  focusTitle();
+  say([[cfg.title+". "+cfg.opts.map(o=>o.k.toUpperCase()+", "+o.t).join(". ")+".","es"]]);
+}
+/* Prueba genérica de opción múltiple. q: {p, parts, a, opts, after} */
+function drill(cfg){
+  view={name:"drill",cfg,qs:cfg.qs,n:0,right:0,answered:false,back:cfg.back};
+  drillAsk();
+}
+function drillAsk(){
+  const v=view;if(v.n>=v.qs.length)return drillDone();
+  const q=v.qs[v.n];v.answered=false;
+  app.innerHTML=`<p class="crumb">${esc(v.cfg.crumb)}</p><h2>${esc(v.cfg.title)}</h2>
+  <p class="count">Pregunta ${v.n+1} de ${v.qs.length}</p>
+  <p class="qtext">${q.html||esc(q.p)}</p>
+  <div class="opts${q.opts.some(o=>o.length>24)?" one":""}">${q.opts.map((o,i)=>`<button class="btn" data-o="${i}" lang="${q.lang||"en"}"><kbd>${i+1}</kbd>${esc(o)}</button>`).join("")}</div>
+  <p class="feedback" id="fb" role="status" aria-live="assertive"></p>
+  <div class="row"><button class="btn" id="rep">${kb("E","Escuchar la pregunta")}</button>${v.cfg.extra?`<button class="btn" id="ext">${kb(v.cfg.extra.k.toUpperCase(),v.cfg.extra.t)}</button>`:""}<button class="btn" id="back">${kb("Esc","Salir")}</button></div>`;
+  app.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>drillChoose(+b.dataset.o));
+  document.getElementById("rep").onclick=drillRead;document.getElementById("back").onclick=v.back;
+  if(v.cfg.extra)document.getElementById("ext").onclick=v.cfg.extra.go;
+  focusTitle();drillRead();
+}
+function drillRead(){const q=view.qs[view.n];say([...q.parts,...q.opts.flatMap((o,i)=>[[`${i+1}.`,"es"],[o,q.lang||"en"]])])}
+function drillChoose(i){
+  const v=view;if(v.answered)return;v.answered=true;
+  const q=v.qs[v.n],ok=q.opts[i]===q.a;if(ok)v.right++;
+  app.querySelectorAll("[data-o]").forEach(b=>{const o=q.opts[+b.dataset.o];if(o===q.a)b.classList.add("ok");else if(+b.dataset.o===i)b.classList.add("no");b.setAttribute("aria-disabled","true")});
+  const msg=ok?"¡Correcto!":`Casi. La respuesta correcta es: ${q.a}.`;
+  const fb=document.getElementById("fb");fb.textContent=msg+(q.after?" "+q.after.map(x=>x[0]).join(" "):"");fb.className="feedback "+(ok?"ok":"no");
+  tone(ok);
+  const nb=document.createElement("button");nb.className="btn primary";nb.id="next";nb.innerHTML=kb("Enter","Siguiente");nb.onclick=()=>{v.n++;drillAsk()};fb.after(nb);
+  setTimeout(()=>say([[ok?"¡Correcto!":"Casi. La respuesta correcta es:","es"],...(ok?[]:[[q.a,q.lang||"en"]]),...(q.after||[])],{force:true}),350);
+  nb.focus();
+}
+function drillDone(){
+  const v=view,pct=Math.round(v.right/v.qs.length*100);saveDrill(v.cfg.key,pct);
+  const msg=pct>=90?"¡Excelente!":pct>=60?"¡Muy bien!":"Sigue practicando. ¡Tú puedes!";
+  view={name:"drilldone",cfg:v.cfg,back:v.back};
+  app.innerHTML=`<p class="crumb">${esc(v.cfg.crumb)}</p><h2>${esc(msg)}</h2>
+  <p class="qtext">Acertaste ${v.right} de ${v.qs.length}: ${pct} por ciento.</p>
+  <div class="row"><button class="btn primary" id="again">${kb("R","Otra prueba")}</button><button class="btn" id="back">${kb("Esc","Volver")}</button></div>`;
+  document.getElementById("again").onclick=v.cfg.retry;document.getElementById("back").onclick=v.back;
+  focusTitle();tone(pct>=60);say([[`${msg} Acertaste ${v.right} de ${v.qs.length}. Presiona R para otra prueba o Escape para volver.`,"es"]],{force:true});
+}
+function others(pool,correct,n){return shuffle([...new Set(pool.filter(x=>x!==correct))]).slice(0,n)}
+
+/* ---------- 6. Los 250 verbos más comunes ---------- */
+const VLISTS=chunk(VERBS,25);
+const VTIP="Cada verbo tiene cuatro formas. V1 es el infinitivo o presente: go. V2 es el pasado simple: went. V3 es el participio, que se usa con have: gone. V4 es la forma continua con i n g: going. Los verbos regulares terminan en e d en pasado y participio; los irregulares hay que aprenderlos de memoria.";
+function verbsHub(focus){
+  view={name:"hub",back:home};
+  app.innerHTML=`<p class="crumb">Verbos</p><h2>Los 250 verbos más comunes</h2>
+  <p class="tip">${esc(VTIP)}</p>
+  <ul class="list">${VLISTS.map((l,i)=>`<li><button class="btn" data-vl="${i}"><span><kbd>${(i+1)%10}</kbd>Lista ${i+1}</span><small>${esc(l[0].v1)} a ${esc(l[l.length-1].v1)}. ${l.filter(v=>v.irr).length} irregulares.${scoreNote("verbs"+i)}</small></button></li>`).join("")}</ul>
+  <div class="row"><button class="btn" id="vtip">${kb("R","Escuchar la explicación")}</button><button class="btn" id="back">${kb("Esc","Volver al inicio")}</button></div>`;
+  view.pick=i=>verbList(i);
+  app.querySelectorAll("[data-vl]").forEach(b=>b.onclick=()=>verbList(+b.dataset.vl));
+  document.getElementById("vtip").onclick=()=>{announce(VTIP);say([[VTIP,"es"]],{force:true})};
+  document.getElementById("back").onclick=home;
+  if(focus!=null){const b=app.querySelector(`[data-vl="${focus}"]`);if(b){b.focus();return say([["Lista "+(focus+1),"es"]])}}
+  focusTitle();say([["Los 250 verbos más comunes, en 10 listas de 25. Presiona un número del 1 al 9, o 0 para la lista 10. Presiona R para escuchar la explicación de V1, V2, V3 y V4.","es"]]);
+}
+const verbItem=v=>({en:`${v.v1}, ${v.v2}, ${v.v3}, ${v.v4}`,es:v.es+(v.irr?" (irregular)":" (regular)"),forms:[["V1",v.v1],["V2",v.v2],["V3",v.v3],["V4",v.v4]]});
+function verbList(i){
+  const l=VLISTS[i],back=()=>verbsHub(i);
+  listMenu({crumb:"Verbos",title:`Lista ${i+1}: ${l[0].v1} – ${l[l.length-1].v1}`,preview:l.map(v=>v.v1).join(", "),back,opts:[
+    {k:"p",t:"Escuchar y pronunciar",d:"Escucha las cuatro formas de cada verbo y grábate diciéndolas.",go:()=>pron({title:`Verbos, lista ${i+1}`,crumb:"Verbos",unit:"Verbo",tip:"Escucha las cuatro formas: V1, V2, V3 y V4. Luego presiona G y dilas todas en orden.",items:l.map(verbItem),back:()=>verbList(i)},0,true)},
+    {k:"q",t:"Prueba de formas",d:"Te digo un verbo y eliges su pasado, su participio o su forma con ing."+scoreNote("verbs"+i),go:()=>verbDrill(i)}]});
+}
+function verbDrill(i){
+  const l=VLISTS[i],F=[["v2","el pasado, V2"],["v3","el participio, V3"],["v4","la forma con ing, V4"],["v1","el infinitivo, V1"]];
+  const qs=shuffle(l).slice(0,10).map((v,k)=>{
+    const [f,name]=k%4===3?F[3]:F[k%3];
+    const a=v[f];
+    const src=f==="v1"?v.v2:v.v1;
+    const pool=f==="v1"?l.map(x=>x.v1):[...l.map(x=>x[f]),v.v1,v.v2,v.v3,v.v4];
+    const opts=shuffle([a,...others(pool.filter(x=>x!==a),a,2)]);
+    return {p:`¿Cuál es ${name} de "${src}"?`,parts:[[`¿Cuál es ${name} de`,"es"],[src,"en"]],a,opts,after:[[`${v.v1}, ${v.v2}, ${v.v3}, ${v.v4}.`,"en"],[`Significa ${v.es}.`,"es"]]};
+  });
+  drill({key:"verbs"+i,title:`Prueba de verbos, lista ${i+1}`,crumb:"Verbos",qs,back:()=>verbList(i),retry:()=>verbDrill(i)});
+}
+
+/* ---------- 7. Presente simple: tercera persona ---------- */
+const TLISTS=chunk(THIRDV,25);
+const TTIP="En presente simple, con he, she, it o un nombre, el verbo lleva s al final: I work, she works. Si el verbo termina en s, sh, ch, x u o, agregamos e s: watch, watches; go, goes. Si termina en consonante más y, cambia a i e s: study, studies. Have se convierte en has. La s suena de tres maneras: como s en works, como z en plays, y como is en watches.";
+const SNDNAME={s:"la s suena como s",z:"la s suena como z",iz:"la terminación suena como is"};
+function thirdHub(focus){
+  view={name:"hub",back:home};
+  app.innerHTML=`<p class="crumb">Tercera persona</p><h2>Presente simple con he, she e it</h2>
+  <p class="tip">${esc(TTIP)}</p>
+  <ul class="list">${TLISTS.map((l,i)=>`<li><button class="btn" data-tl="${i}"><span><kbd>${i+1}</kbd>Lista ${i+1}</span><small>${esc(l.slice(0,4).map(v=>v.f).join(", "))}...${scoreNote("third"+i)}</small></button></li>`).join("")}</ul>
+  <div class="row"><button class="btn" id="ttip">${kb("R","Escuchar la regla")}</button><button class="btn" id="back">${kb("Esc","Volver al inicio")}</button></div>`;
+  view.pick=i=>i<TLISTS.length&&thirdList(i);
+  app.querySelectorAll("[data-tl]").forEach(b=>b.onclick=()=>thirdList(+b.dataset.tl));
+  document.getElementById("ttip").onclick=()=>{announce(TTIP);say([[TTIP,"es"]],{force:true})};
+  document.getElementById("back").onclick=home;
+  if(focus!=null){const b=app.querySelector(`[data-tl="${focus}"]`);if(b){b.focus();return say([["Lista "+(focus+1),"es"]])}}
+  focusTitle();say([["Presente simple en tercera persona: 150 verbos en 6 listas. Presiona un número del 1 al 6. Presiona R para escuchar la regla.","es"]]);
+}
+function thirdList(i){
+  const l=TLISTS[i],back=()=>thirdHub(i);
+  listMenu({crumb:"Tercera persona",title:`Lista ${i+1}`,preview:l.map(v=>v.f).join(", "),back,opts:[
+    {k:"p",t:"Escuchar y pronunciar",d:"Escucha I work, he works, y grábate diciéndolo.",go:()=>pron({title:`Tercera persona, lista ${i+1}`,crumb:"Tercera persona",unit:"Verbo",tip:"Escucha la diferencia entre I y he. Fíjate en el sonido final de la s.",items:l.map(v=>({en:`I ${v.b}, he ${v.f}`,es:`${v.es}. En "${v.f}" ${SNDNAME[v.snd]}.`})),back:()=>thirdList(i)},0,true)},
+    {k:"o",t:"Hacer oraciones",d:"Dices una oración con el verbo. Si no se te ocurre, te doy una para repetir.",go:()=>sent(i,0,true)},
+    {k:"q",t:"Prueba",d:"Completa la oración con la forma correcta."+scoreNote("third"+i),go:()=>thirdDrill(i)}]});
+}
+function thirdDrill(i){
+  const l=TLISTS[i];
+  const qs=shuffle(l).slice(0,10).map(v=>{
+    const blank=v.ex.replace(new RegExp("\\b"+v.f+"\\b"),"_____");
+    const wrong=[v.b,v.f.endsWith("es")?v.b+"s":v.b+"es",v.b.endsWith("y")?v.b+"s":null,v.b==="have"?"haves":null].filter(x=>x&&x!==v.f);
+    const opts=shuffle([v.f,...[...new Set(wrong)].slice(0,2)]);
+    return {p:blank+` (${v.b})`,html:showQ(blank)+` <span lang="en">(${esc(v.b)})</span>`,parts:[["Completa con el verbo","es"],[v.b,"en"],[blank,"en"]],a:v.f,opts,after:[[v.ex,"en"]]};
+  });
+  drill({key:"third"+i,title:`Prueba de tercera persona, lista ${i+1}`,crumb:"Tercera persona",qs,back:()=>thirdList(i),retry:()=>thirdDrill(i)});
+}
+/* Práctica de oraciones */
+function sent(li,i,first){
+  stopRec();
+  const v=TLISTS[li][i];
+  view={name:"sent",li,i,mode:"free",back:()=>thirdList(li),state:"idle"};
+  app.innerHTML=`<p class="crumb">Tercera persona · lista ${li+1} · oraciones</p><h2>Haz una oración con <span lang="en">${esc(v.f)}</span></h2>
+  <p class="count">Verbo ${i+1} de ${TLISTS[li].length}</p>
+  <div class="word"><span class="en" lang="en">${esc(v.f)}</span><span class="es">${esc(v.b)}: ${esc(v.es)}</span></div>
+  <p class="tip" id="sinstr">Empieza con He, She, It o el nombre de una persona. Por ejemplo: My friend ${esc(v.f)}...</p>
+  <p class="feedback" id="sfb" role="status" aria-live="assertive"></p>
+  <form class="panel" id="stf" autocomplete="off"><label for="styped" style="font-weight:700">También puedes escribir tu oración</label>
+    <div class="row"><input id="styped" type="text" lang="en" style="flex:1 1 220px;min-width:0;font-size:1.3rem;padding:12px;border:3px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg)"><button class="btn primary" type="submit">Revisar</button></div></form>
+  <div class="row">
+    <button class="btn primary" id="shab">${kb("G","Decir mi oración")}</button>
+    <button class="btn" id="shelp">${kb("A","Dame una oración de ejemplo")}</button>
+    <button class="btn" id="sprev">${kb("←","Anterior")}</button>
+    <button class="btn" id="snext">${kb("→","Siguiente verbo")}</button>
+    <button class="btn" id="back">${kb("Esc","Volver")}</button></div>`;
+  const g=id=>document.getElementById(id);
+  g("shab").onclick=sentListen;g("shelp").onclick=sentHelp;g("sprev").onclick=()=>sentStep(-1);g("snext").onclick=()=>sentStep(1);g("back").onclick=view.back;
+  g("stf").onsubmit=e=>{e.preventDefault();const t=g("styped").value.trim();if(!t)return;g("styped").value="";sentCheck(t)};
+  focusTitle();
+  const intro=first?[["Vamos a hacer oraciones. Presiona G y di una oración completa con el verbo. Si no se te ocurre ninguna, presiona A y te doy una para repetir.","es"]]:[];
+  say([...intro,["Haz una oración con","es"],[v.f,"en"],["que significa "+v.es,"es"]]);
+}
+function sentStep(d){const n=TLISTS[view.li].length,i=view.i+d;if(i<0)return;
+  if(i>=n){const m="Terminaste los verbos de esta lista. ¡Muy bien! Presiona Escape para volver.";announce(m);return say([[m,"es"]],{force:true})}
+  sent(view.li,i,false)}
+function sentHelp(){
+  const v=TLISTS[view.li][view.i];view.mode="repeat";stopRec();
+  const fb=document.getElementById("sfb");fb.textContent="Repite: "+v.ex;fb.className="feedback";
+  document.getElementById("sinstr").textContent="Ahora presiona G y repite la oración de ejemplo.";
+  say([["Escucha y repite:","es"],[v.ex,"en"],["Ahora presiona G y dila tú.","es"]],{force:true});
+}
+function sentFb(msg,parts,ok){const fb=document.getElementById("sfb");if(!fb)return;fb.textContent=msg;fb.className="feedback "+(ok===true?"ok":ok===false?"no":"");announce(msg);if(ok!=null)tone(ok);setTimeout(()=>say(parts,{force:true}),ok!=null?300:0)}
+function sentListen(){
+  const v=view;if(v.name!=="sent")return;
+  if(v.state==="rec"){try{rec&&rec.stop()}catch(e){}return}
+  if(!SR||micBlocked){const m="El micrófono no está disponible aquí. Escribe tu oración en el cuadro y presiona Enter.";sentFb(m,[[m,"es"]]);document.getElementById("styped").focus();return}
+  try{speechSynthesis.cancel()}catch(e){}
+  let r;try{r=new SR()}catch(e){micBlocked=true;return sentListen()}
+  rec=r;r.lang="en-US";r.interimResults=true;r.continuous=false;r.maxAlternatives=3;
+  let fin=[],interim="",failed=false;v.state="rec";beep();
+  const fb=document.getElementById("sfb");fb.textContent="Te escucho...";fb.className="feedback";
+  r.onresult=e=>{interim="";for(let k=e.resultIndex;k<e.results.length;k++){if(e.results[k].isFinal)fin=[...e.results[k]].map(a=>a.transcript);else interim+=e.results[k][0].transcript}if(interim)fb.textContent="Te escucho: "+interim};
+  r.onerror=e=>{failed=true;v.state="idle";if(e.error==="aborted")return;
+    if(["not-allowed","service-not-allowed","audio-capture"].includes(e.error)){micBlocked=true;const m="No pude usar el micrófono. Escribe tu oración y presiona Enter.";return sentFb(m,[[m,"es"]])}
+    const m="No te escuché. Presiona G y habla otra vez.";sentFb(m,[[m,"es"]])};
+  r.onend=()=>{if(rec===r)rec=null;if(view!==v||failed)return;v.state="idle";
+    const alts=fin.length?fin:interim?[interim]:[];
+    if(!alts.length){const m="No te escuché. Presiona G y habla otra vez.";return sentFb(m,[[m,"es"]])}
+    sentCheck(alts[0],alts)};
+  try{r.start()}catch(e){micBlocked=true;v.state="idle";sentListen()}
+}
+function sentCheck(text,alts){
+  const v=TLISTS[view.li][view.i];alts=alts||[text];
+  if(view.mode==="repeat"){
+    const j=judge(v.ex,alts);
+    if(j.r>=.85){view.mode="free";document.getElementById("sinstr").textContent="Ahora intenta tu propia oración con "+v.f+", o pasa al siguiente verbo con la flecha derecha.";
+      return sentFb(`¡Excelente! Te entendí: ${j.txt}`,[["¡Excelente! Ahora intenta tu propia oración, o pasa al siguiente verbo.","es"]],true)}
+    return sentFb(`Te entendí: ${j.txt}. Escucha otra vez y repite.`,[["Casi. Escucha otra vez:","es"],[v.ex,"en"]],false);
+  }
+  const best=alts.map(a=>({a,w:words(a)})).find(x=>x.w.includes(v.f))||{a:text,w:words(text)};
+  const w=best.w;
+  if(w.length<3)return sentFb(`Te entendí: ${best.a}. Haz una oración un poco más larga, por ejemplo: ${v.ex}`,[["Haz una oración un poco más larga. Por ejemplo:","es"],[v.ex,"en"]],false);
+  const pos=w.indexOf(v.f);
+  if(pos<0){
+    const bpos=w.indexOf(v.b);
+    if(bpos>0&&["he","she","it"].includes(w[bpos-1]))return sentFb(`Te entendí: ${best.a}. Con ${w[bpos-1]} el verbo cambia: ${w[bpos-1]} ${v.f}.`,[["Casi. Con","es"],[w[bpos-1],"en"],["el verbo cambia:","es"],[`${w[bpos-1]} ${v.f}`,"en"]],false);
+    return sentFb(`Te entendí: ${best.a}. No escuché la palabra ${v.f}. Intenta otra vez, o presiona A para un ejemplo.`,[["No escuché la palabra","es"],[v.f,"en"],["Intenta otra vez, o presiona A para un ejemplo.","es"]],false);
+  }
+  const before=w[pos-1];
+  if(["i","you","we","they"].includes(before))return sentFb(`Te entendí: ${best.a}. Con ${before==="i"?"I":before} el verbo no lleva s: ${before==="i"?"I":before} ${v.b}. Usa he, she o un nombre con ${v.f}.`,[["Con","es"],[before,"en"],["no lleva s. Usa he, she o un nombre con","es"],[v.f,"en"]],false);
+  const stars=["¡Excelente!","¡Muy bien!","¡Perfecto!"][Math.floor(Math.random()*3)];
+  return sentFb(`${stars} Dijiste: ${best.a}`,[[stars+" Dijiste:","es"],[best.a,"en"],["Presiona la flecha derecha para el siguiente verbo.","es"]],true);
+}
+
+/* ---------- 8. Países y gentilicios ---------- */
+const REGIONS=[...new Set(COUNTRIES.map(c=>c.r))];
+function countriesHub(focus){
+  view={name:"hub",back:home};
+  app.innerHTML=`<p class="crumb">Países</p><h2>Países y nacionalidades</h2>
+  <p class="tip">En inglés, el país y la nacionalidad se escriben siempre con mayúscula: Brazil, Brazilian. La nacionalidad también es el nombre del idioma en muchos casos: I am Brazilian, I speak Portuguese.</p>
+  <ul class="list">${REGIONS.map((r,i)=>{const cs=COUNTRIES.filter(c=>c.r===r);return `<li><button class="btn" data-cr="${i}"><span><kbd>${i+1}</kbd>${esc(r)}</span><small>${cs.length} países: ${esc(cs.slice(0,3).map(c=>c.ces).join(", "))}...${scoreNote("countries"+i)}</small></button></li>`}).join("")}</ul>
+  <div class="row"><button class="btn" id="back">${kb("Esc","Volver al inicio")}</button></div>`;
+  view.pick=i=>i<REGIONS.length&&countryList(i);
+  app.querySelectorAll("[data-cr]").forEach(b=>b.onclick=()=>countryList(+b.dataset.cr));
+  document.getElementById("back").onclick=home;
+  if(focus!=null){const b=app.querySelector(`[data-cr="${focus}"]`);if(b){b.focus();return say([[REGIONS[focus],"es"]])}}
+  focusTitle();say([["Países y nacionalidades. Elige una región: "+REGIONS.map((r,i)=>`${i+1}, ${r}`).join(". ")+".","es"]]);
+}
+function countryList(i){
+  const r=REGIONS[i],cs=COUNTRIES.filter(c=>c.r===r),back=()=>countriesHub(i);
+  listMenu({crumb:"Países",title:r,preview:cs.map(c=>`${c.c}: ${c.n}`).join(" · "),back,opts:[
+    {k:"p",t:"Escuchar y pronunciar",d:"Escucha cada país con su nacionalidad y grábate.",go:()=>pron({title:"Países: "+r,crumb:"Países",unit:"País",tip:"Escucha el país y su nacionalidad. Luego presiona G y dilos tú.",items:cs.map(c=>({en:`${c.c}, ${c.n}`,es:`${c.ces}, ${c.nes}`,ex:`I am ${c.n}. I am from ${c.c}.`})),back:()=>countryList(i)},0,true)},
+    {k:"q",t:"Prueba",d:"Te digo un país y eliges la nacionalidad, o al revés."+scoreNote("countries"+i),go:()=>countryDrill(i)}]});
+}
+function countryDrill(i){
+  const r=REGIONS[i],cs=COUNTRIES.filter(c=>c.r===r),all=COUNTRIES;
+  const qs=shuffle(cs).slice(0,Math.min(10,cs.length)).map((c,k)=>{
+    const near=[...cs,...shuffle(all)];
+    if(k%3===2){const opts=shuffle([c.c,...others(near.map(x=>x.c),c.c,2)]);return {p:`¿De qué país es una persona ${c.n}?`,parts:[["¿De qué país es una persona","es"],[c.n,"en"]],a:c.c,opts,after:[[`${c.n}. ${c.c}.`,"en"]]}}
+    if(k%3===1){const opts=shuffle([c.c,...others(near.map(x=>x.c),c.c,2)]);return {p:`¿Cómo se dice ${c.ces} en inglés?`,parts:[[`¿Cómo se dice ${c.ces} en inglés?`,"es"]],a:c.c,opts,after:[[`${c.c}, ${c.n}.`,"en"]]}}
+    const opts=shuffle([c.n,...others(near.map(x=>x.n),c.n,2)]);
+    return {p:`Una persona de ${c.c} es...`,parts:[["Una persona de","es"],[c.c,"en"],["es...","es"]],a:c.n,opts,after:[[`I am ${c.n}. I am from ${c.c}.`,"en"]]};
+  });
+  drill({key:"countries"+i,title:"Prueba de países: "+r,crumb:"Países",qs,back:()=>countryList(i),retry:()=>countryDrill(i)});
+}
+
+/* ---------- 9. Listening: diálogos e historias ---------- */
+const LVNAME=["A1 Starter","A2 Explorer","B1 Adventurer"];
+function listenHub(focus){
+  view={name:"hub",back:home};
+  app.innerHTML=`<p class="crumb">Listening</p><h2>Escucha y responde</h2>
+  <p class="tip">Escucha la historia o el diálogo todas las veces que necesites y después responde las preguntas. La primera vez, no te preocupes por cada palabra: busca la idea general.</p>
+  <ul class="list levels">${[0,1,2].map(lv=>{const ss=LISTEN.filter(s=>s.lv===lv+1);const d=ss.filter(s=>drillScores["listen"+LISTEN.indexOf(s)]>=60).length;return `<li><button class="btn" data-ll="${lv}"><span class="big"><kbd>${lv+1}</kbd>${LVNAME[lv]}</span><small>${ss.length} historias y diálogos. ${d} aprobados.</small></button></li>`}).join("")}</ul>
+  <div class="row"><button class="btn" id="back">${kb("Esc","Volver al inicio")}</button></div>`;
+  view.pick=i=>i<3&&listenLevel(i);
+  app.querySelectorAll("[data-ll]").forEach(b=>b.onclick=()=>listenLevel(+b.dataset.ll));
+  document.getElementById("back").onclick=home;
+  if(focus!=null){const b=app.querySelector(`[data-ll="${focus}"]`);if(b){b.focus();return}}
+  focusTitle();say([["Listening. Elige tu nivel: 1, A1. 2, A2. 3, B1.","es"]]);
+}
+function listenLevel(lv,focus){
+  const ids=LISTEN.map((s,i)=>i).filter(i=>LISTEN[i].lv===lv+1);
+  view={name:"hub",back:()=>listenHub(lv)};
+  app.innerHTML=`<p class="crumb">Listening · ${LVNAME[lv]}</p><h2>Elige una historia</h2>
+  <ul class="list">${ids.map((i,k)=>{const s=LISTEN[i];return `<li><button class="btn" data-st="${i}"><span><kbd>${k+1}</kbd><span lang="en">${esc(s.t)}</span></span><small>${esc(s.es)}${s.lines.some(l=>l[0])?" Diálogo.":" Historia."}${scoreNote("listen"+i)}</small></button></li>`}).join("")}</ul>
+  <div class="row"><button class="btn" id="back">${kb("Esc","Volver")}</button></div>`;
+  view.pick=k=>k<ids.length&&story2(ids[k]);
+  app.querySelectorAll("[data-st]").forEach(b=>b.onclick=()=>story2(+b.dataset.st));
+  document.getElementById("back").onclick=view.back;
+  if(focus!=null){const b=app.querySelector(`[data-st="${focus}"]`);if(b){b.focus();return}}
+  focusTitle();say([["Elige una historia.","es"],...ids.flatMap((i,k)=>[[`${k+1}.`,"es"],[LISTEN[i].t,"en"]])]);
+}
+function speakerVoice(name,s){
+  if(!name)return {v:pick("en"),p:1};
+  const sp=[...new Set(s.lines.map(l=>l[0]).filter(Boolean))],k=sp.indexOf(name);
+  const en=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith("en"));
+  return {v:en.length?en[(k*3)%en.length]:null,p:[1,1.3,.8][k%3]};
+}
+function playLines(s,from,to,slow,onLine){
+  try{speechSynthesis.cancel()}catch(e){}
+  try{for(let k=from;k<=to;k++){const [who,text]=s.lines[k];const sv=speakerVoice(who,s);
+    const u=new SpeechSynthesisUtterance(text);u.lang="en-US";if(sv.v)u.voice=sv.v;u.pitch=sv.p;u.rate=slow?.62:.85;
+    u.onstart=()=>onLine&&onLine(k);speechSynthesis.speak(u)}}catch(e){}
+}
+function story2(si){
+  const s=LISTEN[si];
+  view={name:"lstory",si,line:-1,back:()=>listenLevel(s.lv-1,si)};
+  app.innerHTML=`<p class="crumb">Listening · ${LVNAME[s.lv-1]}</p><h2 lang="en">${esc(s.t)}</h2>
+  <p class="tip">${esc(s.es)} Escucha y luego presiona Q para las preguntas.</p>
+  <details class="panel"><summary>Ver el texto (mejor después de escuchar)</summary>
+  <div lang="en">${s.lines.map((l,k)=>`<p data-ln="${k}">${l[0]?`<strong>${esc(l[0])}:</strong> `:""}${esc(l[1])}</p>`).join("")}</div></details>
+  <div class="row">
+    <button class="btn primary" id="lall">${kb("Espacio","Escuchar todo")}</button>
+    <button class="btn" id="lslow">${kb("S","Escuchar despacio")}</button>
+    <button class="btn" id="lprev">${kb("←","Frase anterior")}</button>
+    <button class="btn" id="lnext">${kb("→","Frase siguiente")}</button>
+    <button class="btn primary" id="lq">${kb("Q","Responder preguntas")}</button>
+    <button class="btn" id="back">${kb("Esc","Volver")}</button></div>
+  <p class="feedback" id="lfb" role="status"></p>`;
+  const g=id=>document.getElementById(id);
+  g("lall").onclick=()=>lPlay(false);g("lslow").onclick=()=>lPlay(true);g("lprev").onclick=()=>lLine(-1);g("lnext").onclick=()=>lLine(1);
+  g("lq").onclick=()=>listenDrill(si);g("back").onclick=view.back;
+  focusTitle();
+  say([[s.es+" Presiona Espacio para escuchar, S para escuchar despacio, las flechas para ir frase por frase, y Q para las preguntas.","es"]]);
+}
+function lMark(k){app.querySelectorAll("[data-ln]").forEach(p=>p.classList.toggle("now",+p.dataset.ln===k))}
+function lPlay(slow){const s=LISTEN[view.si];view.line=-1;playLines(s,0,s.lines.length-1,slow,k=>{view.line=k;lMark(k)})}
+function lLine(d){const s=LISTEN[view.si];const k=Math.max(0,Math.min(s.lines.length-1,view.line+d));view.line=k;lMark(k);
+  const fb=document.getElementById("lfb");fb.textContent=`Frase ${k+1} de ${s.lines.length}`;playLines(s,k,k,false)}
+function listenDrill(si){
+  const s=LISTEN[si];
+  const qs=s.qs.map(q=>({p:q.q,parts:[[q.q,"en"]],a:q.o[0],opts:shuffle(q.o)}));
+  drill({key:"listen"+si,title:"Preguntas: "+s.t,crumb:"Listening · "+LVNAME[s.lv-1],qs,back:()=>story2(si),retry:()=>listenDrill(si),
+    extra:{k:"l",t:"Escuchar la historia otra vez",go:()=>playLines(s,0,s.lines.length-1,false)}});
+}
+
 /* ---------- Teclado ---------- */
-const HELP="Ayuda. En el inicio, presiona 1, 2 o 3 para elegir el nivel, 4 para el laboratorio de pronunciación, o 5 para conversar con Sunny. En un nivel, presiona C para continuar con el siguiente módulo, o usa Tab para elegir otro. En las tarjetas: flecha derecha, siguiente. Flecha izquierda, anterior. Espacio, escuchar otra vez. D, deletrear. R, escuchar la regla. L, la lectura. Q, practicar. En la práctica: presiona 1, 2, 3 o 4 para responder, E para escuchar la pregunta otra vez y Enter para seguir. En pronunciación: G graba tu voz, S escucha despacio, Q hace la prueba de oído. En la conversación con Sunny: Espacio, hablar. E, escuchar otra vez. S, más despacio. M, manos libres. F, terminar y recibir consejos. A, ayuda con la pregunta en la práctica guiada. También puedes escribir tu respuesta. Escape siempre te regresa. V enciende o apaga la voz guía.";
+const HELP="Ayuda. En el inicio, presiona 1, 2 o 3 para elegir el nivel, 4 para pronunciación, 5 para conversar con Sunny, 6 para verbos, 7 para tercera persona, 8 para países o 9 para listening. En las listas, presiona el número de la lista y luego P para pronunciar, Q para la prueba u O para hacer oraciones. En las pruebas, responde con 1, 2 o 3. En un nivel, presiona C para continuar con el siguiente módulo, o usa Tab para elegir otro. En las tarjetas: flecha derecha, siguiente. Flecha izquierda, anterior. Espacio, escuchar otra vez. D, deletrear. R, escuchar la regla. L, la lectura. Q, practicar. En la práctica: presiona 1, 2, 3 o 4 para responder, E para escuchar la pregunta otra vez y Enter para seguir. En pronunciación: G graba tu voz, S escucha despacio, Q hace la prueba de oído. En la conversación con Sunny: Espacio, hablar. E, escuchar otra vez. S, más despacio. M, manos libres. F, terminar y recibir consejos. A, ayuda con la pregunta en la práctica guiada. También puedes escribir tu respuesta. Escape siempre te regresa. V enciende o apaga la voz guía.";
 let greeted=false;
 document.addEventListener("keydown",e=>{
-  if(e.target.matches("input,textarea")||e.ctrlKey||e.metaKey||e.altKey)return;
+  if((e.target.matches("input,textarea")&&e.key!=="Escape")||e.ctrlKey||e.metaKey||e.altKey)return;
   const k=e.key.toLowerCase(),n=view.name,m=view.m;
   if(n==="lock"&&k!=="v"&&k!=="h")return;
-  if(!greeted&&n==="home"&&!/^[1-5]$/.test(k)&&k!=="tab"){greeted=true;if(k!=="h"&&k!=="v")homeSpeech()}
+  if(!greeted&&n==="home"&&!/^[1-9]$/.test(k)&&k!=="tab"){greeted=true;if(k!=="h"&&k!=="v")homeSpeech()}
   const stop=()=>e.preventDefault();
   if(k==="v"){stop();return toggleVoice()}
   if(k==="h"){stop();announce(HELP);return say([[HELP,"es"]],{force:true})}
   if(k==="escape"){stop();
     if(n==="lab"||n==="conv"||n==="talkdone"){stopListening();return home()}
     if(n==="talk")return conv();
+    if(["hub","menu","drill","drilldone","sent","lstory"].includes(n)){stopRec();try{speechSynthesis.cancel()}catch(e){}return view.back()}
     if(["pron","ear","eardone"].includes(n))return view.back();
     if(n==="level")return home();
     if(n==="quiz")return openMod(m);
@@ -879,6 +1435,16 @@ document.addEventListener("keydown",e=>{
   if(n==="home"&&/^[1-3]$/.test(k)){stop();return level(+k-1)}
   if(n==="home"&&k==="4"){stop();return lab()}
   if(n==="home"&&k==="5"){stop();return conv()}
+  if(n==="home"&&k==="6"){stop();return verbsHub()}
+  if(n==="home"&&k==="7"){stop();return thirdHub()}
+  if(n==="home"&&k==="8"){stop();return countriesHub()}
+  if(n==="home"&&k==="9"){stop();return listenHub()}
+  if(n==="hub"){if(/^[0-9]$/.test(k)&&view.pick){stop();return view.pick(k==="0"?9:+k-1)}if(k==="r"){const b=document.getElementById("vtip")||document.getElementById("ttip");if(b){stop();b.click()}}return}
+  if(n==="menu"){if(view.keys&&view.keys[k]){stop();return view.keys[k]()}return}
+  if(n==="drill"){const q=view.qs[view.n];if(/^[1-4]$/.test(k)&&!view.answered&&+k<=q.opts.length){stop();return drillChoose(+k-1)}if(k==="e"){stop();return drillRead()}if(view.cfg.extra&&k===view.cfg.extra.k){stop();return view.cfg.extra.go()}return}
+  if(n==="drilldone"){if(k==="r"){stop();return view.cfg.retry()}return}
+  if(n==="sent"){if(k==="g"){stop();return sentListen()}if(k==="a"){stop();return sentHelp()}if(k==="arrowright"){stop();return sentStep(1)}if(k==="arrowleft"){stop();return sentStep(-1)}return}
+  if(n==="lstory"){if(k===" "&&!e.target.matches("button,summary")){stop();return lPlay(false)}if(k==="s"){stop();return lPlay(true)}if(k==="arrowright"){stop();return lLine(1)}if(k==="arrowleft"){stop();return lLine(-1)}if(k==="q"){stop();return listenDrill(view.si)}return}
   if(n==="conv"){if(/^[1-6]$/.test(k)){stop();return talk(+k-1)}if(k==="n"){stop();return setConvLevel((convLevel+1)%CONV_LEVELS.length)}return}
   if(n==="talk"){
     if(k===" "&&!e.target.matches("button")){stop();return listen()}
