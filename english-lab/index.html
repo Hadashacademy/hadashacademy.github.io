@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English Lab · My English Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--ink:#14213D;--ink2:#465375;--bg:#F4F7FF;--card:#fff;--sun:#FFC400;--blue:#1673E6;--line:#DDE3F0;--ok:#1E9E45;--bad:#E53935}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Nunito',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:17px;line-height:1.5}
+h1,h2,h3{font-family:'Fredoka','Nunito',sans-serif;margin:0;line-height:1.15}
+button{font:inherit;cursor:pointer;border:0}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px 60px}
+.top{background:linear-gradient(120deg,#0B4FB3,#1673E6 60%,#3BA0FF);color:#fff;padding:18px 0 26px;border-radius:0 0 28px 28px}
+.top .wrap{padding-bottom:0}
+.brand{display:flex;align-items:center;gap:12px}
+.brand .logo{width:46px;height:46px;border-radius:14px;background:var(--sun);display:flex;align-items:center;justify-content:center;font-size:26px}
+.brand small{display:block;font-weight:700;letter-spacing:.14em;font-size:11px;opacity:.85}
+.brand h1{font-size:26px}
+.back{display:inline-flex;align-items:center;gap:6px;color:#fff;background:rgba(255,255,255,.18);border-radius:20px;padding:6px 14px;font-weight:700;margin-bottom:12px}
+.unit{background:var(--card);border-radius:22px;padding:16px;margin-top:16px;box-shadow:0 2px 0 var(--line)}
+.unit h2{font-size:20px;display:flex;gap:10px;align-items:center}
+.un{background:var(--u,#1673E6);color:#fff;border-radius:12px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.tl{display:grid;gap:8px;margin-top:12px}
+.ti{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:12px 14px;color:var(--ink);text-decoration:none;font-weight:700}
+.ti .ic{font-size:24px}.ti span{flex:1}.ti em{font-style:normal;font-size:12px;color:var(--ink2);font-weight:600;display:block}
+.tag{font-size:11px;font-weight:800;border-radius:10px;padding:3px 9px;background:#E7F1FF;color:#0B4FB3;letter-spacing:.04em}
+.tag.Conversation{background:#FFF0E0;color:#A84A00}.tag.Workbook{background:#E2F7E8;color:#126B2C}
+.hero{margin-top:-14px;background:var(--card);border-radius:22px;padding:18px;box-shadow:0 6px 20px rgba(20,33,61,.08)}
+.hero h2{font-size:26px;margin-top:6px}.hero .wh{color:var(--ink2);font-size:13px;font-weight:700}
+.scene{background:#FFF8DC;border-radius:14px;padding:10px 14px;margin-top:10px;font-size:15px}
+.cast{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.av{width:52px;height:52px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fredoka';font-size:22px;border:3px solid #fff;box-shadow:0 0 0 2px var(--c,#ccc)}
+.av svg{width:56px;height:56px}
+.who{display:flex;flex-direction:column;align-items:center;font-size:12px;font-weight:700;gap:3px}
+.player{display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap}
+.play{background:var(--sun);color:var(--ink);font-family:'Fredoka';font-size:20px;border-radius:40px;padding:12px 24px;box-shadow:0 4px 0 #D9A400;display:flex;align-items:center;gap:8px}
+.play:active{transform:translateY(2px);box-shadow:0 2px 0 #D9A400}
+.chipbtn{background:#EEF2FA;border-radius:20px;padding:8px 14px;font-weight:700;font-size:14px}
+.chipbtn[aria-pressed="true"]{background:var(--ink);color:#fff}
+.sec{background:var(--card);border-radius:22px;padding:18px;margin-top:16px}
+.sec h3{font-size:20px;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sec h3 i{font-style:normal;background:var(--blue);color:#fff;border-radius:50%;width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;font-size:15px}
+.lines{display:grid;gap:8px}
+.ln{display:flex;gap:10px;align-items:flex-start;border-radius:16px;padding:8px 10px;transition:background .2s}
+.ln .av{width:40px;height:40px;font-size:16px;flex:none}.ln .av svg{width:44px;height:44px}
+.ln b{display:block;font-size:13px;color:var(--c)}
+.ln.now{background:#FFF3C4}
+.ln button{margin-left:auto;background:#EEF2FA;border-radius:50%;width:36px;height:36px;flex:none}
+.hidden-text .ln p{filter:blur(6px);user-select:none}
+.ttab{width:100%;border-collapse:separate;border-spacing:0 6px}
+.ttab th{text-align:left;font-size:13px;color:var(--ink2);padding:0 6px}
+.ttab td{padding:0 6px}
+.ttab input{width:100%;font:inherit;border:2px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff}
+.ttab input.ok{border-color:var(--ok);background:#EBF9EF}.ttab input.bad{border-color:var(--bad);background:#FDECEC}
+.given{font-weight:800}
+.check{background:var(--blue);color:#fff;border-radius:30px;padding:10px 22px;font-family:'Fredoka';font-size:17px;margin-top:10px}
+.score{font-family:'Fredoka';font-size:18px;margin-left:12px}
+.q{margin-top:12px}.q p{font-weight:800;margin:0 0 6px}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.opt{background:#EEF2FA;border-radius:14px;padding:10px 14px;font-weight:700}
+.opt.ok{background:#D6F5DE;color:#126B2C}.opt.bad{background:#FDE0E0;color:#A11}
+.rp{display:grid;gap:10px}
+.rpbar{display:flex;gap:8px;flex-wrap:wrap}
+.say{background:#FFF8DC;border:2px dashed #E0A800;border-radius:16px;padding:14px;font-size:19px;font-weight:700}
+.mic{background:var(--bad);color:#fff;border-radius:30px;padding:10px 20px;font-family:'Fredoka';font-size:17px}
+.fb{font-weight:800}
+.stars{font-size:28px;letter-spacing:4px}
+.qrgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:16px}
+.qrc{background:#fff;border-radius:16px;padding:14px;text-align:center;break-inside:avoid}
+.qrc .code{display:flex;justify-content:center;margin:8px 0}
+.qrc b{font-family:'Fredoka';font-size:16px}.qrc small{display:block;color:var(--ink2);font-size:12px}
+.note{font-size:13px;color:var(--ink2);margin-top:10px}
+@media print{.top,.noprint{display:none}.qrgrid{grid-template-columns:repeat(3,1fr)}body{background:#fff}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const DATA = {"tracks": [{"id": "u01-l", "unit": 1, "kind": "Listening", "title": "First day of class", "where": "Student’s Book · Unit 1 · Section 8", "scene": "It’s the first day at Hadash Academy. Miss Ana asks three new students to introduce themselves.", "lines": [["Miss Ana", "Good morning, everyone! Welcome to Hadash Academy. Let’s introduce ourselves. You first, please."], ["Nina", "Hi! I’m Nina. I’m ten years old."], ["Miss Ana", "Nice to meet you, Nina. Where are you from?"], ["Nina", "I’m from Santiago."], ["Miss Ana", "Thank you. And what’s your name?"], ["Omar", "Hello, I’m Omar. I’m ten, too. I’m from La Romana."], ["Miss Ana", "Welcome, Omar! And you?"], ["Sofia", "Hi! My name’s Sofia. I’m nine, and I’m from Puerto Plata. Nice to meet you!"], ["Miss Ana", "Nice to meet you, too, Sofia. Welcome, everyone!"]], "task": {"prompt": "Listen. Write each student’s age and city.", "cols": ["Name", "Age", "From"], "rows": [["Nina", "10", "Santiago"], ["Omar", "10", "La Romana"], ["Sofia", "9", "Puerto Plata"]]}, "quiz": [["Who is the teacher?", ["Nina", "Miss Ana", "Sofia"], 1], ["Who is nine years old?", ["Sofia", "Omar", "Nina"], 0], ["Where is Omar from?", ["Santiago", "Puerto Plata", "La Romana"], 2]]}, {"id": "u01-c", "unit": 1, "kind": "Conversation", "title": "Talk time: Hello, World!", "where": "Student’s Book · Unit 1 · Section 3", "scene": "It’s the first day of English class at Hadash Academy.", "lines": [["Miss Ana", "Good morning, class! I’m Miss Ana, your teacher."], ["Maya", "Good morning, Miss Ana!"], ["Leo", "Hi! I’m Leo. What’s your name?"], ["Maya", "My name’s Maya. Nice to meet you, Leo."], ["Leo", "Nice to meet you, too! How old are you?"], ["Maya", "I’m nine. And you?"], ["Leo", "I’m ten."]], "task": null, "quiz": null}, {"id": "wb01-1", "unit": 1, "kind": "Workbook", "title": "At the school gate", "where": "Workbook · Unit 1 · Exercise 11 · Track 1.1", "scene": "Look at the picture of Hadash Academy. Listen and label the picture.", "lines": [["Miss Ana", "Hello, everyone! I’m Miss Ana, your teacher. Look at our school. It’s Hadash Academy!"], ["Miss Ana", "And look at the flag. It’s the flag of the Dominican Republic."], ["Leo", "Hi! I’m Leo. I have a blue backpack. I’m saying hello to Maya."], ["Maya", "Hello, Leo! I’m Maya. I have a pink backpack."], ["Omar", "And I’m Omar. I’m next to the gate. Nice to meet you!"]], "task": {"prompt": "Write the words: teacher · school · flag · Leo · Maya · Omar.", "cols": ["Number", "Label"], "rows": [["1", "teacher"], ["2", "school"], ["3", "Leo"], ["4", "Maya"], ["5", "Omar"], ["6", "flag"]]}, "quiz": [["What color is Leo’s backpack?", ["pink", "blue", "green"], 1], ["Who is next to the gate?", ["Omar", "Maya", "Miss Ana"], 0], ["What is the name of the school?", ["Santo Domingo School", "Hadash Academy", "La Romana Academy"], 1]]}, {"id": "u02-l", "unit": 2, "kind": "Listening", "title": "Spell the names", "where": "Student’s Book · Unit 2 · Section 8", "scene": "Miss Ana writes the names of three new students on the board.", "lines": [["Miss Ana", "Good morning! I’m writing your names on the board. What’s your name, please?"], ["Sara", "My name’s Sara."], ["Miss Ana", "How do you spell it?"], ["Sara", "S-A-R-A.", "S. A. R. A."], ["Miss Ana", "Thank you, Sara. And you?"], ["Tomás", "I’m Tomás. T-O-M-A-S.", "I’m Tomás. T. O. M. A. S."], ["Miss Ana", "Great! And what’s your name?"], ["Kevin", "Hi! I’m Kevin. K-E-V-I-N.", "Hi! I’m Kevin. K. E. V. I. N."], ["Miss Ana", "Perfect. Sara, Tomás and Kevin. Welcome!"]], "task": {"prompt": "Write each name and its first letter.", "cols": ["Student", "Name", "First letter"], "rows": [["Student 1", "Sara", "S"], ["Student 2", "Tomás", "T"], ["Student 3", "Kevin", "K"]]}, "quiz": [["How do you spell Kevin?", ["K-E-V-I-N", "K-E-B-I-N", "C-E-V-I-N"], 0], ["Which name starts with T?", ["Sara", "Tomás", "Kevin"], 1], ["How many students spell their names?", ["two", "three", "four"], 1]]}, {"id": "u02-c", "unit": 2, "kind": "Conversation", "title": "Talk time: Letters and Sounds", "where": "Student’s Book · Unit 2 · Section 3", "scene": "Nina meets a new student.", "lines": [["Nina", "Hi! What’s your name?"], ["Omar", "My name’s Omar."], ["Nina", "How do you spell it?"], ["Omar", "O-M-A-R."], ["Nina", "Cool! My name’s Nina. N-I-N-A."], ["Omar", "Nina starts with N. N is for nose!"]], "task": null, "quiz": null}, {"id": "u03-l", "unit": 3, "kind": "Listening", "title": "Phone numbers", "where": "Student’s Book · Unit 3 · Section 8", "scene": "Three students make a class phone list.", "lines": [["Miss Ana", "Let’s make a class phone list. Daniel, how old are you?"], ["Daniel", "I’m eleven. My phone number is 809-555-0147.", "I’m eleven. My phone number is eight oh nine, five five five, oh one four seven."], ["Miss Ana", "Thank you. Laura?"], ["Laura", "I’m nine. My number is 829-555-0182.", "I’m nine. My number is eight two nine, five five five, oh one eight two."], ["Miss Ana", "And you, Pedro?"], ["Pedro", "My name’s Pedro. I’m ten. My phone number is 849-555-0136.", "My name’s Pedro. I’m ten. My phone number is eight four nine, five five five, oh one three six."], ["Miss Ana", "Great! Now we have a phone list."]], "task": {"prompt": "Write each student’s age and phone number.", "cols": ["Name", "Age", "Phone number"], "rows": [["Daniel", "11", "809-555-0147"], ["Laura", "9", "829-555-0182"], ["Pedro", "10", "849-555-0136"]]}, "quiz": [["How old is Daniel?", ["nine", "ten", "eleven"], 2], ["Whose number starts with 829?", ["Laura", "Pedro", "Daniel"], 0], ["How old is Pedro?", ["ten", "nine", "eleven"], 0]]}, {"id": "u03-c", "unit": 3, "kind": "Conversation", "title": "Talk time: Numbers and Personal Information", "where": "Student’s Book · Unit 3 · Section 3", "scene": "Miss Ana counts the books with the class.", "lines": [["Miss Ana", "How many books are there?"], ["Nina", "One, two, three… There are eighteen!"], ["Miss Ana", "Great! And how many pencils?"], ["Leo", "There are ten pencils."], ["Miss Ana", "Thank you, Leo. How old are you, Nina?"], ["Nina", "I’m ten."]], "task": null, "quiz": null}, {"id": "u04-l", "unit": 4, "kind": "Listening", "title": "Color the picture", "where": "Student’s Book · Unit 4 · Section 8", "scene": "Miss Ana shows Omar her picture of shapes.", "lines": [["Miss Ana", "Look at my picture, Omar. Can you see the star?"], ["Omar", "Yes! It’s a big star. What color is it?"], ["Miss Ana", "The big star is yellow."], ["Omar", "And the circle?"], ["Miss Ana", "The circle is small. It’s red."], ["Omar", "Is the square blue?"], ["Miss Ana", "Yes, it is. It’s a big blue square!"], ["Omar", "I like your picture, Miss Ana!"]], "task": {"prompt": "Write the color and the size of each shape.", "cols": ["Shape", "Color", "Big or small?"], "rows": [["star", "yellow", "big"], ["circle", "red", "small"], ["square", "blue", "big"]]}, "quiz": [["What color is the star?", ["red", "yellow", "blue"], 1], ["Is the circle big or small?", ["big", "small", "very big"], 1], ["What color is the square?", ["blue", "green", "yellow"], 0]]}, {"id": "u04-c", "unit": 4, "kind": "Conversation", "title": "Talk time: Colors, Shapes and Descriptions", "where": "Student’s Book · Unit 4 · Section 3", "scene": "Maya and Omar make a poster.", "lines": [["Maya", "Look! What color is the star?"], ["Omar", "It’s yellow."], ["Maya", "Is the circle blue?"], ["Omar", "No, it isn’t. It’s red."], ["Maya", "What color are the triangles?"], ["Omar", "They’re green. They’re big triangles!"]], "task": null, "quiz": null}, {"id": "u05-l", "unit": 5, "kind": "Listening", "title": "Lost and found", "where": "Student’s Book · Unit 5 · Section 8", "scene": "After class, Miss Ana finds some things on the floor.", "lines": [["Miss Ana", "Whose pencil is this?"], ["Maya", "It’s my pencil! It’s blue."], ["Miss Ana", "Here you are, Maya. And this yellow ruler?"], ["Omar", "That’s my ruler. Thank you, Miss Ana!"], ["Miss Ana", "You’re welcome. Is this green backpack yours, Leo?"], ["Leo", "Yes, it is. Thank you!"], ["Miss Ana", "Remember, put your things away, please."]], "task": {"prompt": "Who has each thing? Write the name and the color.", "cols": ["Thing", "Whose?", "Color"], "rows": [["pencil", "Maya", "blue"], ["ruler", "Omar", "yellow"], ["backpack", "Leo", "green"]]}, "quiz": [["Whose ruler is it?", ["Leo’s", "Omar’s", "Maya’s"], 1], ["What color is Maya’s pencil?", ["blue", "yellow", "green"], 0], ["What does Miss Ana say at the end?", ["Sit down, please.", "Put your things away, please.", "Open your books."], 1]]}, {"id": "u05-c", "unit": 5, "kind": "Conversation", "title": "Talk time: My Classroom", "where": "Student’s Book · Unit 5 · Section 3", "scene": "It’s English class.", "lines": [["Miss Ana", "Open your books, please. Look at page five."], ["Omar", "Excuse me, Miss Ana. Is this your pencil?"], ["Miss Ana", "No, it isn’t. It’s Maya’s."], ["Maya", "Yes, that’s my pencil! Thank you, Omar."], ["Omar", "You’re welcome. Are these your crayons, too?"], ["Maya", "No, those are Nina’s."]], "task": null, "quiz": null}, {"id": "u06-l", "unit": 6, "kind": "Listening", "title": "Family photos", "where": "Student’s Book · Unit 6 · Section 8", "scene": "Leo shows Nina photos of his family.", "lines": [["Nina", "Leo, who is this in photo one?"], ["Leo", "That’s my grandmother. Her name is Lucía."], ["Nina", "She looks very kind! And photo two?"], ["Leo", "That’s my cousin. His name is Mateo. He’s eleven."], ["Nina", "Who is the woman in photo three?"], ["Leo", "She’s my aunt. Her name is Carmen. She’s a teacher."], ["Nina", "You have a big family, Leo!"]], "task": {"prompt": "Who is in each photo? Write the person and the name.", "cols": ["Photo", "Who?", "Name"], "rows": [["Photo 1", "grandmother", "Lucía"], ["Photo 2", "cousin", "Mateo"], ["Photo 3", "aunt", "Carmen"]]}, "quiz": [["Who is Lucía?", ["Leo’s aunt", "Leo’s grandmother", "Leo’s cousin"], 1], ["How old is Mateo?", ["ten", "eleven", "twelve"], 1], ["What is Carmen’s job?", ["doctor", "teacher", "nurse"], 1]]}, {"id": "u06-c", "unit": 6, "kind": "Conversation", "title": "Talk time: My Family and Friends", "where": "Student’s Book · Unit 6 · Section 3", "scene": "Nina looks at Leo’s family photo.", "lines": [["Nina", "Who is she?"], ["Leo", "She’s my sister."], ["Nina", "What’s her name?"], ["Leo", "Her name is Emma. She’s six."], ["Nina", "And who is he?"], ["Leo", "He’s my grandpa, Joe. He’s funny, and he likes music."]], "task": null, "quiz": null}], "speakers": {"Miss Ana": {"pitch": 1.05, "rate": 0.92, "color": "#6941C6"}, "Maya": {"pitch": 1.5, "rate": 0.95, "color": "#1673E6"}, "Leo": {"pitch": 1.25, "rate": 0.95, "color": "#F26B00"}, "Nina": {"pitch": 1.6, "rate": 0.95, "color": "#D81B72"}, "Omar": {"pitch": 1.15, "rate": 0.92, "color": "#1E9E45"}, "Sofia": {"pitch": 1.55, "rate": 0.95, "color": "#D81B72"}, "Sara": {"pitch": 1.55, "rate": 0.95, "color": "#E5257D"}, "Tomás": {"pitch": 1.1, "rate": 0.92, "color": "#0B4FB3"}, "Kevin": {"pitch": 1.2, "rate": 0.95, "color": "#A84A00"}, "Daniel": {"pitch": 1.1, "rate": 0.92, "color": "#0B4FB3"}, "Laura": {"pitch": 1.5, "rate": 0.95, "color": "#D81B72"}, "Pedro": {"pitch": 1.2, "rate": 0.95, "color": "#126B2C"}}, "faces": {"Maya": "<svg class=\"kid\" width=\"56\" height=\"56\" viewBox=\"14 8 72 72\" role=\"img\" aria-label=\"Maya\"><circle cx=\"23\" cy=\"30\" r=\"14\" fill=\"#2B1A12\"/><circle cx=\"77\" cy=\"30\" r=\"14\" fill=\"#2B1A12\"/><path d=\"M33 108 H67 L66 154 H53 L50 122 L47 154 H34Z\" fill=\"#3B6FD1\"/><ellipse cx=\"41\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#E53935\" stroke=\"#1B2547\" stroke-width=\"1\"/><ellipse cx=\"59\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#E53935\" stroke=\"#1B2547\" stroke-width=\"1\"/><rect x=\"31\" y=\"72\" width=\"38\" height=\"42\" rx=\"13\" fill=\"#FFC93C\"/><path d=\"M34 80 Q24 96 26 110\" stroke=\"#FFC93C\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"26\" cy=\"112\" r=\"5.5\" fill=\"#A0663F\"/><path d=\"M66 80 Q76 96 74 110\" stroke=\"#FFC93C\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"74\" cy=\"112\" r=\"5.5\" fill=\"#A0663F\"/><rect x=\"45\" y=\"64\" width=\"10\" height=\"10\" fill=\"#A0663F\"/><circle cx=\"26\" cy=\"51\" r=\"5\" fill=\"#A0663F\"/><circle cx=\"74\" cy=\"51\" r=\"5\" fill=\"#A0663F\"/><circle cx=\"50\" cy=\"48\" r=\"24\" fill=\"#A0663F\"/><path d=\"M25 50 Q24 22 50 22 Q76 22 75 50 Q70 34 56 31 Q44 36 30 38 Q27 43 25 50Z\" fill=\"#2B1A12\"/><ellipse cx=\"41\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><ellipse cx=\"59\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><circle cx=\"42.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"60.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"35\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><circle cx=\"65\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><path d=\"M42 59 Q50 67 58 59\" stroke=\"#1B2547\" stroke-width=\"2.2\" fill=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M43 72 Q50 79 57 72\" stroke=\"#fff\" stroke-width=\"2\" fill=\"none\" opacity=\".7\"/></svg>", "Leo": "<svg class=\"kid\" width=\"56\" height=\"56\" viewBox=\"14 8 72 72\" role=\"img\" aria-label=\"Leo\"><rect x=\"37\" y=\"122\" width=\"10\" height=\"32\" rx=\"4\" fill=\"#7A4A2A\"/><rect x=\"53\" y=\"122\" width=\"10\" height=\"32\" rx=\"4\" fill=\"#7A4A2A\"/><path d=\"M33 108 H67 L68 128 H52 L50 118 L48 128 H32Z\" fill=\"#2E8B3E\"/><ellipse cx=\"41\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#FFFFFF\" stroke=\"#1B2547\" stroke-width=\"1\"/><ellipse cx=\"59\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#FFFFFF\" stroke=\"#1B2547\" stroke-width=\"1\"/><rect x=\"31\" y=\"72\" width=\"38\" height=\"42\" rx=\"13\" fill=\"#F57C00\"/><path d=\"M34 80 Q24 96 26 110\" stroke=\"#F57C00\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"26\" cy=\"112\" r=\"5.5\" fill=\"#7A4A2A\"/><path d=\"M66 80 Q76 96 74 110\" stroke=\"#F57C00\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"74\" cy=\"112\" r=\"5.5\" fill=\"#7A4A2A\"/><rect x=\"45\" y=\"64\" width=\"10\" height=\"10\" fill=\"#7A4A2A\"/><circle cx=\"26\" cy=\"51\" r=\"5\" fill=\"#7A4A2A\"/><circle cx=\"74\" cy=\"51\" r=\"5\" fill=\"#7A4A2A\"/><circle cx=\"50\" cy=\"48\" r=\"24\" fill=\"#7A4A2A\"/><path d=\"M26 46 Q26 26 50 24 Q74 26 74 46 Q66 36 50 36 Q34 36 26 46Z\" fill=\"#1A1110\"/><circle cx=\"30\" cy=\"38\" r=\"8\" fill=\"#1A1110\"/><circle cx=\"36\" cy=\"29\" r=\"8\" fill=\"#1A1110\"/><circle cx=\"46\" cy=\"25\" r=\"8\" fill=\"#1A1110\"/><circle cx=\"56\" cy=\"25\" r=\"8\" fill=\"#1A1110\"/><circle cx=\"65\" cy=\"29\" r=\"8\" fill=\"#1A1110\"/><circle cx=\"71\" cy=\"37\" r=\"8\" fill=\"#1A1110\"/><ellipse cx=\"41\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><ellipse cx=\"59\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><circle cx=\"42.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"60.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"35\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><circle cx=\"65\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><path d=\"M42 59 Q50 67 58 59\" stroke=\"#1B2547\" stroke-width=\"2.2\" fill=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M43 72 Q50 79 57 72\" stroke=\"#fff\" stroke-width=\"2\" fill=\"none\" opacity=\".7\"/></svg>", "Nina": "<svg class=\"kid\" width=\"56\" height=\"56\" viewBox=\"14 8 72 72\" role=\"img\" aria-label=\"Nina\"><path d=\"M70 34 Q96 46 84 92 Q78 70 66 52Z\" fill=\"#14100E\"/><rect x=\"38\" y=\"118\" width=\"9\" height=\"36\" rx=\"4\" fill=\"#C98C5E\"/><rect x=\"53\" y=\"118\" width=\"9\" height=\"36\" rx=\"4\" fill=\"#C98C5E\"/><path d=\"M34 76 Q50 70 66 76 L76 128 Q50 134 24 128Z\" fill=\"#EC5D9B\"/><ellipse cx=\"41\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#8E44AD\" stroke=\"#1B2547\" stroke-width=\"1\"/><ellipse cx=\"59\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#8E44AD\" stroke=\"#1B2547\" stroke-width=\"1\"/><path d=\"M34 80 Q24 96 26 110\" stroke=\"#EC5D9B\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"26\" cy=\"112\" r=\"5.5\" fill=\"#C98C5E\"/><path d=\"M66 80 Q76 96 74 110\" stroke=\"#EC5D9B\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"74\" cy=\"112\" r=\"5.5\" fill=\"#C98C5E\"/><rect x=\"45\" y=\"64\" width=\"10\" height=\"10\" fill=\"#C98C5E\"/><circle cx=\"26\" cy=\"51\" r=\"5\" fill=\"#C98C5E\"/><circle cx=\"74\" cy=\"51\" r=\"5\" fill=\"#C98C5E\"/><circle cx=\"50\" cy=\"48\" r=\"24\" fill=\"#C98C5E\"/><path d=\"M25 50 Q24 22 50 22 Q76 22 75 50 Q70 34 56 31 Q44 36 30 38 Q27 43 25 50Z\" fill=\"#14100E\"/><ellipse cx=\"41\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><ellipse cx=\"59\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><circle cx=\"42.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"60.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"35\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><circle cx=\"65\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><path d=\"M42 59 Q50 67 58 59\" stroke=\"#1B2547\" stroke-width=\"2.2\" fill=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M43 72 Q50 79 57 72\" stroke=\"#fff\" stroke-width=\"2\" fill=\"none\" opacity=\".7\"/></svg>", "Omar": "<svg class=\"kid\" width=\"56\" height=\"56\" viewBox=\"14 8 72 72\" role=\"img\" aria-label=\"Omar\"><path d=\"M33 108 H67 L66 154 H53 L50 122 L47 154 H34Z\" fill=\"#2B3F7A\"/><ellipse cx=\"41\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#1B2547\" stroke=\"#1B2547\" stroke-width=\"1\"/><ellipse cx=\"59\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#1B2547\" stroke=\"#1B2547\" stroke-width=\"1\"/><rect x=\"31\" y=\"72\" width=\"38\" height=\"42\" rx=\"13\" fill=\"#2B8540\"/><path d=\"M34 80 Q24 96 26 110\" stroke=\"#2B8540\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"26\" cy=\"112\" r=\"5.5\" fill=\"#B97A4E\"/><path d=\"M66 80 Q76 96 74 110\" stroke=\"#2B8540\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"74\" cy=\"112\" r=\"5.5\" fill=\"#B97A4E\"/><rect x=\"45\" y=\"64\" width=\"10\" height=\"10\" fill=\"#B97A4E\"/><circle cx=\"26\" cy=\"51\" r=\"5\" fill=\"#B97A4E\"/><circle cx=\"74\" cy=\"51\" r=\"5\" fill=\"#B97A4E\"/><circle cx=\"50\" cy=\"48\" r=\"24\" fill=\"#B97A4E\"/><path d=\"M25 48 Q23 22 50 22 Q77 22 75 48 Q73 36 64 32 Q52 38 34 34 Q28 38 25 48Z\" fill=\"#4A2E1C\"/><ellipse cx=\"41\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><ellipse cx=\"59\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><circle cx=\"42.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"60.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"35\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><circle cx=\"65\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><path d=\"M42 59 Q50 67 58 59\" stroke=\"#1B2547\" stroke-width=\"2.2\" fill=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><circle cx=\"41\" cy=\"50\" r=\"7\" fill=\"none\" stroke=\"#1B2547\" stroke-width=\"2\"/><circle cx=\"59\" cy=\"50\" r=\"7\" fill=\"none\" stroke=\"#1B2547\" stroke-width=\"2\"/><path d=\"M48 50 H52\" stroke=\"#1B2547\" stroke-width=\"2\"/><path d=\"M43 72 Q50 79 57 72\" stroke=\"#fff\" stroke-width=\"2\" fill=\"none\" opacity=\".7\"/></svg>", "Miss Ana": "<svg class=\"kid\" width=\"56\" height=\"56\" viewBox=\"14 8 72 72\" role=\"img\" aria-label=\"Ana\"><circle cx=\"50\" cy=\"18\" r=\"11\" fill=\"#2B1A12\"/><rect x=\"38\" y=\"118\" width=\"9\" height=\"36\" rx=\"4\" fill=\"#8C5634\"/><rect x=\"53\" y=\"118\" width=\"9\" height=\"36\" rx=\"4\" fill=\"#8C5634\"/><path d=\"M34 76 Q50 70 66 76 L76 128 Q50 134 24 128Z\" fill=\"#3B4A7A\"/><ellipse cx=\"41\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#1B2547\" stroke=\"#1B2547\" stroke-width=\"1\"/><ellipse cx=\"59\" cy=\"156\" rx=\"9\" ry=\"5\" fill=\"#1B2547\" stroke=\"#1B2547\" stroke-width=\"1\"/><path d=\"M34 80 Q24 96 26 110\" stroke=\"#3B4A7A\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"26\" cy=\"112\" r=\"5.5\" fill=\"#8C5634\"/><path d=\"M66 80 Q76 96 74 110\" stroke=\"#3B4A7A\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/><circle cx=\"74\" cy=\"112\" r=\"5.5\" fill=\"#8C5634\"/><rect x=\"45\" y=\"64\" width=\"10\" height=\"10\" fill=\"#8C5634\"/><circle cx=\"26\" cy=\"51\" r=\"5\" fill=\"#8C5634\"/><circle cx=\"74\" cy=\"51\" r=\"5\" fill=\"#8C5634\"/><circle cx=\"50\" cy=\"48\" r=\"24\" fill=\"#8C5634\"/><path d=\"M25 50 Q24 22 50 22 Q76 22 75 50 Q70 34 56 31 Q44 36 30 38 Q27 43 25 50Z\" fill=\"#2B1A12\"/><ellipse cx=\"41\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><ellipse cx=\"59\" cy=\"50\" rx=\"3.2\" ry=\"4\" fill=\"#1B2547\"/><circle cx=\"42.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"60.2\" cy=\"48.5\" r=\"1.2\" fill=\"#fff\"/><circle cx=\"35\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><circle cx=\"65\" cy=\"58\" r=\"3.5\" fill=\"#F48FB1\" opacity=\".55\"/><path d=\"M42 59 Q50 67 58 59\" stroke=\"#1B2547\" stroke-width=\"2.2\" fill=\"#fff\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path d=\"M43 72 Q50 79 57 72\" stroke=\"#fff\" stroke-width=\"2\" fill=\"none\" opacity=\".7\"/></svg>"}, "titles": {"1": "Hello, World!", "2": "Letters and Sounds", "3": "Numbers and Personal Information", "4": "Colors, Shapes and Descriptions", "5": "My Classroom", "6": "My Family and Friends"}};
+const COLORS = ['#1673E6','#F26B00','#D81B72','#1E9E45'];
+const ucol = n => COLORS[Math.floor((n-1)/6)%4];
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const store = {get(k){try{return JSON.parse(localStorage.getItem('lab:'+k))}catch(e){return null}},set(k,v){try{localStorage.setItem('lab:'+k,JSON.stringify(v))}catch(e){}}};
+
+function avatar(name){
+  const sp = DATA.speakers[name] || {color:'#888'};
+  if (DATA.faces[name]) return `<span class="av" style="--c:${sp.color};background:#fff">${DATA.faces[name]}</span>`;
+  return `<span class="av" style="--c:${sp.color};background:${sp.color}">${esc(name[0])}</span>`;
+}
+const icon = k => ({Listening:'🎧',Conversation:'💬',Workbook:'📒'})[k];
+
+/* ---------- speech ---------- */
+let voices = [];
+function loadVoices(){ voices = (speechSynthesis.getVoices()||[]).filter(v => /^en/i.test(v.lang)); }
+if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function voiceFor(name){
+  if (!voices.length) return null;
+  const names = Object.keys(DATA.speakers); const i = Math.max(0, names.indexOf(name));
+  const pref = voices.filter(v => /en-US|en-GB/i.test(v.lang)); const pool = pref.length ? pref : voices;
+  return pool[i % pool.length];
+}
+let slow = false;
+function speak(name, text){
+  return new Promise(res => {
+    if (!('speechSynthesis' in window)) return res();
+    const u = new SpeechSynthesisUtterance(text);
+    const sp = DATA.speakers[name] || {pitch:1, rate:1};
+    u.lang = 'en-US'; u.pitch = sp.pitch; u.rate = sp.rate * (slow ? 0.75 : 1);
+    const v = voiceFor(name); if (v) u.voice = v;
+    u.onend = res; u.onerror = res;
+    speechSynthesis.speak(u);
+  });
+}
+let playing = false;
+async function playAll(t){
+  if (playing){ speechSynthesis.cancel(); playing = false; setPlayBtn(false); return; }
+  playing = true; setPlayBtn(true);
+  for (let i = 0; i < t.lines.length && playing; i++){
+    document.querySelectorAll('.ln').forEach(el => el.classList.toggle('now', +el.dataset.i === i));
+    const [s, d, sp] = t.lines[i];
+    await speak(s, sp || d);
+    await new Promise(r => setTimeout(r, 350));
+  }
+  document.querySelectorAll('.ln').forEach(el => el.classList.remove('now'));
+  playing = false; setPlayBtn(false);
+  const plays = (store.get(t.id + ':plays') || 0) + 1; store.set(t.id + ':plays', plays);
+}
+function setPlayBtn(on){ const b = $('#playbtn'); if (b) b.innerHTML = on ? '⏹ Stop' : '▶ Listen'; }
+
+/* ---------- views ---------- */
+function home(){
+  const byUnit = {};
+  DATA.tracks.forEach(t => (byUnit[t.unit] = byUnit[t.unit] || []).push(t));
+  const units = Object.keys(byUnit).map(n => {
+    const items = byUnit[n].map(t => {
+      const st = store.get(t.id + ':stars');
+      return `<a class="ti" href="#${t.id}"><span class="ic">${icon(t.kind)}</span><span>${esc(t.title)}<em>${esc(t.where)}</em></span>${st ? '⭐'.repeat(st) : `<span class="tag ${t.kind}">${t.kind}</span>`}</a>`;
+    }).join('');
+    return `<div class="unit" style="--u:${ucol(+n)}"><h2><span class="un">${n}</span>${esc(DATA.titles[n] || '')}</h2><div class="tl">${items}</div></div>`;
+  }).join('');
+  return `<header class="top"><div class="wrap"><div class="brand"><span class="logo">🦉</span><div><small>MY ENGLISH ADVENTURE · BOOK 1</small><h1>English Lab</h1></div></div>
+  <p style="margin:10px 0 0;opacity:.95">Scan the QR code in your book, listen, and practice. 🎧💬</p></div></header>
+  <main class="wrap">${units}
+  <p class="note noprint">Teacher: <a href="#qr">print the QR codes</a> · Units 7–24 coming soon.</p></main>`;
+}
+
+function trackView(t){
+  const cast = [...new Set(t.lines.map(l => l[0]))];
+  const lines = t.lines.map(([s, d], i) => `<div class="ln" data-i="${i}" style="--c:${(DATA.speakers[s]||{}).color||'#888'}">${avatar(s)}<p><b>${esc(s)}</b>${esc(d)}</p><button aria-label="Play this line" data-say="${i}">🔈</button></div>`).join('');
+  let task = '';
+  if (t.task){
+    const rows = t.task.rows.map((r, ri) => `<tr><td class="given">${esc(r[0])}</td>${r.slice(1).map((v, ci) => `<td><input aria-label="${esc(t.task.cols[ci+1])} for ${esc(r[0])}" data-a="${esc(v)}" autocomplete="off"></td>`).join('')}</tr>`).join('');
+    task = `<section class="sec"><h3><i>1</i>Listen and complete</h3><p>${esc(t.task.prompt)}</p>
+      <table class="ttab"><thead><tr>${t.task.cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+      <button class="check" id="chk">Check my answers</button><span class="score" id="tscore"></span></section>`;
+  }
+  let quiz = '';
+  if (t.quiz){
+    quiz = `<section class="sec"><h3><i>2</i>Quick quiz</h3>${t.quiz.map(([q, o, a], qi) => `<div class="q" data-q="${qi}"><p>${qi+1}. ${esc(q)}</p><div class="opts">${o.map((x, oi) => `<button class="opt" data-o="${oi}" data-ok="${oi===a}">${esc(x)}</button>`).join('')}</div></div>`).join('')}
+      <p class="stars" id="qstars"></p></section>`;
+  }
+  const rp = `<section class="sec"><h3><i>${t.task ? 3 : 1}</i>Your turn: role-play</h3>
+    <p>Choose a character. The app says the other lines. You say yours!</p>
+    <div class="rpbar">${cast.map(c => `<button class="chipbtn" data-role="${esc(c)}">${esc(c)}</button>`).join('')}</div>
+    <div class="rp" id="rp"></div></section>`;
+  return `<header class="top" style="background:linear-gradient(120deg,${ucol(t.unit)},${ucol(t.unit)}cc)"><div class="wrap"><a class="back" href="#">← English Lab</a>
+    <div class="brand"><span class="logo">${icon(t.kind)}</span><div><small>UNIT ${t.unit} · ${t.kind.toUpperCase()}</small><h1>${esc(DATA.titles[t.unit] || '')}</h1></div></div></div></header>
+  <main class="wrap"><div class="hero"><span class="wh">${esc(t.where)}</span><h2>${esc(t.title)}</h2><div class="scene">${esc(t.scene)}</div>
+    <div class="cast">${cast.map(c => `<span class="who">${avatar(c)}${esc(c)}</span>`).join('')}</div>
+    <div class="player"><button class="play" id="playbtn">▶ Listen</button>
+      <button class="chipbtn" id="slow" aria-pressed="false">🐢 Slow</button>
+      <button class="chipbtn" id="showtxt" aria-pressed="false">📄 Show text</button></div></div>
+  <section class="sec hidden-text" id="trans"><h3>💬 Conversation</h3><div class="lines">${lines}</div>
+    <p class="note">Tip: listen first without the text. Then press “Show text” and listen again.</p></section>
+  ${task}${quiz}${rp}</main>`;
+}
+
+function qrView(){
+  const base = location.href.split('#')[0];
+  const cards = DATA.tracks.map(t => `<div class="qrc"><b>Unit ${t.unit} · ${esc(t.title)}</b><div class="code" data-url="${esc(base + '#' + t.id)}"></div><small>${esc(t.where)}</small></div>`).join('');
+  return `<header class="top noprint"><div class="wrap"><a class="back" href="#">← English Lab</a><div class="brand"><span class="logo">🔳</span><div><small>FOR THE TEACHER</small><h1>QR codes</h1></div></div></div></header>
+  <main class="wrap"><p class="noprint">Print this page and stick each QR code in the book. Each code opens its listening page. <button class="chipbtn" onclick="print()">🖨 Print</button></p>
+  <p class="note noprint">These codes use this page’s address: <b>${esc(base)}</b>. Open this page from your GitHub Pages address before printing.</p>
+  <div class="qrgrid">${cards}</div></main>`;
+}
+
+/* ---------- behaviour ---------- */
+const NUM = {zero:'0',one:'1',two:'2',three:'3',four:'4',five:'5',six:'6',seven:'7',eight:'8',nine:'9',ten:'10',eleven:'11',twelve:'12'};
+const norm = s => { s = String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim(); return NUM[s] || s.replace(/ /g, s.match(/^\d/) ? '' : ' '); };
+
+function bindTrack(t){
+  $('#playbtn').onclick = () => playAll(t);
+  $('#slow').onclick = e => { slow = !slow; e.currentTarget.setAttribute('aria-pressed', slow); };
+  $('#showtxt').onclick = e => { const on = $('#trans').classList.toggle('hidden-text'); e.currentTarget.setAttribute('aria-pressed', !on); };
+  document.querySelectorAll('[data-say]').forEach(b => b.onclick = () => { speechSynthesis.cancel(); const [s, d, sp] = t.lines[+b.dataset.say]; speak(s, sp || d); });
+  const chk = $('#chk');
+  if (chk) chk.onclick = () => {
+    let ok = 0, all = 0;
+    document.querySelectorAll('.ttab input').forEach(i => { all++; const good = norm(i.value) === norm(i.dataset.a); i.classList.toggle('ok', good); i.classList.toggle('bad', !good && i.value.trim() !== ''); if (good) ok++; });
+    $('#tscore').textContent = `${ok} / ${all} ${ok === all ? '🎉' : ''}`;
+    store.set(t.id + ':task', ok / all); award(t);
+  };
+  document.querySelectorAll('.q').forEach(q => q.querySelectorAll('.opt').forEach(b => b.onclick = () => {
+    if (q.dataset.done) return; q.dataset.done = 1;
+    const good = b.dataset.ok === 'true'; b.classList.add(good ? 'ok' : 'bad');
+    if (!good) q.querySelector('[data-ok="true"]').classList.add('ok');
+    q.dataset.good = good ? 1 : 0;
+    const done = [...document.querySelectorAll('.q')].filter(x => x.dataset.done);
+    if (done.length === t.quiz.length){ const g = done.filter(x => x.dataset.good === '1').length; $('#qstars').textContent = '⭐'.repeat(g) + '☆'.repeat(t.quiz.length - g); store.set(t.id + ':quiz', g / t.quiz.length); award(t); }
+  }));
+  document.querySelectorAll('[data-role]').forEach(b => b.onclick = () => { document.querySelectorAll('[data-role]').forEach(x => x.setAttribute('aria-pressed', x === b)); rolePlay(t, b.dataset.role); });
+}
+function award(t){
+  const a = store.get(t.id + ':task'), q = store.get(t.id + ':quiz');
+  const parts = [a, q].filter(x => x !== null && x !== undefined);
+  if (!parts.length) return;
+  const avg = parts.reduce((s, x) => s + x, 0) / parts.length;
+  store.set(t.id + ':stars', avg >= .9 ? 3 : avg >= .6 ? 2 : 1);
+}
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+function listenOnce(){
+  return new Promise(res => {
+    if (!SR) return res(null);
+    const r = new SR(); r.lang = 'en-US'; r.interimResults = false; r.maxAlternatives = 1;
+    r.onresult = e => res(e.results[0][0].transcript); r.onerror = () => res(''); r.onend = () => res('');
+    r.start();
+  });
+}
+function similar(a, b){
+  const A = norm(a).split(' '), B = new Set(norm(b).split(' '));
+  if (!A.length) return 0; return A.filter(w => B.has(w)).length / Math.max(B.size, 1);
+}
+async function rolePlay(t, role){
+  const box = $('#rp'); speechSynthesis.cancel();
+  for (let i = 0; i < t.lines.length; i++){
+    const [s, d, sp] = t.lines[i];
+    if (s !== role){ box.innerHTML = `<div class="ln" style="--c:${(DATA.speakers[s]||{}).color}">${avatar(s)}<p><b>${esc(s)}</b>${esc(d)}</p></div>`; await speak(s, sp || d); continue; }
+    const said = await new Promise(res => {
+      box.innerHTML = `<div class="say">🗣 Your line: “${esc(d)}”</div><div class="rpbar">${SR ? '<button class="mic" id="mic">🎤 Speak</button>' : ''}<button class="chipbtn" id="done">✔ I said it</button><button class="chipbtn" id="hear">🔈 Hear it</button></div><p class="fb" id="fb"></p>`;
+      $('#hear').onclick = () => speak(role, sp || d);
+      $('#done').onclick = () => res(true);
+      if (SR) $('#mic').onclick = async () => {
+        $('#fb').textContent = 'Listening… 👂'; const heard = await listenOnce();
+        if (heard === null) return;
+        const sc = similar(heard, d);
+        $('#fb').innerHTML = sc >= .6 ? `Great job! 🎉 “${esc(heard)}”` : `Try again! I heard: “${esc(heard || '…')}”`;
+        if (sc >= .6) setTimeout(() => res(true), 900);
+      };
+    });
+  }
+  box.innerHTML = `<div class="say">🎉 Well done! You finished the conversation as <b>${esc(role)}</b>. Try another character!</div>`;
+}
+
+function render(){
+  speechSynthesis && speechSynthesis.cancel && speechSynthesis.cancel(); playing = false;
+  const id = location.hash.slice(1); const app = $('#app');
+  const t = DATA.tracks.find(x => x.id === id);
+  if (id === 'qr'){ app.innerHTML = qrView(); document.querySelectorAll('.code').forEach(el => { if (window.QRCode) new QRCode(el, {text: el.dataset.url, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M}); else el.textContent = el.dataset.url; }); }
+  else if (t){ app.innerHTML = trackView(t); bindTrack(t); }
+  else app.innerHTML = home();
+  scrollTo(0, 0);
+}
+addEventListener('hashchange', render); render();
+</script>
+</body>
+</html>
