@@ -99,8 +99,8 @@ const icon = k => ({Listening:'🎧',Conversation:'💬',Workbook:'📒'})[k];
 let voices = [];
 function loadVoices(){ voices = (speechSynthesis.getVoices()||[]).filter(v => /^en/i.test(v.lang)); }
 if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
-const FEM = /(female|woman|samantha|victoria|karen|moira|tessa|fiona|veena|zira|aria|jenny|\bava\b|allison|susan|hazel|libby|sonia|michelle|emma|joanna|salli|kimberly|\bivy\b|kendra|nicky|serena|catherine|natasha|clara|google us english|x-sfg|x-tpc|x-tpf|x-iob|x-iog|x-gba|x-gbc|x-gbg|x-fis)/i;
-const MAL = /(\bmale\b|\bman\b|alex|daniel|fred|\btom\b|aaron|arthur|oliver|gordon|rishi|david|mark|\bguy\b|ryan|george|christopher|eric|brian|matthew|joey|justin|william|liam|x-iol|x-iom|x-tpd|x-gbb|x-gbd|x-rjs)/i;
+const FEM = /\b(female|woman|samantha|victoria|karen|moira|tessa|fiona|veena|zira|aria|jenny|ava|ana|allison|susan|hazel|libby|sonia|michelle|emma|joanna|salli|kimberly|ivy|kendra|nicky|serena|catherine|natasha|clara|martha|kathy|shelley|sandy|flo|grandma|nora|amy|ruth|google us english|x-sfg|x-tpc|x-tpf|x-iob|x-iog|x-gba|x-gbc|x-gbg|x-fis)\b/i;
+const MAL = /\b(male|man|alex|daniel|fred|tom|aaron|arthur|oliver|gordon|rishi|david|mark|guy|ryan|george|christopher|eric|brian|matthew|joey|justin|william|liam|andrew|roger|steffan|davis|jason|tony|grandpa|rocko|reed|eddy|ralph|albert|stephen|x-iol|x-iom|x-tpd|x-gbb|x-gbd|x-rjs)\b/i;
 function vg(v){ const n = v.name + ' ' + (v.voiceURI || ''); return /female/i.test(n) ? 'f' : MAL.test(n) ? 'm' : FEM.test(n) ? 'f' : '?'; }
 function pick(name){
   const sp = DATA.speakers[name] || {g:'f'}; const g = sp.g || 'f';
@@ -112,7 +112,7 @@ function pick(name){
   const v = pool.length ? pool[Math.max(0, same.indexOf(name)) % pool.length] : null;
   let pitch;
   if (match) pitch = sp.kid ? (g === 'm' ? 1.15 : 1.25) : 1.0;
-  else pitch = g === 'm' ? (sp.kid ? 0.85 : 0.6) : (sp.kid ? 1.5 : 1.25);
+  else pitch = g === 'm' ? (sp.kid ? 0.7 : 0.5) : (sp.kid ? 1.45 : 1.2);
   return {v, pitch};
 }
 function voiceFor(name){ return voices.length ? pick(name).v : null; }
@@ -122,7 +122,7 @@ function speak(name, text){
     if (!('speechSynthesis' in window)) return res();
     const u = new SpeechSynthesisUtterance(text);
     const sp = DATA.speakers[name] || {pitch:1, rate:1};
-    const pk = voices.length ? pick(name) : {v:null, pitch: (sp.g === 'm' ? 0.7 : 1.2)};
+    const pk = voices.length ? pick(name) : {v:null, pitch: (sp.g === 'm' ? 0.6 : 1.25)};
     u.lang = 'en-US'; u.pitch = pk.pitch; u.rate = sp.rate * (slow ? 0.75 : 1);
     if (pk.v) u.voice = pk.v;
     u.onend = res; u.onerror = res;

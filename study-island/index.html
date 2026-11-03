@@ -128,6 +128,7 @@ let voices=[];
 function loadVoices(){try{voices=speechSynthesis.getVoices()}catch(e){}}
 try{loadVoices();speechSynthesis.onvoiceschanged=loadVoices}catch(e){}
 function pick(lang){return voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(lang))}
+const FEMV=/\b(female|woman|samantha|victoria|karen|moira|tessa|fiona|veena|zira|aria|jenny|ava|ana|allison|susan|hazel|libby|sonia|michelle|emma|joanna|salli|kimberly|ivy|kendra|nicky|serena|catherine|natasha|clara|martha|kathy|shelley|sandy|flo|grandma|nora|amy|ruth|google us english|x-sfg|x-tpc|x-tpf|x-iob|x-iog|x-gba|x-gbc|x-gbg|x-fis)\b/i;const MALV=/\b(male|man|alex|daniel|fred|tom|aaron|arthur|oliver|gordon|rishi|david|mark|guy|ryan|george|christopher|eric|brian|matthew|joey|justin|william|liam|andrew|roger|steffan|davis|jason|tony|grandpa|rocko|reed|eddy|ralph|albert|stephen|x-iol|x-iom|x-tpd|x-gbb|x-gbd|x-rjs)\b/i;function vgen(v){const n=v.name+' '+(v.voiceURI||'');return /female/i.test(n)?'f':MALV.test(n)?'m':FEMV.test(n)?'f':'?'}function pickG(lang,g,idx){const L=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(lang));const us=a=>{const b=a.filter(v=>/en[-_]us/i.test(v.lang));return b.length?b:a};let pool=us(L.filter(v=>vgen(v)===g)),match=true;if(!pool.length){pool=us(L.filter(v=>vgen(v)==='?'));match=false}if(!pool.length){pool=us(L);match=false}return {v:pool.length?pool[(idx||0)%pool.length]:null,p:match?1:(g==='m'?0.6:1.2)}}
 function forSpeech(t){return t.replace(/_{2,}/g," blank ").replace(/[\/·]/g,", ")}
 // parts: [[texto, "en"|"es"]]. English always uses the English voice so pronunciation is right.
 function say(parts,{force=false,onDone}={}){
@@ -595,13 +596,13 @@ function convParts(text,base="en"){
   text.split(/(\([^)]*\))/).forEach(s=>{if(!s.trim())return;if(s.startsWith("("))inner(s.slice(1,-1),"es");else inner(s,"en")});
   return out;
 }
-function speakThen(parts,onEnd){
+function speakThen(parts,onEnd,g){
   try{speechSynthesis.cancel()}catch(e){}
   let finished=false;const end=()=>{if(finished)return;finished=true;onEnd&&onEnd()};
   if(!parts.length)return end();
   try{parts.forEach(([text,lang],i)=>{
     const u=new SpeechSynthesisUtterance(forSpeech(text));
-    u.lang=lang==="en"?"en-US":"es-ES";const v=pick(lang);if(v)u.voice=v;
+    u.lang=lang==="en"?"en-US":"es-ES";const pg=g&&lang==="en"?pickG("en",g,0):null;const v=pg?pg.v:pick(lang);if(v)u.voice=v;if(pg)u.pitch=pg.p;
     u.rate=(lang==="en"?.86:1)*(view.slow?.75:1);
     if(i===parts.length-1){u.onend=end;u.onerror=end}
     speechSynthesis.speak(u)});
@@ -703,7 +704,7 @@ function sunnySpeaks(){
   const v=view;v.state="speaking";setStatus("Sunny está hablando... Presiona Espacio para contestar.");
   speakThen(convParts(v.last),()=>{if(view!==v||v.state!=="speaking")return;v.state="idle";
     if(handsFree&&SR&&!micBlocked&&!v.over){listen()}
-    else setStatus(SR&&!micBlocked?"Tu turno. Presiona Espacio para hablar.":"Tu turno. Escribe tu respuesta y presiona Enter.",true)});
+    else setStatus(SR&&!micBlocked?"Tu turno. Presiona Espacio para hablar.":"Tu turno. Escribe tu respuesta y presiona Enter.",true)},"f");
 }
 function replay(slow){const v=view;if(v.name!=="talk"||!v.last)return;stopRec();v.slow=slow;sunnySpeaks();v.slow=false}
 function stopRec(){try{rec&&rec.abort()}catch(e){}rec=null;if(view.state==="listening")view.state="idle"}
@@ -1369,11 +1370,12 @@ function listenLevel(lv,focus){
   if(focus!=null){const b=app.querySelector(`[data-st="${focus}"]`);if(b){b.focus();return}}
   focusTitle();say([["Elige una historia.","es"],...ids.flatMap((i,k)=>[[`${k+1}.`,"es"],[LISTEN[i].t,"en"]])]);
 }
+const GENDER={Ana:"f",Leo:"m",Seller:"m",Carla:"f",Manager:"m",Rosa:"f",Mia:"f",Mario:"m",Laura:"f",Daniel:"m",Paula:"f",Doctor:"f",Sunny:"f"};
 function speakerVoice(name,s){
   if(!name)return {v:pick("en"),p:1};
-  const sp=[...new Set(s.lines.map(l=>l[0]).filter(Boolean))],k=sp.indexOf(name);
-  const en=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith("en"));
-  return {v:en.length?en[(k*3)%en.length]:null,p:[1,1.3,.8][k%3]};
+  const g=GENDER[name]||"f";
+  const same=[...new Set(s.lines.map(l=>l[0]).filter(Boolean))].filter(n=>(GENDER[n]||"f")===g);
+  return pickG("en",g,Math.max(0,same.indexOf(name)));
 }
 function playLines(s,from,to,slow,onLine){
   try{speechSynthesis.cancel()}catch(e){}
