@@ -127,13 +127,13 @@ function drawStars(){if(!maxStars)return;document.getElementById("hstars").textC
 let voices=[];
 function loadVoices(){try{voices=speechSynthesis.getVoices()}catch(e){}}
 try{loadVoices();speechSynthesis.onvoiceschanged=loadVoices}catch(e){}
-function pick(lang){return voices.find(v=>v.lang&&v.lang.toLowerCase().startsWith(lang))}
-const FEMV=/\b(female|woman|samantha|victoria|karen|moira|tessa|fiona|veena|zira|aria|jenny|ava|ana|allison|susan|hazel|libby|sonia|michelle|emma|joanna|salli|kimberly|ivy|kendra|nicky|serena|catherine|natasha|clara|martha|kathy|shelley|sandy|flo|grandma|nora|amy|ruth|google us english|x-sfg|x-tpc|x-tpf|x-iob|x-iog|x-gba|x-gbc|x-gbg|x-fis)\b/i;const MALV=/\b(male|man|alex|daniel|fred|tom|aaron|arthur|oliver|gordon|rishi|david|mark|guy|ryan|george|christopher|eric|brian|matthew|joey|justin|william|liam|andrew|roger|steffan|davis|jason|tony|grandpa|rocko|reed|eddy|ralph|albert|stephen|x-iol|x-iom|x-tpd|x-gbb|x-gbd|x-rjs)\b/i;function vgen(v){const n=v.name+' '+(v.voiceURI||'');return /female/i.test(n)?'f':MALV.test(n)?'m':FEMV.test(n)?'f':'?'}function pickG(lang,g,idx){const L=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(lang));const us=a=>{const b=a.filter(v=>/en[-_]us/i.test(v.lang));return b.length?b:a};let pool=us(L.filter(v=>vgen(v)===g)),match=true;if(!pool.length){pool=us(L.filter(v=>vgen(v)==='?'));match=false}if(!pool.length){pool=us(L);match=false}return {v:pool.length?pool[(idx||0)%pool.length]:null,p:match?1:(g==='m'?0.6:1.2)}}
+const GOODV=/natural|online|neural|premium|enhanced|google|siri/i;const goodFirst=a=>a.filter(v=>GOODV.test(v.name)).concat(a.filter(v=>!GOODV.test(v.name)));function pick(lang){return goodFirst(voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(lang)))[0]}
+const FEMV=/\b(female|woman|samantha|victoria|karen|moira|tessa|fiona|veena|zira|aria|jenny|ava|ana|allison|susan|hazel|libby|sonia|michelle|emma|joanna|salli|kimberly|ivy|kendra|nicky|serena|catherine|natasha|clara|martha|kathy|shelley|sandy|flo|grandma|nora|amy|ruth|google us english|x-sfg|x-tpc|x-tpf|x-iob|x-iog|x-gba|x-gbc|x-gbg|x-fis)\b/i;const MALV=/\b(male|man|alex|daniel|fred|tom|aaron|arthur|oliver|gordon|rishi|david|mark|guy|ryan|george|christopher|eric|brian|matthew|joey|justin|william|liam|andrew|roger|steffan|davis|jason|tony|grandpa|rocko|reed|eddy|ralph|albert|stephen|x-iol|x-iom|x-tpd|x-gbb|x-gbd|x-rjs)\b/i;function vgen(v){const n=v.name+' '+(v.voiceURI||'');return /female/i.test(n)?'f':MALV.test(n)?'m':FEMV.test(n)?'f':'?'}function pickG(lang,g,idx){const L=voices.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(lang));const us=a=>{const b=a.filter(v=>/en[-_]us/i.test(v.lang));return goodFirst(b.length?b:a)};let pool=us(L.filter(v=>vgen(v)===g)),match=true;if(!pool.length){pool=us(L.filter(v=>vgen(v)==='?'));match=false}if(!pool.length){pool=us(L);match=false}return {v:pool.length?pool[(idx||0)%pool.length]:null,p:match?1:(g==='m'?0.6:1.2)}}
 function forSpeech(t){return t.replace(/_{2,}/g," blank ").replace(/[\/·]/g,", ")}
 // parts: [[texto, "en"|"es"]]. English always uses the English voice so pronunciation is right.
 function say(parts,{force=false,onDone}={}){
   try{
-    speechSynthesis.cancel();
+    stopAll();
     const list=parts.filter(([t,l])=>t&&(l==="en"||fullVoice||force));
     list.forEach(([text,lang],i)=>{
       const u=new SpeechSynthesisUtterance(forSpeech(text));
@@ -460,7 +460,7 @@ function pron(cfg,i,first){
   const intro=first?[[cfg.tip?cfg.tip:"Practica la pronunciación de este módulo.","es"],["Escucha y luego presiona G para grabar tu voz.","es"]]:[];
   say([...intro,[it.en,"en"]]);
 }
-function model(rate){const en=view.cfg.items[view.i].en;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(en);u.lang="en-US";const v=pick("en");if(v)u.voice=v;u.rate=rate*.9;speechSynthesis.speak(u)}catch(e){}}
+function model(rate){const en=view.cfg.items[view.i].en;try{stopAll();const u=new SpeechSynthesisUtterance(en);u.lang="en-US";const v=pick("en");if(v)u.voice=v;u.rate=rate*.9;speechSynthesis.speak(u)}catch(e){}}
 function pStep(d){const c=view.cfg,i=view.i+d;if(i<0)return;
   if(i>=c.items.length){const msg="Terminaste las palabras."+(c.si!=null&&(SOUNDS[c.si].pairs||SOUNDS[c.si].ear)?" Presiona Q para la prueba de oído.":"");announce(msg);say([[msg,"es"]]);return}
   pron(c,i,false)}
@@ -486,7 +486,7 @@ function record(){
   if(micBlocked)return fallbackSelf();
   const target=view.cfg.items[view.i].en,fb=document.getElementById("pfb");
   let alts=[],failed=false;
-  try{speechSynthesis.cancel()}catch(e){}
+  stopAll()
   let r;try{r=new SR()}catch(e){micBlocked=true;return fallbackSelf()}
   r.lang="en-US";r.maxAlternatives=5;r.interimResults=false;r.continuous=false;
   view.state="rec";fb.textContent="Habla ahora...";fb.className="feedback";announce("Habla ahora");
@@ -597,7 +597,7 @@ function convParts(text,base="en"){
   return out;
 }
 function speakThen(parts,onEnd,g){
-  try{speechSynthesis.cancel()}catch(e){}
+  stopAll()
   let finished=false;const end=()=>{if(finished)return;finished=true;onEnd&&onEnd()};
   if(!parts.length)return end();
   try{parts.forEach(([text,lang],i)=>{
@@ -716,7 +716,7 @@ function listen(){
   if(v.retry){v.retry=false;return askSunny()}
   if(v.state==="thinking")return;
   if(v.state==="listening"){try{rec&&rec.stop()}catch(e){}return}
-  try{speechSynthesis.cancel()}catch(e){}
+  stopAll()
   if(!SR||micBlocked){const m="En este navegador el micrófono no está disponible. Escribe tu respuesta en el cuadro y presiona Enter.";setStatus(m,true);say([[m,"es"]],{force:true});const t=document.getElementById("typed");if(t)t.focus();return}
   let r;try{r=new SR()}catch(e){micBlocked=true;return listen()}
   rec=r;r.lang="en-US";r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
@@ -735,12 +735,12 @@ function listen(){
 }
 function sendStudent(text){
   const v=view;if(v.name!=="talk"||v.state==="thinking")return;
-  stopRec();try{speechSynthesis.cancel()}catch(e){}
+  stopRec();stopAll()
   if(v.guided&&v.over)return;
   addBubble("me",text);v.turns.push({role:"user",content:text});if(v.guided)guidedAnswer(text);else askSunny();
 }
 async function finishTalk(){
-  const v=view;if(v.name!=="talk")return;stopListening();try{speechSynthesis.cancel()}catch(e){}
+  const v=view;if(v.name!=="talk")return;stopListening();stopAll()
   const said=v.turns.slice(1).filter(t=>t.role==="user");
   if(!said.length){const m="Todavía no has hablado. Contesta la pregunta de Sunny y luego presiona F.";setStatus(m,true);say([[m,"es"]],{force:true});return}
   v.state="thinking";
@@ -1274,7 +1274,7 @@ function sentListen(){
   const v=view;if(v.name!=="sent")return;
   if(v.state==="rec"){try{rec&&rec.stop()}catch(e){}return}
   if(!SR||micBlocked){const m="El micrófono no está disponible aquí. Escribe tu oración en el cuadro y presiona Enter.";sentFb(m,[[m,"es"]]);document.getElementById("styped").focus();return}
-  try{speechSynthesis.cancel()}catch(e){}
+  stopAll()
   let r;try{r=new SR()}catch(e){micBlocked=true;return sentListen()}
   rec=r;r.lang="en-US";r.interimResults=true;r.continuous=false;r.maxAlternatives=3;
   let fin=[],interim="",failed=false;v.state="rec";beep();
@@ -1377,11 +1377,19 @@ function speakerVoice(name,s){
   const same=[...new Set(s.lines.map(l=>l[0]).filter(Boolean))].filter(n=>(GENDER[n]||"f")===g);
   return pickG("en",g,Math.max(0,same.indexOf(name)));
 }
-function playLines(s,from,to,slow,onLine){
-  try{speechSynthesis.cancel()}catch(e){}
-  try{for(let k=from;k<=to;k++){const [who,text]=s.lines[k];const sv=speakerVoice(who,s);
-    const u=new SpeechSynthesisUtterance(text);u.lang="en-US";if(sv.v)u.voice=sv.v;u.pitch=sv.p;u.rate=slow?.62:.85;
-    u.onstart=()=>onLine&&onLine(k);speechSynthesis.speak(u)}}catch(e){}
+let AUD={},curA=null,playTok=0;
+fetch("audio/manifest.json").then(r=>r.ok?r.json():{}).then(m=>{AUD=m||{}}).catch(()=>{});
+function stopAll(){playTok++;try{speechSynthesis.cancel()}catch(e){}if(curA){try{curA.pause()}catch(e){}curA=null}}
+function ttsLine(who,text,s,slow){return new Promise(res=>{try{const sv=speakerVoice(who,s);const u=new SpeechSynthesisUtterance(text);u.lang="en-US";if(sv.v)u.voice=sv.v;u.pitch=sv.p;u.rate=slow?.62:.85;
+  u.onend=u.onerror=()=>res();speechSynthesis.speak(u)}catch(e){res()}})}
+function fileLine(f,slow){return new Promise(res=>{const a=new Audio("audio/"+f);curA=a;a.preservesPitch=true;a.playbackRate=slow?.75:1;
+  let fin=false;const done=ok=>{if(fin)return;fin=true;if(curA===a)curA=null;res(ok)};
+  a.onended=()=>done(true);a.onerror=()=>done(false);a.onpause=()=>{if(!a.ended)done(true)};const pr=a.play();if(pr&&pr.catch)pr.catch(()=>done(false))})}
+async function playLines(s,from,to,slow,onLine){
+  stopAll();const tok=playTok;
+  for(let k=from;k<=to;k++){if(tok!==playTok)return;const [who,text]=s.lines[k];onLine&&onLine(k);
+    const f=AUD[who+"|"+text];let ok=false;if(f)ok=await fileLine(f,slow);
+    if(tok!==playTok)return;if(!ok)await ttsLine(who,text,s,slow)}
 }
 function story2(si){
   const s=LISTEN[si];
@@ -1429,7 +1437,7 @@ document.addEventListener("keydown",e=>{
   if(k==="escape"){stop();
     if(n==="lab"||n==="conv"||n==="talkdone"){stopListening();return home()}
     if(n==="talk")return conv();
-    if(["hub","menu","drill","drilldone","sent","lstory"].includes(n)){stopRec();try{speechSynthesis.cancel()}catch(e){}return view.back()}
+    if(["hub","menu","drill","drilldone","sent","lstory"].includes(n)){stopRec();stopAll();return view.back()}
     if(["pron","ear","eardone"].includes(n))return view.back();
     if(n==="level")return home();
     if(n==="quiz")return openMod(m);
