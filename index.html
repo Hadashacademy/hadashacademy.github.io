@@ -131,8 +131,11 @@ nav a:hover{color:var(--gold-hi)}
 .facts{border-top:1px solid rgba(233,205,128,.35);padding-top:22px}
 .facts b{display:block;font-family:var(--display);font-size:1.7rem;color:var(--gold-hi)}
 .door{width:100%;max-width:360px;margin:0 auto;display:block}
-.door .leaf{transform-origin:118px 50%;animation:open 1.6s ease-out .3s both}
-@keyframes open{from{transform:scaleX(1)}to{transform:scaleX(.42)}}
+.door .leaf{animation:swing 5s ease-in-out infinite}
+.door .leaf-l{transform-origin:52px 0}
+.door .leaf-r{transform-origin:188px 0}
+@keyframes swing{0%,12%{transform:scaleX(1)}45%,65%{transform:scaleX(.16)}100%{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.door .leaf{animation:none;transform:scaleX(.3)}}
 .door .star{animation:twinkle 2.6s ease-in-out infinite}
 @keyframes twinkle{50%{opacity:.55}}
 @media (max-width:760px){.hero-grid{grid-template-columns:1fr}.door{max-width:220px;order:-1}}
@@ -425,7 +428,7 @@ section#tutorias{background:var(--band-2)}
         <rect x="52" y="32" width="136" height="238" fill="var(--gold-soft)"/>
         <path d="M120 270 C 110 220, 150 190, 120 130 C 105 100, 125 80, 120 60" stroke="var(--gold)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="2 18"/>
         <path class="star" d="M120 40l7 14 15.5 2-11.3 10.8 2.7 15.3L120 75l-13.9 7.1 2.7-15.3L97.5 56l15.5-2z" fill="url(#g)"/>
-        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7326"/><stop offset=".45" stop-color="#e9cd80"/><stop offset=".7" stop-color="#c49a3c"/><stop offset="1" stop-color="#f3dc96"/></linearGradient></defs><g class="leaf"><rect x="52" y="32" width="136" height="238" fill="url(#g)"/><circle cx="170" cy="155" r="6" fill="var(--navy)"/></g>
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7326"/><stop offset=".45" stop-color="#e9cd80"/><stop offset=".7" stop-color="#c49a3c"/><stop offset="1" stop-color="#f3dc96"/></linearGradient></defs><g class="leaf leaf-l"><rect x="52" y="32" width="68" height="238" fill="url(#g)"/><rect x="60" y="44" width="52" height="96" rx="3" fill="none" stroke="var(--navy)" stroke-opacity=".25" stroke-width="2"/><rect x="60" y="156" width="52" height="102" rx="3" fill="none" stroke="var(--navy)" stroke-opacity=".25" stroke-width="2"/><circle cx="110" cy="155" r="5" fill="var(--navy)"/></g><g class="leaf leaf-r"><rect x="120" y="32" width="68" height="238" fill="url(#g)"/><rect x="128" y="44" width="52" height="96" rx="3" fill="none" stroke="var(--navy)" stroke-opacity=".25" stroke-width="2"/><rect x="128" y="156" width="52" height="102" rx="3" fill="none" stroke="var(--navy)" stroke-opacity=".25" stroke-width="2"/><circle cx="130" cy="155" r="5" fill="var(--navy)"/></g>
         <rect x="20" y="268" width="200" height="10" rx="5" fill="url(#g)"/>
       </svg>
     </div>
