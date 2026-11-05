@@ -67,6 +67,14 @@ nav#menu{margin-left:auto;display:block}
 .wa-float:hover{transform:scale(1.07)}
 .wa-float svg{width:32px;height:32px}
 .copy.wa-btn{background:#25d366!important;border-color:#25d366!important;color:#fff!important;text-decoration:none}
+
+.door .rays{transform-origin:120px 150px;animation:spin 18s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.door .sun{transform-origin:120px 150px;animation:glow 2.5s ease-in-out infinite}
+@keyframes glow{50%{transform:scale(1.12);opacity:.85}}
+.door .book{animation:float 3s ease-in-out infinite}
+@keyframes float{50%{transform:translate(120px,144px)}}
+.door .dname{font:700 11px var(--body,sans-serif);letter-spacing:.22em;fill:#f3dc96}
 </style>
 <title>Hadash Academy</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -431,8 +439,8 @@ section#tutorias{background:var(--band-2)}
       <svg class="door" viewBox="0 0 240 300" role="img" aria-label="Una puerta abierta con un camino y una estrella">
         <rect x="40" y="20" width="160" height="250" rx="6" fill="var(--navy-2)" stroke="url(#g)" stroke-width="4"/>
         <rect x="52" y="32" width="136" height="238" fill="var(--gold-soft)"/>
-        <path d="M120 270 C 110 220, 150 190, 120 130 C 105 100, 125 80, 120 60" stroke="var(--gold)" stroke-width="10" fill="none" stroke-linecap="round" stroke-dasharray="2 18"/>
-        <path class="star" d="M120 40l7 14 15.5 2-11.3 10.8 2.7 15.3L120 75l-13.9 7.1 2.7-15.3L97.5 56l15.5-2z" fill="url(#g)"/>
+        <defs><clipPath id="dopen"><rect x="52" y="32" width="136" height="238"/></clipPath><radialGradient id="sun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff8e3"/><stop offset=".35" stop-color="#f3dc96"/><stop offset="1" stop-color="#c49a3c" stop-opacity="0"/></radialGradient></defs>
+        <g clip-path="url(#dopen)"><rect x="52" y="32" width="136" height="238" fill="var(--navy)"/><g class="rays" fill="#e9cd80" opacity=".5"><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(0 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(30 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(60 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(90 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(120 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(150 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(180 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(210 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(240 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(270 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(300 120 150)"/><rect x="117" y="40" width="6" height="110" rx="3" transform="rotate(330 120 150)"/></g><circle class="sun" cx="120" cy="150" r="70" fill="url(#sun)"/><g class="book" transform="translate(120 150)"><path d="M-26 -12c9-4 18-4 26 2 8-6 17-6 26-2v28c-9-4-18-4-26 2-8-6-17-6-26-2z" fill="#fff8e3" stroke="#9c7326" stroke-width="2" stroke-linejoin="round"/><path d="M0 -10v28" stroke="#9c7326" stroke-width="2"/></g><text x="120" y="200" text-anchor="middle" class="dname">HADASH</text><text x="120" y="214" text-anchor="middle" class="dname">ACADEMY</text></g>
         <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9c7326"/><stop offset=".45" stop-color="#e9cd80"/><stop offset=".7" stop-color="#c49a3c"/><stop offset="1" stop-color="#f3dc96"/></linearGradient></defs><g class="leaf leaf-l"><rect x="52" y="32" width="68" height="238" fill="url(#g)"/><rect x="60" y="44" width="52" height="96" rx="3" fill="none" stroke="var(--navy)" stroke-opacity=".25" stroke-width="2"/><rect x="60" y="156" width="52" height="102" rx="3" fill="none" stroke="var(--navy)" stroke-opacity=".25" stroke-width="2"/><circle cx="110" cy="155" r="5" fill="var(--navy)"/></g><g class="leaf leaf-r"><rect x="120" y="32" width="68" height="238" fill="url(#g)"/><rect x="128" y="44" width="52" height="96" rx="3" fill="none" stroke="var(--navy)" stroke-opacity=".25" stroke-width="2"/><rect x="128" y="156" width="52" height="102" rx="3" fill="none" stroke="var(--navy)" stroke-opacity=".25" stroke-width="2"/><circle cx="130" cy="155" r="5" fill="var(--navy)"/></g>
         <rect x="20" y="268" width="200" height="10" rx="5" fill="url(#g)"/>
       </svg>
