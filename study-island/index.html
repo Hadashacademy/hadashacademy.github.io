@@ -927,31 +927,78 @@ const THIRD={have:"has",like:"likes",want:"wants",go:"goes",live:"lives",play:"p
 /* Revisa una respuesta y devuelve UN consejo en español (o "") */
 function grammarTip(said,q){
   const t=" "+said.toLowerCase().replace(/[^a-z0-9' ]/g," ").replace(/\s+/g," ")+" ";
-  let m;
-  if(/ i have (\d+|[a-z-]+) years /.test(t))return 'Para decir la edad usamos "am": "I am twelve years old".';
-  if((m=t.match(/ (he|she|it) don't /)))return `Con ${m[1]} decimos "doesn't": "${m[1]} doesn't".`;
-  if((m=t.match(/ (he|she|it) (have|like|want|go|live|play|eat|work|do|study|watch|need|love) /)))return `Con ${m[1]} el verbo lleva "s": "${m[1]} ${THIRD[m[2]]}".`;
+  const V=verbMaps();let m;
+  const ing=b=>b==="swim"?"swimming":b==="run"?"running":b==="get"?"getting":b==="sit"?"sitting":b.endsWith("ie")?b.slice(0,-2)+"ying":b.endsWith("e")&&b!=="be"&&b!=="see"?b.slice(0,-1)+"ing":b+"ing";
+  const nw={"1":"one","2":"two","3":"three","4":"four","5":"five","6":"six","7":"seven","8":"eight","9":"nine","10":"ten","11":"eleven","12":"twelve","13":"thirteen","14":"fourteen","15":"fifteen","16":"sixteen","17":"seventeen","18":"eighteen","19":"nineteen","20":"twenty"};
+  const SUBJ="i|you|we|they|he|she|it|my \\w+|the \\w+|[a-z]+";
+  /* Edad: I have 12 years */
+  if((m=t.match(/ (i|he|she|my \w+|we|they) (have|has) (\d+|[a-z]+) years( old)? /))){const s=m[1],be=s==="i"?"am":/^(we|they)$/.test(s)?"are":"is";return `Para decir la edad usamos "${be}", no "have": "${s==="i"?"I":s} ${be} ${nw[m[3]]||m[3]} years old".`}
+  if(/ i born /.test(t))return 'Decimos "I was born": "I was born in...".';
   if(/ i am agree /.test(t))return 'Se dice "I agree", sin "am".';
-  if(/ people is /.test(t))return '"People" es plural: decimos "people are".';
-  if((m=t.match(/ more (good|bad|big) /)))return `Decimos "${{good:"better",bad:"worse",big:"bigger"}[m[1]]}", no "more ${m[1]}".`;
-  if(/ i am (agree|like|have|go|live|want) /.test(t)&&!/ i am going /.test(t))return 'Con verbos como like o have no usamos "am": "I like", "I have".';
-  if(q.past&&(m=t.match(/ (?:i|we|they|he|she) (go|eat|have|do|see|play|watch|visit|study|make|buy|come|take|drink|start|swim|listen|cook|travel) /)))return `Esta pregunta es en pasado: decimos "${PAST[m[1]]}" en vez de "${m[1]}".`;
-  if(/^ (is|are) /.test(t))return 'En inglés siempre ponemos el sujeto: "It is..." o "They are...".';
-  if((m=t.match(/ i (no|not) (like|have|know|want|go|eat|play|understand|speak|live|need) /)))return `Para negar usamos "don't": "I don't ${m[2]}".`;
-  if(/ i has /.test(t))return 'Con "I" decimos "have": "I have".';
+  /* am / is / are + verbo: I am go, my mother is work */
+  if((m=t.match(/ (i am|i'm|you are|we are|they are|he is|she is|it is|he's|she's|(?:my|the|his|her) \w+ is) (\w+) /))&&V.base.has(m[2])&&V.pp[m[2]]!==m[2]&&!NOTV.has(m[2])&&!(m[2]==="like"&&!/^(i am|i'm)$/.test(m[1]))&&!/ (going|used) /.test(t)){
+    const v=m[2],sub=m[1].replace(/ (am|is|are)$|'m$|'s$/,"");
+    if(v==="like"||v==="have")return `Con "${v}" no usamos "am" ni "is": "${sub==="i"?"I":sub} ${sub==="i"||/^(you|we|they)$/.test(sub)?v:V.third[v]||v+"s"}".`;
+    return `No juntes "${m[1].split(" ").pop()}" con otro verbo. Di "${sub==="i"?"I":sub} ${sub==="i"||/^(you|we|they)$/.test(sub)?v:V.third[v]||v+"s"}" o, si es ahora mismo, "${m[1].replace(/^i /,"I ")} ${ing(v)}".`}
+  /* Profesiones sin artículo: I am student */
+  if((m=t.match(/ (i am|i'm|he is|she is|he's|she's|you are|is) (teacher|doctor|student|nurse|engineer|lawyer|singer|dancer|pilot|chef|cook|driver|accountant|artist|farmer|programmer|dentist|writer|actor|actress|police officer|firefighter|secretary|scientist|musician|baker|waiter|waitress) /)))return `Con las profesiones usamos "${/^[aeiou]/.test(m[2])?"an":"a"}": "${m[1].replace(/^i /,"I ")} ${/^[aeiou]/.test(m[2])?"an":"a"} ${m[2]}".`;
+  if(/^ (is|are|was) /.test(t))return 'En inglés siempre ponemos el sujeto: "It is..." o "They are...".';
+  /* Sujeto plural con is / was */
+  if((m=t.match(/ (people|parents|friends|brothers|sisters|children|kids|students|they|we|you|cousins|dogs|cats) is /)))return `"${m[1]}" es plural: decimos "${m[1]} are".`;
+  if((m=t.match(/ (we|they|you|people|parents|friends) was /)))return `Con ${m[1]} el pasado es "were": "${m[1]} were".`;
   if((m=t.match(/ (they|we|you) is /)))return `Con ${m[1]} usamos "are": "${m[1]} are".`;
   if((m=t.match(/ (he|she|it) are /)))return `Con ${m[1]} usamos "is": "${m[1]} is".`;
   if(/ i is /.test(t))return 'Con "I" usamos "am": "I am".';
+  if(/ i has /.test(t))return 'Con "I" decimos "have": "I have".';
+  /* Tercera persona sin s: he have, my sister like */
+  if((m=t.match(/ (he|she|it|my (?:mother|father|mom|dad|sister|brother|friend|teacher|grandma|grandpa|grandmother|grandfather|cousin|uncle|aunt|dog|cat|family|best friend)) (don't) /)))return `Con ${m[1]} decimos "doesn't": "${m[1]} doesn't".`;
+  if((m=t.match(/ (he|she|it|my (?:mother|father|mom|dad|sister|brother|friend|teacher|grandma|grandpa|grandmother|grandfather|cousin|uncle|aunt|dog|cat|family|best friend)) (\w+) /))&&V.base.has(m[2])&&!/(always|usually|never|sometimes|often|really|also|just|can|will|must|should|could|would|didn't|doesn't|did|does)/.test(m[2])&&V.third[m[2]]&&!(/ (yesterday|last \w+|\w+ ago) /.test(t))){
+    if(!/ (can|will|must|should|could|would|to|didn't|doesn't|did not|does not) /.test(t.slice(0,t.indexOf(" "+m[2]+" "))))return `Con ${m[1]} el verbo lleva "s": "${m[1]} ${V.third[m[2]]}".`}
+  /* Negaciones */
+  if((m=t.match(/ i (no|not) (\w+) /))&&V.base.has(m[2]))return `Para negar usamos "don't": "I don't ${m[2]}".`;
+  if((m=t.match(/ (don't|doesn't|didn't|do not|does not|did not|can't|cannot|won't) (\w+ )?(nothing|nobody|nowhere|never) /))){const x={nothing:"anything",nobody:"anybody",nowhere:"anywhere",never:"ever"}[m[3]];return `En inglés no usamos dos negaciones juntas: "${m[1]} ${m[2]||""}${x}".`}
+  if((m=t.match(/ (doesn't|does not|didn't|did not) (\w+) /))){const b=V.fromPast[m[2]]||V.fromThird[m[2]];if(b&&b!==m[2])return `Después de "${m[1]}" el verbo va en su forma simple: "${m[1]} ${b}".`}
+  /* Modales */
+  if((m=t.match(/ (can|could|must|should|will|would) to /)))return `Después de "${m[1]}" el verbo va sin "to": "${m[1]} go", "${m[1]} play".`;
+  if((m=t.match(/ (can|could|must|should|will|would) (\w+) /))&&V.fromThird[m[2]]&&V.fromThird[m[2]]!==m[2])return `Después de "${m[1]}" el verbo va sin "s": "${m[1]} ${V.fromThird[m[2]]}".`;
+  if((m=t.match(/ (do|does) (you|he|she|they|we) can /)))return `Para preguntar con "can" no usamos "do": "Can ${m[2]}...?".`;
+  /* Pasado con marcador de tiempo */
+  const past=/ (yesterday|last (?:week|weekend|year|night|summer|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday|christmas|time)|\w+ ago|in 20[0-2]\d|when i was) /.test(t)||q.past;
+  if(past&&(m=t.match(/ (?:i|we|they|he|she|you|my \w+) (?:always |also |just )?(\w+) /))&&V.base.has(m[1])&&V.past[m[1]]!==m[1]&&!/^(was|were|had|did|went)$/.test(m[1]))return `Cuando hablamos del pasado decimos "${V.past[m[1]]}" en vez de "${m[1]}".`;
+  if((m=t.match(/ didn't (\w+) /))&&V.fromPast[m[1]]&&V.fromPast[m[1]]!==m[1])return `Después de "didn't" el verbo va en presente: "didn't ${V.fromPast[m[1]]}".`;
+  /* Adjetivos -ing / -ed */
+  if((m=t.match(/ (i am|i'm|i feel|i was|we are|we were) (?:very |so |really |a little )?(boring|exciting|interesting|tiring|confusing|frightening|embarrassing|relaxing|disappointing) /))){const ed=m[2].replace(/ing$/,"ed").replace(/tired$/,"tired").replace("frighteed","frightened");return `Para decir cómo te sientes usamos "-ed": "I am ${m[2]==="tiring"?"tired":ed}". "I am ${m[2]}" significa que tú haces sentir así a los demás.`}
+  /* Comparativos */
+  if((m=t.match(/ more (better|worse|bigger|taller|smaller|older|younger|faster) /)))return `"${m[1]}" ya es comparativo: no necesita "more".`;
+  if((m=t.match(/ more (tall|big|small|old|young|fast|short|long|cheap|happy|nice|easy|hard|smart|good|bad|strong|cold|hot|funny|pretty|busy|new|high|low|late|early|close|slow) /))){const c={good:"better",bad:"worse",big:"bigger",hot:"hotter",funny:"funnier",pretty:"prettier",happy:"happier",easy:"easier",busy:"busier",early:"earlier",nice:"nicer",late:"later",close:"closer"}[m[1]]||m[1]+"er";return `Con adjetivos cortos decimos "${c}", no "more ${m[1]}".`}
+  /* Artículos y orden */
+  if((m=t.match(/ (like|love|hate|play|prefer|enjoy|study) the (pizza|soccer|football|basketball|baseball|volleyball|tennis|music|rice|chocolate|english|math|spanish|science|history|books|dogs|cats|movies|sports|fruit|coffee|ice cream|chicken|fish) /)))return `Para hablar de algo en general no usamos "the": "${m[1]} ${m[2]}".`;
+  if((m=t.match(/ is the (red|blue|green|yellow|black|white|pink|purple|orange|brown|gray|grey) /)))return `Con los colores no usamos "the": "is ${m[1]}".`;
+  if((m=t.match(/ (go|goes|went|going) to (the )?(home) /)))return 'Decimos "go home", sin "to".';
+  if((m=t.match(/ (go|goes|went|going) to the (school|church|bed|work) /)))return `Decimos "${m[1]} to ${m[2]}", sin "the".`;
+  if((m=t.match(/ (car|house|shirt|dress|bag|dog|cat|ball|book|door|phone|bike|hat|shoes|t shirt) (red|blue|green|yellow|black|white|pink|purple|big|small|new|old|beautiful|pretty) /))&&!/ (is|are|was|were) /.test(t.slice(t.indexOf(m[1]))))return `En inglés el adjetivo va antes: "${/^[aeiou]/.test(m[2])?"an":"a"} ${m[2]} ${m[1]}".`;
+  if((m=t.match(/ a (apple|orange|egg|elephant|animal|idea|hour|umbrella|ice cream|old|interesting|amazing|english|engineer|artist|actor|uncle|aunt) /)))return `Antes de sonido de vocal usamos "an": "an ${m[1]}".`;
+  /* Expresiones típicas */
+  if(/ want that (you|he|she|they|we|me|him|her) /.test(t))return 'Decimos "I want you to come", no "want that".';
+  if(/ (make|makes|made|making) (my |the |your |his |her |our )?homework /.test(t))return 'Con la tarea usamos "do": "I do my homework".';
+  if(/ like very much /.test(t)||/ love very much /.test(t))return '"Very much" va al final: "I like music very much".';
+  if((m=t.match(/ since (\d+|one|two|three|four|five|six|seven|eight|nine|ten|many|a few) (years|months|weeks|days|hours) /)))return `Para una cantidad de tiempo usamos "for": "for ${m[1]} ${m[2]}". "Since" va con una fecha: "since 2020".`;
   if((m=t.match(/ i have (hungry|thirsty|cold|hot|sleepy|afraid|tired) /)))return `En inglés decimos "I am ${m[1]}", no "I have ${m[1]}".`;
-  if((m=t.match(/ (can|could|must|should|will) to /)))return `Después de "${m[1]}" el verbo va sin "to": "${m[1]} go", "${m[1]} play".`;
-  if((m=t.match(/ (doesn't|does not|didn't|did not) (\w+?)(s|ed) /))&&!/ (doesn't|does not|didn't|did not) (is|was|has|says|us|this|guess|miss|kiss|pass|dress|need|feed) /.test(t))return `Después de "${m[1]}" el verbo va en su forma simple: "${m[1]} ${m[2]}".`;
-  if((m=t.match(/ didn't (went|ate|had|saw|made|bought|came|took|drank|swam|got) /))){const base=Object.keys(PAST).find(k=>PAST[k]===m[1])||"get";return `Después de "didn't" el verbo va en presente: "didn't ${base}".`}
-  if((m=t.match(/ (like|love|want|need) (play|go|eat|watch|read|swim|dance|sing|study|travel|listen|cook|draw|ride|run|walk) /)))return m[1]==="want"||m[1]==="need"?`Decimos "${m[1]} to ${m[2]}", con "to".`:`Decimos "${m[1]} ${m[2]==="swim"?"swimming":m[2]==="run"?"running":m[2].replace(/e$/,"")+"ing"}" o "${m[1]} to ${m[2]}".`;
-  if((m=t.match(/ in (monday|tuesday|wednesday|thursday|friday|saturday|sunday|the weekend)s? /)))return `Con los días decimos "on": "on ${m[1]}".`;
-  if((m=t.match(/ there is (two|three|four|five|many|a lot of|some) /)))return `Con plural decimos "there are": "there are ${m[1]}...".`;
-  if((m=t.match(/ a (apple|orange|egg|elephant|animal|idea|hour|umbrella|ice cream|old|interesting|amazing|english) /)))return `Antes de sonido de vocal usamos "an": "an ${m[1]}".`;
-  if(/ (yesterday|last (week|weekend|year|night|summer|month)) /.test(t)&&(m=t.match(/ (?:i|we|they|he|she) (go|eat|have|do|see|play|watch|visit|make|buy|come|take|drink|swim|cook|travel) /)))return `Cuando hablamos del pasado decimos "${PAST[m[1]]}" en vez de "${m[1]}".`;
+  if(/ people is /.test(t))return '"People" es plural: decimos "people are".';
+  if((m=t.match(/ there is (two|three|four|five|many|a lot of|some|\d+) /)))return `Con plural decimos "there are": "there are ${m[1]}...".`;
+  if((m=t.match(/ (like|love|want|need) (play|go|eat|watch|read|swim|dance|sing|study|travel|listen|cook|draw|ride|run|walk) /)))return m[1]==="want"||m[1]==="need"?`Decimos "${m[1]} to ${m[2]}", con "to".`:`Decimos "${m[1]} ${ing(m[2])}" o "${m[1]} to ${m[2]}".`;
+  if((m=t.match(/ in (monday|tuesday|wednesday|thursday|friday|saturday|sunday)s? /)))return `Con los días decimos "on": "on ${m[1]}".`;
+  if(/ more good /.test(t))return 'Decimos "better", no "more good".';
   return "";
+}
+let _VM=null;
+const NOTV=new Set(["open","close","clean","free","mean","ready","sure","fine","right","well","sorry","near","dry","empty","light","last","cool","warm","fit","fun","busy","late","slow","fast","wrong","calm","quiet","clear","complete","correct","perfect","welcome","present","live","love","need","must","cook","work","play","study","dance","sing"].filter(w=>!["work","play","study","dance","sing","cook","need","love","live"].includes(w)));
+function verbMaps(){if(_VM)return _VM;
+  const base=new Set(),past={},fromPast={},third={},fromThird={},pp={};
+  VERBS.forEach(x=>{const b=x.v1;if(b==="be")return;base.add(b);const pa=x.v2.split(" / ")[0];past[b]=pa;pp[b]=x.v3;if(!fromPast[pa])fromPast[pa]=b;
+    const th=b==="have"?"has":b==="do"?"does":b==="go"?"goes":/(s|sh|ch|x|z|o)$/.test(b)?b+"es":/[^aeiou]y$/.test(b)?b.slice(0,-1)+"ies":b+"s";third[b]=th;fromThird[th]=b});
+  Object.entries(PAST).forEach(([b,pa])=>{base.add(b);past[b]=past[b]||pa;fromPast[pa]=fromPast[pa]||b});
+  return _VM={base,past,fromPast,third,fromThird,pp};
 }
 function guidedStart(){
   const v=view;v.guided=true;v.qs=guidedQs(v.ti,v.li);v.k=0;v.tips=[];v.answers=0;
@@ -967,7 +1014,7 @@ function guidedAnswer(text){
   const words=text.trim().split(/\s+/).length;
   const esCount=(text.match(ES_WORDS)||[]).length;
   /* Si no entendió o contestó en español: le explicamos la pregunta y se la repetimos (una vez). */
-  if((LOST.test(text)||esCount>=2&&esCount>=words/2)&&!v.helped){
+  if((LOST.test(text)&&words<=5&&!grammarTip(text,q)||esCount>=2&&esCount>=words/2)&&!v.helped){
     v.helped=true;
     const why=esCount>=2?"Intenta contestar en inglés. ":"";
     sayGuided(`(${why}La pregunta significa: ${q.es} Puedes decir: "${q.m}") Let's try again. ${q.q}`);return}
@@ -979,7 +1026,7 @@ function guidedAnswer(text){
   let msg=PRAISE[Math.floor(Math.random()*PRAISE.length)]+" ";
   if(q.name){const n=text.match(/(?:name is|name's|i am|i'm|call me)\s+([a-záéíóúñ]+)/i)||(words<=2?[0,text.trim().split(/\s+/).pop()]:null);if(n){v.who=n[1][0].toUpperCase()+n[1].slice(1);msg=`Nice to meet you, ${v.who}! `}}
   const tip=grammarTip(text,q);
-  if(tip){v.tips.push(tip);msg=`(Pequeño consejo: ${tip}) `+msg}
+  if(tip){v.tips.push(tip);msg=`(Pequeño consejo: ${tip}) `+["Good try!","Nice try!","Almost!","You're doing well!"][v.answers%4]+" "}
   else if(words<3&&!q.name){msg+=`(Intenta con una oración completa, por ejemplo: "${q.m}") `;v.tips.push(`Responder con oraciones completas, como "${q.m}"`)}
   else if(!q.name){
     v.good=(v.good||0)+1;
