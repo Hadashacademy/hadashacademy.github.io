@@ -936,6 +936,20 @@ function grammarTip(said,q){
   if(/ i am (agree|like|have|go|live|want) /.test(t)&&!/ i am going /.test(t))return 'Con verbos como like o have no usamos "am": "I like", "I have".';
   if(q.past&&(m=t.match(/ (?:i|we|they|he|she) (go|eat|have|do|see|play|watch|visit|study|make|buy|come|take|drink|start|swim|listen|cook|travel) /)))return `Esta pregunta es en pasado: decimos "${PAST[m[1]]}" en vez de "${m[1]}".`;
   if(/^ (is|are) /.test(t))return 'En inglés siempre ponemos el sujeto: "It is..." o "They are...".';
+  if((m=t.match(/ i (no|not) (like|have|know|want|go|eat|play|understand|speak|live|need) /)))return `Para negar usamos "don't": "I don't ${m[2]}".`;
+  if(/ i has /.test(t))return 'Con "I" decimos "have": "I have".';
+  if((m=t.match(/ (they|we|you) is /)))return `Con ${m[1]} usamos "are": "${m[1]} are".`;
+  if((m=t.match(/ (he|she|it) are /)))return `Con ${m[1]} usamos "is": "${m[1]} is".`;
+  if(/ i is /.test(t))return 'Con "I" usamos "am": "I am".';
+  if((m=t.match(/ i have (hungry|thirsty|cold|hot|sleepy|afraid|tired) /)))return `En inglés decimos "I am ${m[1]}", no "I have ${m[1]}".`;
+  if((m=t.match(/ (can|could|must|should|will) to /)))return `Después de "${m[1]}" el verbo va sin "to": "${m[1]} go", "${m[1]} play".`;
+  if((m=t.match(/ (doesn't|does not|didn't|did not) (\w+?)(s|ed) /))&&!/ (doesn't|does not|didn't|did not) (is|was|has|says|us|this|guess|miss|kiss|pass|dress|need|feed) /.test(t))return `Después de "${m[1]}" el verbo va en su forma simple: "${m[1]} ${m[2]}".`;
+  if((m=t.match(/ didn't (went|ate|had|saw|made|bought|came|took|drank|swam|got) /))){const base=Object.keys(PAST).find(k=>PAST[k]===m[1])||"get";return `Después de "didn't" el verbo va en presente: "didn't ${base}".`}
+  if((m=t.match(/ (like|love|want|need) (play|go|eat|watch|read|swim|dance|sing|study|travel|listen|cook|draw|ride|run|walk) /)))return m[1]==="want"||m[1]==="need"?`Decimos "${m[1]} to ${m[2]}", con "to".`:`Decimos "${m[1]} ${m[2]==="swim"?"swimming":m[2]==="run"?"running":m[2].replace(/e$/,"")+"ing"}" o "${m[1]} to ${m[2]}".`;
+  if((m=t.match(/ in (monday|tuesday|wednesday|thursday|friday|saturday|sunday|the weekend)s? /)))return `Con los días decimos "on": "on ${m[1]}".`;
+  if((m=t.match(/ there is (two|three|four|five|many|a lot of|some) /)))return `Con plural decimos "there are": "there are ${m[1]}...".`;
+  if((m=t.match(/ a (apple|orange|egg|elephant|animal|idea|hour|umbrella|ice cream|old|interesting|amazing|english) /)))return `Antes de sonido de vocal usamos "an": "an ${m[1]}".`;
+  if(/ (yesterday|last (week|weekend|year|night|summer|month)) /.test(t)&&(m=t.match(/ (?:i|we|they|he|she) (go|eat|have|do|see|play|watch|visit|make|buy|come|take|drink|swim|cook|travel) /)))return `Cuando hablamos del pasado decimos "${PAST[m[1]]}" en vez de "${m[1]}".`;
   return "";
 }
 function guidedStart(){
@@ -944,15 +958,35 @@ function guidedStart(){
   sayGuided(hi+v.qs[0].q);
 }
 function sayGuided(text){const v=view;addBubble("ai",text);v.turns.push({role:"assistant",content:text});v.last=text;sunnySpeaks()}
+const ES_WORDS=/\b(que|qué|el|la|los|las|es|mi|yo|soy|tengo|como|cómo|porque|pero|muy|bien|sí|nada|eso|esto|una|uno|para|con|está|estoy|tiene|hola|gracias|bueno)\b/gi;
+const LOST=/\b(i don'?t (know|understand)|no entiendo|no s[eé]|what\??$|repeat|again|help|ayuda|otra vez)\b/i;
+const ok3=s=>s.toLowerCase().replace(/[^a-z' ]/g," ").split(/\s+/).filter(w=>w.length>2).map(w=>w.replace(/(ing|ed|es|s)$/,""));
 function guidedAnswer(text){
   const v=view,q=v.qs[v.k];
-  v.answers++;
   const words=text.trim().split(/\s+/).length;
+  const esCount=(text.match(ES_WORDS)||[]).length;
+  /* Si no entendió o contestó en español: le explicamos la pregunta y se la repetimos (una vez). */
+  if((LOST.test(text)||esCount>=2&&esCount>=words/2)&&!v.helped){
+    v.helped=true;
+    const why=esCount>=2?"Intenta contestar en inglés. ":"";
+    sayGuided(`(${why}La pregunta significa: ${q.es} Puedes decir: "${q.m}") Let's try again. ${q.q}`);return}
+  const spanish=esCount>=2&&esCount>=words/2;
+  v.helped=false;v.answers++;
+  if(spanish){v.tips.push(`Contestar en inglés, por ejemplo: "${q.m}"`);v.k++;
+    if(v.k>=v.qs.length){v.over=true;sayGuided(`(Recuerda contestar en inglés. Podías decir: "${q.m}") That was fun! (Presiona F para escuchar tus consejos, o Escape para elegir otro tema.)`);return}
+    sayGuided(`(Recuerda contestar en inglés. Podías decir: "${q.m}") Let's go on. ${v.qs[v.k].q}`);return}
   let msg=PRAISE[Math.floor(Math.random()*PRAISE.length)]+" ";
   if(q.name){const n=text.match(/(?:name is|name's|i am|i'm|call me)\s+([a-záéíóúñ]+)/i)||(words<=2?[0,text.trim().split(/\s+/).pop()]:null);if(n){v.who=n[1][0].toUpperCase()+n[1].slice(1);msg=`Nice to meet you, ${v.who}! `}}
   const tip=grammarTip(text,q);
   if(tip){v.tips.push(tip);msg=`(Pequeño consejo: ${tip}) `+msg}
   else if(words<3&&!q.name){msg+=`(Intenta con una oración completa, por ejemplo: "${q.m}") `;v.tips.push(`Responder con oraciones completas, como "${q.m}"`)}
+  else if(!q.name){
+    v.good=(v.good||0)+1;
+    const A=new Set(ok3(text)),M=ok3(q.m),same=M.filter(w=>A.has(w)).length/Math.max(M.length,1);
+    if(words>=6)msg=["Great sentence!","Excellent, a long and clear answer!","Wow, very complete!"][v.answers%3]+" ";
+    else msg+=["(Muy bien dicho.) ","(Correcto, se entiende perfecto.) ","(¡Bien! Buena oración.) "][v.answers%3];
+    if(same<.5&&v.answers%2===0)msg+=`(Otra forma de decirlo: "${q.m}") `;
+  }
   v.k++;
   if(v.k>=v.qs.length){
     msg+=`That was fun${v.who?", "+v.who:""}! You did a great job. (Presiona F para escuchar tus consejos, o Escape para elegir otro tema.)`;
@@ -968,6 +1002,7 @@ function guidedHelp(){
 function guidedFinish(v){
   const tips=[...new Set(v.tips)];
   let t=`¡Muy bien${v.who?", "+v.who:""}! Hoy respondiste ${v.answers} ${v.answers===1?"pregunta":"preguntas"} en inglés. `;
+  if(v.good)t+=`${v.good} de tus respuestas fueron oraciones completas y claras. `;
   if(tips.length)t+="Para mejorar: "+tips.slice(0,3).join(" También: ")+" ";
   else t+="No encontré errores en tus respuestas. ¡Excelente trabajo! ";
   t+="Sigue practicando todos los días, aunque sean cinco minutos.";
