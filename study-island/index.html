@@ -183,7 +183,7 @@ function home(){
   <details class="panel"><summary>Para la profesora</summary>
     <p>Cada nivel es un libro de My English Adventure. Los módulos se abren en orden: para pasar al siguiente, el estudiante necesita 2 estrellas, es decir, 60 por ciento o más en la práctica.</p>
     <p>Atajos: 1, 2, 3 eligen nivel. C continúa con el siguiente módulo. Flechas cambian de palabra. Espacio escucha. D deletrea. R lee la regla. L abre la lectura. Q abre la práctica. P practica la pronunciación del módulo. G graba la voz. 4 abre el laboratorio de pronunciación. 5 abre la conversación con Sunny: Espacio para hablar, E repite, S más despacio, M manos libres, F termina y da consejos. Escape regresa. V enciende o apaga la voz guía. H es la ayuda.</p>
-    <p>La conversación con Sunny usa la inteligencia artificial de Claude: funciona cuando la app se abre dentro de Claude con una cuenta iniciada, y la primera vez pide permiso. El micrófono funciona mejor en Google Chrome o Microsoft Edge. Si el micrófono no está disponible, el estudiante puede escribir sus respuestas.</p>
+    <p>La conversación con Sunny usa inteligencia artificial cuando la academia la tiene activada. Si la inteligencia artificial no está disponible o se acaba el saldo, Sunny pasa sola al modo gratuito de práctica guiada, sin que el estudiante tenga que hacer nada. El micrófono funciona mejor en Google Chrome o Microsoft Edge. Si el micrófono no está disponible, el estudiante puede escribir sus respuestas.</p>
     <p>Con NVDA o JAWS, las letras funcionan en modo foco. Los botones siempre funcionan con Tab y Enter.</p>
     <button class="btn" id="unlock" aria-pressed="${unlockAll}">${unlockAll?"Volver a bloquear en orden":"Abrir todos los módulos en este dispositivo"}</button>
   </details>`;
@@ -555,8 +555,15 @@ async function webSample(input,opts={}){
   const code=store.get("hadash-code","");
   const messages=typeof input==="string"?[{role:"user",content:input}]:input;
   let r;
-  try{r=await fetch(window.SUNNY_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,messages}),signal:opts.signal})}
-  catch(e){throw {code:e&&e.name==="AbortError"?"cancelled":"upstream_error"}}
+  for(let attempt=0;attempt<2;attempt++){
+    const tm=new AbortController(),timer=setTimeout(()=>tm.abort(),20000);
+    if(opts.signal)opts.signal.addEventListener("abort",()=>tm.abort(),{once:true});
+    try{r=await fetch(window.SUNNY_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,messages}),signal:tm.signal})}
+    catch(e){r=null;if(opts.signal&&opts.signal.aborted)throw {code:"cancelled"}}
+    finally{clearTimeout(timer)}
+    if(r&&(r.ok||r.status<500))break;
+  }
+  if(!r)throw {code:"upstream_error"};
   if(r.status===401)throw {code:"not_granted"};
   if(r.status===429)throw {code:"rate_limited"};
   if(!r.ok)throw {code:"upstream_error"};
@@ -689,6 +696,7 @@ async function askSunny(){
     if(view!==v||e.code==="cancelled")return;
     v.state="idle";
     if(e.text&&bubble)bubble.textContent=e.text+" ...";
+    if(sampleFn===webSample&&e.code!=="refused"){toGuided(v);return}
     let m;
     if(["not_granted","sampling_disabled","not_declared","capability_disabled","capability_removed"].includes(e.code)){m="Sunny no tiene permiso para conversar en esta cuenta. Para usarla, permite que la app use Claude cuando aparezca el aviso.";sampleFn=null}
     else if(e.code==="rate_limited")m="Sunny necesita descansar un momento. Espera un poco y presiona Espacio para hablar otra vez.";
@@ -699,6 +707,15 @@ async function askSunny(){
     if(e.code==="refused"&&v.turns.length>1)v.turns.pop();
     setStatus(m,true);say([[m,"es"]],{force:true});
   }
+}
+/* Si la IA falla o se acaba el saldo, Sunny sigue sola en el modo gratuito de práctica guiada. */
+function toGuided(v){
+  sampleFn=null;if(v.name!=="talk"||v.guided)return;
+  if(v.turns.length&&v.turns[v.turns.length-1].role==="user")v.turns.pop();
+  const h=document.getElementById("helpq");if(h)h.hidden=false;
+  const m="Sunny sigue contigo en modo práctica guiada.";
+  setStatus(m,true);
+  speakThen([[m,"es"]],()=>{if(view===v)guidedStart()});
 }
 function sunnySpeaks(){
   const v=view;v.state="speaking";setStatus("Sunny está hablando... Presiona Espacio para contestar.");
@@ -760,7 +777,7 @@ ${transcript}`;
   ctl=new AbortController();
   try{const {text}=v.guided?{text:guidedFinish(v)}:await sampleFn(prompt,{cache:false,signal:ctl.signal,modelTier:"quick",onText:({text})=>{const p=document.getElementById("fbk");if(p&&view===d)p.textContent=text}});
     if(view!==d)return;const clean=text.replace(/[*#`_]/g,"").trim();d.last=clean;document.getElementById("fbk").textContent=clean;speakThen(convParts(clean,"es"));
-  }catch(e){if(view!==d||e.code==="cancelled")return;const m="No pude preparar los consejos ahora. Intenta otra vez más tarde.";document.getElementById("fbk").textContent=m;say([[m,"es"]],{force:true})}
+  }catch(e){if(view!==d||e.code==="cancelled")return;if(sampleFn===webSample)sampleFn=null;const m="No pude preparar los consejos ahora. Intenta otra vez más tarde.";document.getElementById("fbk").textContent=m;say([[m,"es"]],{force:true})}
 }
 
 /* ---------- Conversación guiada (sin internet de IA: solo el micrófono del navegador) ---------- */
