@@ -75,6 +75,15 @@ button{font:inherit;cursor:pointer;border:0}
 .qrc .code{display:flex;justify-content:center;margin:8px 0}
 .qrc b{font-family:'Fredoka';font-size:16px}.qrc small{display:block;color:var(--ink2);font-size:12px}
 .note{font-size:13px;color:var(--ink2);margin-top:10px}
+.books{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-top:-14px}
+.bk{position:relative;display:flex;flex-direction:column;background:var(--card);border-radius:22px;padding:20px;color:var(--ink);text-decoration:none;box-shadow:0 6px 20px rgba(20,33,61,.08);border-top:6px solid var(--b);transition:transform .15s,box-shadow .15s}
+.bk:hover,.bk:focus-visible{transform:translateY(-3px);box-shadow:0 10px 26px rgba(20,33,61,.14)}
+.bk h2{font-size:21px;margin-top:10px}.bk p{margin:6px 0 0;font-size:15px;color:var(--ink2)}
+.bkic{font-size:34px;width:58px;height:58px;border-radius:16px;background:color-mix(in srgb,var(--b) 14%,#fff);display:flex;align-items:center;justify-content:center}
+.bklv{position:absolute;top:20px;right:20px;background:var(--b);color:#fff;font-family:'Fredoka';border-radius:12px;padding:4px 12px;font-size:16px}
+.bk .bkage{font-weight:800;color:var(--b);font-size:13px;margin-top:2px}
+.bkmeta{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin:12px 0 14px}
+.bkgo{margin-top:auto;align-self:flex-start;display:inline-block;background:var(--b);color:#fff;font-family:'Fredoka';border-radius:30px;padding:9px 18px;font-size:16px}
 @media print{.top,.noprint{display:none}.qrgrid{grid-template-columns:repeat(3,1fr)}body{background:#fff}}
 </style>
 </head>
@@ -162,23 +171,42 @@ async function playAll(t){
 function setPlayBtn(on){ const b = $('#playbtn'); if (b) b.innerHTML = on ? '⏹ Stop' : '▶ Listen'; }
 
 /* ---------- views ---------- */
-function home(){
+const BOOKS = {
+  book1:  {emoji:'📗', name:'My English Adventure · Book 1', lv:'A1', age:'9–11 years · 9–11 años', desc:'Student’s Book and Workbook: listenings and conversations for the 24 units.', col:'#1673E6', test: n => n < 100},
+  junior: {emoji:'🔎', name:'My English Adventure Junior · A2', lv:'A2', age:'8–10 years · 8–10 años', desc:'Listening Lab for the 24 Junior A2 units.', col:'#F26B00', test: n => n > 100}
+};
+const bookOf = t => t.unit > 100 ? 'junior' : 'book1';
+function unitsOf(key){
   const byUnit = {};
-  DATA.tracks.forEach(t => (byUnit[t.unit] = byUnit[t.unit] || []).push(t));
-  const mk = list => list.map(n => {
+  DATA.tracks.filter(t => BOOKS[key].test(t.unit)).forEach(t => (byUnit[t.unit] = byUnit[t.unit] || []).push(t));
+  return byUnit;
+}
+function home(){
+  const card = (href, emoji, lv, col, name, age, desc, meta, extra='') => `<a class="bk" href="${href}" style="--b:${col}"${extra}>
+    <span class="bkic">${emoji}</span><span class="bklv">${lv}</span>
+    <h2>${esc(name)}</h2><p class="bkage">${esc(age)}</p><p>${esc(desc)}</p>
+    <span class="bkmeta">${meta}</span><span class="bkgo">Enter · Entrar →</span></a>`;
+  const books = Object.entries(BOOKS).map(([k, b]) => {
+    const u = unitsOf(k), n = Object.values(u).reduce((s, l) => s + l.length, 0);
+    return card('#' + k, b.emoji, b.lv, b.col, b.name, b.age, b.desc, `${Object.keys(u).length} units · ${n} tracks`);
+  }).join('') + card('teen/', '🎓', 'B1', '#7C3AED', 'My English Adventure · Teen Edition', '13–15 years · 13–15 años', 'Talk, read and write: 25 B1 units, Sounds lab and tricky words.', 'B1 open · A1 & A2 coming soon');
+  return `<header class="top"><div class="wrap"><div class="brand"><span class="logo">🦉</span><div><small>MY ENGLISH ADVENTURE · HADASH ACADEMY</small><h1>English Lab</h1></div></div>
+  <p style="margin:10px 0 0;opacity:.95">Choose your book, or scan the QR code in your book. 🎧💬<br><span style="opacity:.85;font-size:15px">Elige el libro que estás usando o escanea el código QR.</span></p></div></header>
+  <main class="wrap"><div class="books">${books}</div>
+  <p class="note noprint">Teacher: <a href="#qr">print the QR codes</a></p></main>`;
+}
+function bookView(key){
+  const B = BOOKS[key], byUnit = unitsOf(key);
+  const units = Object.keys(byUnit).map(n => {
     const items = byUnit[n].map(t => {
       const st = store.get(t.id + ':stars');
       return `<a class="ti" href="#${t.id}"><span class="ic">${icon(t.kind)}</span><span>${esc(t.title)}<em>${esc(t.where)}</em></span>${st ? '⭐'.repeat(st) : `<span class="tag ${t.kind}">${t.kind}</span>`}</a>`;
     }).join('');
     return `<div class="unit" style="--u:${ucol(+n)}"><h2><span class="un">${n > 100 ? n - 100 : n}</span>${esc(DATA.titles[n] || '')}</h2><div class="tl">${items}</div></div>`;
   }).join('');
-  const keys = Object.keys(byUnit);
-  const units = '<h2 style="margin:22px 0 6px">📗 My English Adventure · Book 1</h2>' + mk(keys.filter(n => +n < 100)) +
-    (keys.some(n => +n > 100) ? '<h2 id="junior" style="margin:28px 0 6px">🔎 My English Adventure Junior · A2</h2>' + mk(keys.filter(n => +n > 100)) : '');
-  return `<header class="top"><div class="wrap"><div class="brand"><span class="logo">🦉</span><div><small>MY ENGLISH ADVENTURE · BOOK 1 · JUNIOR A2</small><h1>English Lab</h1></div></div>
-  <p style="margin:10px 0 0;opacity:.95">Scan the QR code in your book, listen, and practice. 🎧💬</p></div></header>
-  <main class="wrap">${units}
-  <p class="note noprint">Teacher: <a href="#qr">print the QR codes</a> · Units 7–24 coming soon.</p></main>`;
+  return `<header class="top" style="background:linear-gradient(120deg,${B.col},${B.col}cc)"><div class="wrap"><a class="back" href="#">← All books · Todos los libros</a>
+  <div class="brand"><span class="logo">${B.emoji}</span><div><small>ENGLISH LAB · LEVEL ${B.lv}</small><h1>${esc(B.name)}</h1></div></div></div></header>
+  <main class="wrap">${units}</main>`;
 }
 
 function trackView(t){
@@ -200,7 +228,7 @@ function trackView(t){
     <p>Choose a character. The app says the other lines. You say yours!</p>
     <div class="rpbar">${cast.map(c => `<button class="chipbtn" data-role="${esc(c)}">${esc(c)}</button>`).join('')}</div>
     <div class="rp" id="rp"></div></section>`;
-  return `<header class="top" style="background:linear-gradient(120deg,${ucol(t.unit)},${ucol(t.unit)}cc)"><div class="wrap"><a class="back" href="#">← English Lab</a>
+  return `<header class="top" style="background:linear-gradient(120deg,${ucol(t.unit)},${ucol(t.unit)}cc)"><div class="wrap"><a class="back" href="#${bookOf(t)}">← ${t.unit > 100 ? 'Junior A2' : 'Book 1'}</a>
     <div class="brand"><span class="logo">${icon(t.kind)}</span><div><small>${t.unit > 100 ? 'JUNIOR A2 · UNIT ' + (t.unit - 100) : 'UNIT ' + t.unit} · ${t.kind.toUpperCase()}</small><h1>${esc(DATA.titles[t.unit] || '')}</h1></div></div></div></header>
   <main class="wrap"><div class="hero"><span class="wh">${esc(t.where)}</span><h2>${esc(t.title)}</h2><div class="scene">${esc(t.scene)}</div>
     <div class="cast">${cast.map(c => `<span class="who">${avatar(c)}${esc(c)}</span>`).join('')}</div>
@@ -302,6 +330,7 @@ function render(){
   const t = DATA.tracks.find(x => x.id === id);
   if (id === 'qr'){ app.innerHTML = qrView(); document.querySelectorAll('.code').forEach(el => { if (window.QRCode) new QRCode(el, {text: el.dataset.url, width: 150, height: 150, correctLevel: QRCode.CorrectLevel.M}); else el.textContent = el.dataset.url; }); }
   else if (t){ app.innerHTML = trackView(t); bindTrack(t); }
+  else if (BOOKS[id]) app.innerHTML = bookView(id);
   else if (/^(u|wb|j)\d\d-/.test(id)) app.innerHTML = soon(id);
   else app.innerHTML = home();
   scrollTo(0, 0);
