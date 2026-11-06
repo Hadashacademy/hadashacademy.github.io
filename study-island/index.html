@@ -170,7 +170,7 @@ vbtn.onclick=toggleVoice;drawVoice();drawStars();
 function home(){
   view={name:"home"};
   app.innerHTML=`<h2>Elige tu nivel</h2>
-  <p class="sub">Presiona 1, 2 o 3 para elegir el nivel, 4 para pronunciación, 5 para conversar con Sunny, 6 para verbos, 7 para he, she, it, 8 para países o 9 para listening. Presiona H para escuchar la ayuda.</p>
+  <p class="sub">Presiona 1, 2 o 3 para elegir el nivel, 4 para pronunciación, 5 para conversar con Sunny, 6 para verbos, 7 para he, she, it, 8 para países, 9 para listening o 0 para Real American English. Presiona H para escuchar la ayuda.</p>
   <ul class="list levels">${LEVELS.map((l,i)=>{const d=l.mods.filter(m=>done(m.id)).length;return `<li><button class="btn" data-l="${i}">
     <span class="big"><kbd>${i+1}</kbd>${esc(l.name)}</span><span>${esc(l.es)}</span><small>${esc(l.desc)}</small>
     <small>${d} de ${l.mods.length} módulos completados.</small><span class="bar" aria-hidden="true"><i style="width:${d/l.mods.length*100}%"></i></span></button></li>`}).join("")}
@@ -179,10 +179,11 @@ function home(){
   <li><button class="btn" id="vBtn"><span class="big"><kbd>6</kbd>Verbos</span><span>Los 250 más comunes</span><small>V1, V2, V3 y V4: go, went, gone, going. Escucha, pronuncia y haz la prueba.</small></button></li>
   <li><button class="btn" id="tBtn"><span class="big"><kbd>7</kbd>He, she, it</span><span>Presente simple en tercera persona</span><small>150 verbos: she works, he watches. Pronuncia y haz tus propias oraciones.</small></button></li>
   <li><button class="btn" id="cBtn"><span class="big"><kbd>8</kbd>Países</span><span>Países y nacionalidades</span><small>Brazil, Brazilian. 63 países por región, con prueba.</small></button></li>
-  <li><button class="btn" id="lBtn"><span class="big"><kbd>9</kbd>Listening</span><span>Escucha y responde</span><small>Historias y diálogos por nivel con preguntas de comprensión.</small></button></li></ul>
+  <li><button class="btn" id="lBtn"><span class="big"><kbd>9</kbd>Listening</span><span>Escucha y responde</span><small>Historias y diálogos por nivel con preguntas de comprensión.</small></button></li>
+  <li><button class="btn" id="sBtn"><span class="big"><kbd>0</kbd>Real American English</span><span>El inglés que se habla de verdad</span><small>What's up, I'm down, gonna, piece of cake: 40 expresiones de Estados Unidos, cuándo usarlas, diálogos y prueba. Desde A2.</small></button></li></ul>
   <details class="panel"><summary>Para la profesora</summary>
     <p>Cada nivel es un libro de My English Adventure. Los módulos se abren en orden: para pasar al siguiente, el estudiante necesita 2 estrellas, es decir, 60 por ciento o más en la práctica.</p>
-    <p>Atajos: 1, 2, 3 eligen nivel. C continúa con el siguiente módulo. Flechas cambian de palabra. Espacio escucha. D deletrea. R lee la regla. L abre la lectura. Q abre la práctica. P practica la pronunciación del módulo. G graba la voz. 4 abre el laboratorio de pronunciación. 5 abre la conversación con Sunny: Espacio para hablar, E repite, S más despacio, M manos libres, F termina y da consejos. Escape regresa. V enciende o apaga la voz guía. H es la ayuda.</p>
+    <p>Atajos: 1, 2, 3 eligen nivel. C continúa con el siguiente módulo. Flechas cambian de palabra. Espacio escucha. D deletrea. R lee la regla. L abre la lectura. Q abre la práctica. P practica la pronunciación del módulo. G graba la voz. 4 abre el laboratorio de pronunciación. 0 abre Real American English: flechas cambian de expresión, Espacio escucha, P la dices tú, Q hace la prueba. 5 abre la conversación con Sunny: Espacio para hablar, E repite, S más despacio, M manos libres, F termina y da consejos. Escape regresa. V enciende o apaga la voz guía. H es la ayuda.</p>
     <p>La conversación con Sunny usa inteligencia artificial cuando la academia la tiene activada. Si la inteligencia artificial no está disponible o se acaba el saldo, Sunny pasa sola al modo gratuito de práctica guiada, sin que el estudiante tenga que hacer nada. El micrófono funciona mejor en Google Chrome o Microsoft Edge. Si el micrófono no está disponible, el estudiante puede escribir sus respuestas.</p>
     <p>Con NVDA o JAWS, las letras funcionan en modo foco. Los botones siempre funcionan con Tab y Enter.</p>
     <button class="btn" id="unlock" aria-pressed="${unlockAll}">${unlockAll?"Volver a bloquear en orden":"Abrir todos los módulos en este dispositivo"}</button>
@@ -190,11 +191,11 @@ function home(){
   app.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>level(+b.dataset.l));
   document.getElementById("labBtn").onclick=()=>lab();
   document.getElementById("convBtn").onclick=()=>conv();
-  document.getElementById("vBtn").onclick=()=>verbsHub();document.getElementById("tBtn").onclick=()=>thirdHub();document.getElementById("cBtn").onclick=()=>countriesHub();document.getElementById("lBtn").onclick=()=>listenHub();
+  document.getElementById("vBtn").onclick=()=>verbsHub();document.getElementById("tBtn").onclick=()=>thirdHub();document.getElementById("cBtn").onclick=()=>countriesHub();document.getElementById("lBtn").onclick=()=>listenHub();document.getElementById("sBtn").onclick=()=>slangHub();
   document.getElementById("unlock").onclick=()=>{unlockAll=!unlockAll;store.set("hadash-unlock-all",unlockAll);announce(unlockAll?"Todos los módulos abiertos en este dispositivo.":"Módulos en orden otra vez.");home()};
   focusTitle();
 }
-function homeSpeech(){say([["Bienvenido a Hadash Study Island. Elige tu nivel.","es"],["1.","es"],["A1 Starter","en"],["2.","es"],["A2 Explorer","en"],["3.","es"],["B1 Adventurer","en"],["4. Laboratorio de pronunciación.","es"],["5. Conversación con Sunny. 6. Los 250 verbos. 7. Tercera persona. 8. Países y nacionalidades. 9. Listening.","es"],["Presiona H para la ayuda.","es"]])}
+function homeSpeech(){say([["Bienvenido a Hadash Study Island. Elige tu nivel.","es"],["1.","es"],["A1 Starter","en"],["2.","es"],["A2 Explorer","en"],["3.","es"],["B1 Adventurer","en"],["4. Laboratorio de pronunciación.","es"],["5. Conversación con Sunny. 6. Los 250 verbos. 7. Tercera persona. 8. Países y nacionalidades. 9. Listening. 0. Real American English, el inglés que se habla de verdad.","es"],["Presiona H para la ayuda.","es"]])}
 
 /* ---------- Nivel: módulos ---------- */
 function level(li,focusId){
@@ -1445,7 +1446,7 @@ async function playLines(s,from,to,slow,onLine){
 }
 function story2(si){
   const s=LISTEN[si];
-  view={name:"lstory",si,line:-1,back:()=>listenLevel(s.lv-1,si)};
+  view={name:"lstory",si,line:-1,back:s.back||(()=>listenLevel(s.lv-1,si))};
   app.innerHTML=`<p class="crumb">Listening · ${LVNAME[s.lv-1]}</p><h2 lang="en">${esc(s.t)}</h2>
   <p class="tip">${esc(s.es)} Escucha y luego presiona Q para las preguntas.</p>
   <details class="panel"><summary>Ver el texto (mejor después de escuchar)</summary>
@@ -1475,21 +1476,155 @@ function listenDrill(si){
     extra:{k:"l",t:"Escuchar la historia otra vez",go:()=>playLines(s,0,s.lines.length-1,false)}});
 }
 
+/* ---------- 0. Real American English: expresiones del inglés real ---------- */
+/* reg: a = solo con amigos · c = casual (amigos y conocidos) · t = cualquier situación · h = solo hablado, nunca escrito */
+const REG={a:"Solo con amigos.",c:"En conversación casual, con amigos y conocidos.",t:"En cualquier situación, también con la maestra.",h:"Solo hablando, con amigos. Nunca en una tarea escrita ni en un examen."};
+const REGQ=["Con amigos, en una conversación casual","En cualquier situación, también con la maestra","Solo hablando, nunca en un examen escrito"];
+const regAns=r=>r==="t"?REGQ[1]:r==="h"?REGQ[2]:REGQ[0];
+const SLANG=[
+ {t:"Greetings",es:"Saludos y despedidas",tip:"En Estados Unidos casi nadie dice How do you do. Entre amigos se saluda de forma corta y relajada. Fíjate en cuándo puedes usar cada expresión.",items:[
+  {en:"What's up?",es:"¿Qué tal? ¿Qué hay?",reg:"a",ex:"Hey, Jay! What's up?"},
+  {en:"Not much.",es:"Nada, aquí tranquilo. Es la respuesta normal a What's up.",reg:"a",ex:"What's up? Not much. Just chilling at home."},
+  {en:"How's it going?",es:"¿Cómo va todo?",reg:"t",ex:"Hi, Mr. Brown. How's it going?"},
+  {en:"What's new?",es:"¿Qué hay de nuevo?",reg:"c",ex:"Long time no see! What's new?"},
+  {en:"Long time no see!",es:"¡Cuánto tiempo sin verte!",reg:"c",ex:"Kayla! Long time no see! How are you?"},
+  {en:"Hey!",es:"¡Hola! Es más casual que hello.",reg:"c",ex:"Hey! Do you have a minute?"},
+  {en:"See ya!",es:"¡Nos vemos!",reg:"a",ex:"I have to go. See ya tomorrow!"},
+  {en:"Take care!",es:"¡Cuídate!",reg:"t",ex:"Have a nice weekend. Take care!"}],
+  dlg:{t:"Long time no see",es:"Jay se encuentra con su amiga Kayla en el centro comercial.",lines:[
+   ["Jay","Kayla? Hey! Long time no see!"],["Kayla","Jay! What's up? How's it going?"],["Jay","Not much. I'm just buying some shoes. What's new with you?"],
+   ["Kayla","I started a new school this year. It's really cool."],["Jay","That's awesome! I have to go now, my mom is waiting. See ya!"],["Kayla","See ya, Jay! Take care!"]],
+   qs:[{q:"Where are Jay and Kayla?",o:["At the mall","At school","At the beach"]},{q:"What is new with Kayla?",o:["She started a new school","She has a new dog","She bought new shoes"]},{q:"Why does Jay have to go?",o:["His mom is waiting","He is late for class","He is tired"]}]}},
+ {t:"Reactions",es:"Reacciones",tip:"Los estadounidenses reaccionan mucho cuando alguien les cuenta algo. Estas expresiones te ayudan a sonar natural y a mostrar interés.",items:[
+  {en:"That's awesome!",es:"¡Qué genial! ¡Qué bueno!",reg:"c",ex:"I passed my English test! That's awesome!"},
+  {en:"No way!",es:"¡No puede ser! ¡En serio!",reg:"a",ex:"I met a famous singer today. No way!"},
+  {en:"For real?",es:"¿En serio? ¿De verdad?",reg:"a",ex:"We don't have class tomorrow. For real?"},
+  {en:"Cool.",es:"Bien, genial, está bien.",reg:"c",ex:"The party is at seven. Cool, I'll be there."},
+  {en:"Sounds good.",es:"Me parece bien. Dale.",reg:"t",ex:"Let's meet at the library at three. Sounds good."},
+  {en:"No worries.",es:"No te preocupes. Tranquilo.",reg:"t",ex:"Sorry I'm late! No worries."},
+  {en:"My bad.",es:"Mi culpa, perdón. Para errores pequeños.",reg:"a",ex:"You took my pencil. Oh, my bad! Here you go."},
+  {en:"Oh my gosh!",es:"¡Ay, Dios mío! Es la forma suave y respetuosa.",reg:"c",ex:"Oh my gosh! Your cake is beautiful!"}],
+  dlg:{t:"Big news",es:"Marcus le cuenta una buena noticia a su amiga Emma.",lines:[
+   ["Marcus","Emma, guess what? I made the school basketball team!"],["Emma","No way! For real?"],["Marcus","For real! The coach told me today."],
+   ["Emma","Oh my gosh, that's awesome! Let's celebrate with ice cream after school."],["Marcus","Sounds good. Oh, sorry, I stepped on your foot."],["Emma","No worries!"],["Marcus","My bad. I'm just too happy!"]],
+   qs:[{q:"What is Marcus's news?",o:["He made the basketball team","He got a new phone","He passed a test"]},{q:"Who told Marcus the news?",o:["The coach","His mom","Emma"]},{q:"How do they want to celebrate?",o:["With ice cream","With pizza","With a party"]}]}},
+ {t:"Making plans",es:"Planes con amigos",tip:"Para invitar a alguien o aceptar un plan, los estadounidenses usan expresiones muy cortas. Si no puedes ir, hay formas amables de decirlo.",items:[
+  {en:"Hang out",es:"Pasar el rato juntos.",reg:"c",ex:"Do you want to hang out on Saturday?"},
+  {en:"What are you up to?",es:"¿Qué estás haciendo? ¿Qué planes tienes?",reg:"a",ex:"Hey, what are you up to this weekend?"},
+  {en:"I'm down.",es:"Me apunto. Cuenta conmigo.",reg:"a",ex:"Movies tonight? I'm down!"},
+  {en:"Count me in!",es:"¡Cuenta conmigo!",reg:"c",ex:"A soccer game in the park? Count me in!"},
+  {en:"Chill",es:"Relajarse, no hacer nada especial.",reg:"a",ex:"I'm just going to chill at home today."},
+  {en:"Grab a bite",es:"Ir a comer algo rápido.",reg:"c",ex:"Let's grab a bite after class."},
+  {en:"Swing by",es:"Pasar por un lugar un momento.",reg:"c",ex:"Can you swing by my house later?"},
+  {en:"Take a rain check",es:"Dejarlo para otro día.",reg:"c",ex:"I can't go today. Can I take a rain check?"}],
+  dlg:{t:"Saturday plans",es:"Tyler invita a su amiga Sofia a salir el sábado.",lines:[
+   ["Tyler","Hey Sofia, what are you up to on Saturday?"],["Sofia","Nothing special. I'm just going to chill at home. Why?"],["Tyler","Some friends and I want to hang out at the park and play soccer."],
+   ["Sofia","I'm down! Count me in."],["Tyler","Cool. After the game we can grab a bite."],["Sofia","Sounds good. Can you swing by my house at ten?"],["Tyler","Sure. See ya on Saturday!"]],
+   qs:[{q:"What does Sofia plan to do on Saturday at first?",o:["Chill at home","Go to the park","Study"]},{q:"What are they going to play?",o:["Soccer","Basketball","Video games"]},{q:"What time will Tyler swing by?",o:["At ten","At two","At seven"]}]}},
+ {t:"Fast spoken English",es:"Así se habla rápido",tip:"Cuando los estadounidenses hablan rápido, juntan palabras: going to suena gonna. Debes entenderlas al escuchar, pero en tareas y exámenes escribe siempre la forma completa.",items:[
+  {en:"gonna",es:"going to. Ir a hacer algo.",reg:"h",ex:"I'm gonna call you later."},
+  {en:"wanna",es:"want to. Querer hacer algo.",reg:"h",ex:"Do you wanna play a game?"},
+  {en:"gotta",es:"have got to. Tener que.",reg:"h",ex:"Sorry, I gotta go now."},
+  {en:"kinda",es:"kind of. Un poco, más o menos.",reg:"h",ex:"I'm kinda tired today."},
+  {en:"lemme",es:"let me. Déjame.",reg:"h",ex:"Lemme see your picture."},
+  {en:"gimme",es:"give me. Dame.",reg:"h",ex:"Gimme a second, please."},
+  {en:"dunno",es:"don't know. No sé.",reg:"h",ex:"Where is Jay? I dunno."},
+  {en:"y'all",es:"you all. Ustedes. Se oye mucho en el sur de Estados Unidos.",reg:"h",ex:"Are y'all ready for the trip?"}],
+  dlg:{t:"In a hurry",es:"Jay y Kayla hablan rápido antes de la clase.",lines:[
+   ["Kayla","Jay, are you gonna come to the library with me?"],["Jay","I wanna go, but I gotta finish my science project first."],["Kayla","Is it hard?"],
+   ["Jay","Kinda. Lemme show you. Gimme a second."],["Kayla","Wow, it looks great. When is it due?"],["Jay","I dunno. Tomorrow, I think!"]],
+   qs:[{q:"Where does Kayla want to go?",o:["To the library","To the park","To the cafeteria"]},{q:"What does Jay have to finish?",o:["His science project","His math homework","His book"]},{q:"When is the project due, according to Jay?",o:["Tomorrow, he thinks","Next week","Today"]}]}},
+ {t:"School and everyday life",es:"La escuela y el día a día",tip:"Estas expresiones se escuchan todos los días en las escuelas de Estados Unidos. Algunas son idioms: el significado no es literal.",items:[
+  {en:"Piece of cake",es:"Pan comido. Muy fácil.",reg:"c",ex:"The test was a piece of cake."},
+  {en:"Ace a test",es:"Sacar una nota excelente.",reg:"c",ex:"I studied a lot, and I aced my test!"},
+  {en:"Pop quiz",es:"Examen sorpresa.",reg:"t",ex:"Oh no, the teacher gave us a pop quiz today."},
+  {en:"Hit the books",es:"Ponerse a estudiar.",reg:"c",ex:"Exams are next week. Time to hit the books."},
+  {en:"Cram",es:"Estudiar mucho a última hora.",reg:"c",ex:"Don't cram the night before the exam."},
+  {en:"Figure out",es:"Descubrir o entender cómo hacer algo.",reg:"t",ex:"I can't figure out this math problem."},
+  {en:"I'm beat.",es:"Estoy agotado.",reg:"a",ex:"I ran five miles today. I'm beat!"},
+  {en:"Break a leg!",es:"¡Mucha suerte! Se dice antes de una presentación.",reg:"c",ex:"Your play is tonight? Break a leg!"}],
+  dlg:{t:"Test day",es:"Marcus y Emma hablan después de un examen.",lines:[
+   ["Emma","Marcus, how was the pop quiz?"],["Marcus","A piece of cake! I hit the books all weekend."],["Emma","I didn't study. I tried to cram last night and now I'm beat."],
+   ["Marcus","Don't worry. Next time we can study together. I can help you figure out the hard parts."],["Emma","Thanks! And good luck with your speech tomorrow."],["Marcus","Thanks! My mom always says break a leg."]],
+   qs:[{q:"How was the pop quiz for Marcus?",o:["Very easy","Very hard","He didn't take it"]},{q:"Why is Emma tired?",o:["She studied late last night","She played soccer","She didn't sleep because of a party"]},{q:"What does Marcus have tomorrow?",o:["A speech","A game","A trip"]}]}}
+];
+Object.assign(GENDER,{Jay:"m",Kayla:"f",Marcus:"m",Emma:"f",Tyler:"m",Sofia:"f"});
+LVNAME.push("Real American English");
+const SL0=LISTEN.length;
+SLANG.forEach((T,i)=>LISTEN.push({...T.dlg,lv:4,back:()=>slangTopic(i)}));
+const slangDone=i=>drillScores["slang"+i];
+function slangHub(focus){
+  view={name:"hub",back:home};
+  app.innerHTML=`<p class="crumb">Real American English</p><h2>Real American English</h2>
+  <p class="tip">Las expresiones que se escuchan de verdad en Estados Unidos: en la calle, en la escuela, en series y canciones. De cada una aprendes qué significa y cuándo usarla, porque no todo se puede decir en todas partes. Recomendado desde el nivel A2.</p>
+  <ul class="list">${SLANG.map((T,i)=>`<li><button class="btn" data-sl="${i}"><span><kbd>${i+1}</kbd><span lang="en">${esc(T.t)}</span></span><small>${esc(T.es)}: ${esc(T.items.slice(0,3).map(x=>x.en.replace(/\.$/,"")).join(", "))}...${scoreNote("slang"+i)}</small></button></li>`).join("")}</ul>
+  <div class="row"><button class="btn" id="back">${kb("Esc","Volver al inicio")}</button></div>`;
+  view.pick=i=>i<SLANG.length&&slangTopic(i);
+  app.querySelectorAll("[data-sl]").forEach(b=>b.onclick=()=>slangTopic(+b.dataset.sl));
+  document.getElementById("back").onclick=home;
+  if(focus!=null){const b=app.querySelector(`[data-sl="${focus}"]`);if(b){b.focus();return say([[SLANG[focus].es,"es"]])}}
+  focusTitle();say([["Real American English. Expresiones del inglés real de Estados Unidos. Elige un tema:","es"],...SLANG.flatMap((T,i)=>[[`${i+1}, ${T.es}.`,"es"]])]);
+}
+function slangTopic(i){
+  const T=SLANG[i],back=()=>slangHub(i);
+  listMenu({crumb:"Real American English",title:T.es,tip:T.tip,preview:T.items.map(x=>x.en).join(" · "),back,opts:[
+    {k:"a",t:"Aprender las expresiones",d:"Qué significa cada una, cuándo usarla y un ejemplo.",go:()=>slangCard(i,0,true)},
+    {k:"p",t:"Escuchar y decirlas",d:"Escucha cada expresión y grábate diciéndola.",go:()=>pron({title:"Decirlo: "+T.es,crumb:"Real American English",unit:"Expresión",tip:"Escucha la expresión y luego presiona G para decirla tú.",items:T.items.map(x=>({en:x.en,es:x.es,ex:x.ex})),back:()=>slangTopic(i)},0,true)},
+    {k:"d",t:"Diálogo",d:"Escucha una conversación real con estas expresiones y responde preguntas.",go:()=>story2(SL0+i)},
+    {k:"q",t:"Prueba",d:"Qué significa, cómo se dice y cuándo usarla."+scoreNote("slang"+i),go:()=>slangDrill(i)}]});
+}
+function slangParts(it){return [[it.en,"en"],["Significa: "+it.es,"es"],["Cuándo usarla: "+REG[it.reg],"es"],["Ejemplo:","es"],[it.ex,"en"]]}
+function slangCard(ti,i,first){
+  const T=SLANG[ti],it=T.items[i];
+  view={name:"slang",ti,i,back:()=>slangTopic(ti)};
+  app.innerHTML=`<p class="crumb">Real American English · ${esc(T.es)}</p><h2>${esc(T.es)}</h2>
+  ${first?`<p class="tip">${esc(T.tip)}</p>`:""}
+  <p class="count">Expresión ${i+1} de ${T.items.length}</p>
+  <div class="word"><span class="en" lang="en">${esc(it.en)}</span><span class="es">Significa: ${esc(it.es)}</span>
+  <span class="es"><strong>Cuándo usarla:</strong> ${esc(REG[it.reg])}</span><span class="ex2" lang="en">${esc(it.ex)}</span></div>
+  <div class="row">
+    <button class="btn primary" id="slis">${kb("Espacio","Escuchar")}</button>
+    <button class="btn" id="sprev">${kb("←","Anterior")}</button>
+    <button class="btn" id="snext">${kb("→","Siguiente")}</button>
+    <button class="btn" id="spron">${kb("P","Decirla yo")}</button>
+    <button class="btn" id="sq">${kb("Q","Prueba")}</button>
+    <button class="btn" id="back">${kb("Esc","Volver")}</button></div>`;
+  const g=id=>document.getElementById(id);
+  g("slis").onclick=()=>say(slangParts(it),{force:true});g("sprev").onclick=()=>slangStep(-1);g("snext").onclick=()=>slangStep(1);
+  g("spron").onclick=()=>pron({title:"Decirlo: "+T.es,crumb:"Real American English",unit:"Expresión",tip:"",items:T.items.map(x=>({en:x.en,es:x.es,ex:x.ex})),back:()=>slangCard(ti,i)},i);
+  g("sq").onclick=()=>slangDrill(ti);g("back").onclick=view.back;
+  focusTitle();
+  say([...(first?[[T.tip,"es"],["Usa las flechas para cambiar de expresión y Espacio para escuchar otra vez.","es"]]:[]),...slangParts(it)]);
+}
+function slangStep(d){const v=view,n=SLANG[v.ti].items.length,i=v.i+d;
+  if(i<0)return say([["Esta es la primera expresión.","es"]],{force:true});
+  if(i>=n){announce("Terminaste las expresiones. Presiona Q para la prueba.");return say([["Terminaste las expresiones de este tema. Presiona Q para hacer la prueba, o D en el menú para escuchar el diálogo.","es"]],{force:true})}
+  slangCard(v.ti,i)}
+function slangDrill(i){
+  const T=SLANG[i],pool=SLANG.flatMap(x=>x.items);
+  const qs=shuffle(T.items).map((it,k)=>{
+    if(k%3===0){const opts=shuffle([it.es,...others(T.items.map(x=>x.es),it.es,2)]);return {p:`¿Qué significa «${it.en}»?`,parts:[["¿Qué significa","es"],[it.en,"en"]],a:it.es,opts,lang:"es",after:[[it.ex,"en"]]}}
+    if(k%3===1){const opts=shuffle([it.en,...others(pool.map(x=>x.en),it.en,2)]);return {p:`¿Cómo se dice en inglés: ${it.es}`,parts:[["¿Cómo se dice en inglés:","es"],[it.es,"es"]],a:it.en,opts,after:[[it.ex,"en"]]}}
+    return {p:`¿Cuándo puedes usar «${it.en}»?`,parts:[["¿Cuándo puedes usar","es"],[it.en,"en"]],a:regAns(it.reg),opts:[...REGQ],lang:"es",after:[[REG[it.reg],"es"]]};
+  });
+  drill({key:"slang"+i,title:"Prueba: "+T.es,crumb:"Real American English",qs,back:()=>slangTopic(i),retry:()=>slangDrill(i)});
+}
+
 /* ---------- Teclado ---------- */
-const HELP="Ayuda. En el inicio, presiona 1, 2 o 3 para elegir el nivel, 4 para pronunciación, 5 para conversar con Sunny, 6 para verbos, 7 para tercera persona, 8 para países o 9 para listening. En las listas, presiona el número de la lista y luego P para pronunciar, Q para la prueba u O para hacer oraciones. En las pruebas, responde con 1, 2 o 3. En un nivel, presiona C para continuar con el siguiente módulo, o usa Tab para elegir otro. En las tarjetas: flecha derecha, siguiente. Flecha izquierda, anterior. Espacio, escuchar otra vez. D, deletrear. R, escuchar la regla. L, la lectura. Q, practicar. En la práctica: presiona 1, 2, 3 o 4 para responder, E para escuchar la pregunta otra vez y Enter para seguir. En pronunciación: G graba tu voz, S escucha despacio, Q hace la prueba de oído. En la conversación con Sunny: Espacio, hablar. E, escuchar otra vez. S, más despacio. M, manos libres. F, terminar y recibir consejos. A, ayuda con la pregunta en la práctica guiada. También puedes escribir tu respuesta. Escape siempre te regresa. V enciende o apaga la voz guía.";
+const HELP="Ayuda. En el inicio, presiona 1, 2 o 3 para elegir el nivel, 4 para pronunciación, 5 para conversar con Sunny, 6 para verbos, 7 para tercera persona, 8 para países, 9 para listening o 0 para Real American English. En las listas, presiona el número de la lista y luego P para pronunciar, Q para la prueba u O para hacer oraciones. En las pruebas, responde con 1, 2 o 3. En un nivel, presiona C para continuar con el siguiente módulo, o usa Tab para elegir otro. En las tarjetas: flecha derecha, siguiente. Flecha izquierda, anterior. Espacio, escuchar otra vez. D, deletrear. R, escuchar la regla. L, la lectura. Q, practicar. En la práctica: presiona 1, 2, 3 o 4 para responder, E para escuchar la pregunta otra vez y Enter para seguir. En pronunciación: G graba tu voz, S escucha despacio, Q hace la prueba de oído. En la conversación con Sunny: Espacio, hablar. E, escuchar otra vez. S, más despacio. M, manos libres. F, terminar y recibir consejos. A, ayuda con la pregunta en la práctica guiada. También puedes escribir tu respuesta. Escape siempre te regresa. V enciende o apaga la voz guía.";
 let greeted=false;
 document.addEventListener("keydown",e=>{
   if((e.target.matches("input,textarea")&&e.key!=="Escape")||e.ctrlKey||e.metaKey||e.altKey)return;
   const k=e.key.toLowerCase(),n=view.name,m=view.m;
   if(n==="lock"&&k!=="v"&&k!=="h")return;
-  if(!greeted&&n==="home"&&!/^[1-9]$/.test(k)&&k!=="tab"){greeted=true;if(k!=="h"&&k!=="v")homeSpeech()}
+  if(!greeted&&n==="home"&&!/^[0-9]$/.test(k)&&k!=="tab"){greeted=true;if(k!=="h"&&k!=="v")homeSpeech()}
   const stop=()=>e.preventDefault();
   if(k==="v"){stop();return toggleVoice()}
   if(k==="h"){stop();announce(HELP);return say([[HELP,"es"]],{force:true})}
   if(k==="escape"){stop();
     if(n==="lab"||n==="conv"||n==="talkdone"){stopListening();return home()}
     if(n==="talk")return conv();
-    if(["hub","menu","drill","drilldone","sent","lstory"].includes(n)){stopRec();stopAll();return view.back()}
+    if(["hub","menu","drill","drilldone","sent","lstory","slang"].includes(n)){stopRec();stopAll();return view.back()}
     if(["pron","ear","eardone"].includes(n))return view.back();
     if(n==="level")return home();
     if(n==="quiz")return openMod(m);
@@ -1501,6 +1636,11 @@ document.addEventListener("keydown",e=>{
   if(n==="home"&&k==="7"){stop();return thirdHub()}
   if(n==="home"&&k==="8"){stop();return countriesHub()}
   if(n==="home"&&k==="9"){stop();return listenHub()}
+  if(n==="home"&&k==="0"){stop();return slangHub()}
+  if(n==="slang"){
+    if(k==="arrowright"){stop();return slangStep(1)}if(k==="arrowleft"){stop();return slangStep(-1)}
+    if(k===" "&&!e.target.matches("button")){stop();return say(slangParts(SLANG[view.ti].items[view.i]),{force:true})}
+    if(k==="p"){stop();return document.getElementById("spron").click()}if(k==="q"){stop();return slangDrill(view.ti)}}
   if(n==="hub"){if(/^[0-9]$/.test(k)&&view.pick){stop();return view.pick(k==="0"?9:+k-1)}if(k==="r"){const b=document.getElementById("vtip")||document.getElementById("ttip");if(b){stop();b.click()}}return}
   if(n==="menu"){if(view.keys&&view.keys[k]){stop();return view.keys[k]()}return}
   if(n==="drill"){const q=view.qs[view.n];if(/^[1-4]$/.test(k)&&!view.answered&&+k<=q.opts.length){stop();return drillChoose(+k-1)}if(k==="e"){stop();return drillRead()}if(view.cfg.extra&&k===view.cfg.extra.k){stop();return view.cfg.extra.go()}return}
