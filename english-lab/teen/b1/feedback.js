@@ -142,13 +142,35 @@ function listen(opts){ // returns {stop(), promise}
   return {stop:function(){ try{rec.stop();}catch(e){} }, promise:p};
 }
 function tok(s){ return String(s).toLowerCase().replace(/[’]/g,"'").replace(/[^a-z0-9' ]+/g,' ').split(/\s+/).filter(Boolean); }
-function compareLine(expected, said){ // LCS alignment word by word
-  var E=tok(expected), S=tok(said), n=E.length, m=S.length, L=[];
+function same(a,b){ return a===b || a.replace(/'/g,'')===b.replace(/'/g,''); }
+function compareLine(expected, said){ // LCS alignment word by word; keeps the original spelling for display
+  var disp=String(expected).split(/\s+/).filter(Boolean), keys=disp.map(function(w){ return tok(w).join(' '); });
+  var idx=[], E=[]; keys.forEach(function(k,i){ if(k){ idx.push(i); E.push(k.split(' ')[0]); } });
+  var S=tok(said), n=E.length, m=S.length, L=[];
   for(var i=0;i<=n;i++){ L.push(new Array(m+1).fill(0)); }
-  for(i=n-1;i>=0;i--) for(var j=m-1;j>=0;j--) L[i][j]= E[i]===S[j] || E[i].replace(/'/g,'')===S[j].replace(/'/g,'') ? 1+L[i+1][j+1] : Math.max(L[i+1][j],L[i][j+1]);
-  var ok=[]; i=0; j=0; while(i<n&&j<m){ if(E[i]===S[j]||E[i].replace(/'/g,'')===S[j].replace(/'/g,'')){ok[i]=1;i++;j++;} else if(L[i+1][j]>=L[i][j+1]) i++; else j++; }
+  for(i=n-1;i>=0;i--) for(var j=m-1;j>=0;j--) L[i][j]= same(E[i],S[j]) ? 1+L[i+1][j+1] : Math.max(L[i+1][j],L[i][j+1]);
+  var ok=[]; i=0; j=0; while(i<n&&j<m){ if(same(E[i],S[j])){ok[i]=1;i++;j++;} else if(L[i+1][j]>=L[i][j+1]) i++; else j++; }
+  var good={}, missed=[]; idx.forEach(function(di,k){ good[di]=!!ok[k]; if(!ok[k]) missed.push(disp[di].replace(/^[^A-Za-zÀ-ÿ0-9’']+|[^A-Za-zÀ-ÿ0-9’']+$/g,'')); });
   var hit=ok.filter(Boolean).length;
-  return {pct: n? Math.round(hit*100/n):0, html: E.map(function(w,k){return '<span class="'+(ok[k]?'wok':'wno')+'">'+esc(w)+'</span>';}).join(' ')};
+  return {pct: n? Math.round(hit*100/n):0, missed:missed,
+    html: disp.map(function(w,di){ return di in good ? '<span class="'+(good[di]?'wok':'wno')+'">'+esc(w)+'</span>' : esc(w); }).join(' ')};
+}
+function sameWord(target, said){ var t=tok(target).join(' '); var S=tok(said); return S.some(function(x){ return same(x,t); }) || tok(said).join(' ').indexOf(t)>=0; }
+/* Pronunciation tips for Spanish speakers */
+function tipFor(w){
+  var x=w.toLowerCase().replace(/’/g,"'");
+  if(/^s[bcdfgklmnpqtvw]/.test(x)) return ['Start with a long “sss” — don’t add an “e” before it.','No digas “e” al principio: empieza con “sss”.'];
+  if(/th/.test(x)) return ['For “th”, put your tongue between your teeth.','Para “th”, pon la lengua entre los dientes.'];
+  if(/[td]ed$/.test(x)) return ['Here “-ed” sounds like “id”.','Aquí “-ed” suena como “id”.'];
+  if(/ed$/.test(x)) return ['The “-ed” is very short: just a “t” or “d” sound.','La “-ed” es cortita: solo suena “t” o “d”.'];
+  if(/^v|[^a-z]v/.test(x)||/v/.test(x)) return ['For “v”, touch your bottom lip with your top teeth.','Para la “v”, toca el labio de abajo con los dientes de arriba.'];
+  if(/^h/.test(x)) return ['The “h” is a soft breath, like “ha!”.','La “h” es un soplido suave, como “ja”.'];
+  if(/sh/.test(x)) return ['“sh” sounds like asking for silence: shhh.','“sh” suena como cuando pides silencio: shhh.'];
+  if(/^j|dge|ge$/.test(x)) return ['“j” sounds like “dy”: jump, orange.','La “j” suena como “dy”.'];
+  if(/^y/.test(x)) return ['Start “y” like a quick “i”.','La “y” empieza como una “i” rápida.'];
+  if(/(ing)$/.test(x)) return ['Finish with “-ing”: the “g” is soft, in your throat.','Termina con “-ing”, suave, en la garganta.'];
+  if(/[bcdfgklmnprstxz]{2}$/.test(x)) return ['Say the last sounds clearly — don’t cut the end.','Pronuncia bien el final, no lo cortes.'];
+  return ['Listen carefully and copy the stress and the vowels.','Escucha y copia el acento y las vocales.'];
 }
 function speakFeedback(text, secs, unit){
   var a=analyze(text, unit), wpm= secs>3 ? Math.round(a.words/(secs/60)) : 0, good=[], next=[];
@@ -161,5 +183,5 @@ function speakFeedback(text, secs, unit){
 }
 function fbList(good,next){ return (good.length?'<h4>👍 Well done</h4><ul>'+good.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>':'')+(next.length?'<h4>🎯 Next time</h4><ul>'+next.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>':''); }
 
-window.FB={writeHTML:writeHTML, bindWrite:bindWrite, SR:SR, listen:listen, compareLine:compareLine, speakFeedback:speakFeedback, fbList:fbList, ltCheck:ltCheck, esc:esc, store:store, TEACHER_WA:TEACHER_WA, words:words};
+window.FB={sameWord:sameWord, tipFor:tipFor, writeHTML:writeHTML, bindWrite:bindWrite, SR:SR, listen:listen, compareLine:compareLine, speakFeedback:speakFeedback, fbList:fbList, ltCheck:ltCheck, esc:esc, store:store, TEACHER_WA:TEACHER_WA, words:words};
 })();

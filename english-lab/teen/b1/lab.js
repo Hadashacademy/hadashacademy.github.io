@@ -60,8 +60,8 @@ function talkHTML(){
     '<div class="dlg" id="dlg">'+rows+'</div>'+
     (D.after?'<p class="hint">'+esc(D.after)+'</p>':'')+
     '<div class="ctrl"><button class="btn" id="chk">✓ Check</button><button class="btn ghost" id="show">Show answers</button><span class="score" id="tsc"></span></div></div>'+
-    '<div class="card T"><div class="h"><span class="n">2</span> Role-play<small>you are one of the characters</small></div>'+
-    '<p class="hint" style="margin:0">Choose your character. The app reads the other lines — say <b>your</b> lines out loud'+((window.FB&&FB.SR)?'. The 🎤 listens and shows which words were clear (<span class="wok">green</span>) or not (<span class="wno">red</span>).':', then tap <b>Next</b>.')+'</p>'+
+    '<div class="card T"><div class="h"><span class="n">2</span> Role-play with a voice tutor<small>you are one of the characters</small></div>'+
+    '<p class="hint" style="margin:0">Choose your character. The app reads the other lines — say <b>your</b> lines out loud'+((window.FB&&FB.SR)?'. Your <b>🧑‍🏫 voice tutor</b> listens, shows the clear words in <span class="wok">green</span> and the unclear ones in <span class="wno">red</span>, then practices those words with you out loud. Tap <b>Next</b> to skip.':', then tap <b>Next</b>.')+'</p>'+
     '<div class="ctrl">'+people.map(function(p){return '<button class="btn ghost sm role" data-w="'+esc(p)+'">I’m '+esc(p)+'</button>';}).join('')+'<button class="btn sm" id="next" disabled>Next ▶</button></div><div id="rpBox" class="dlg"></div></div>'+
     sound+prompts;
 }
@@ -84,17 +84,56 @@ function bindTalk(root){
   async function run(){ var t=token; var rows=box.querySelectorAll('.ln');
     while(step<D.lines.length){ if(t!==token) return; var r=rows[step]; r.classList.add('on'); r.scrollIntoView({block:'nearest',behavior:'smooth'});
       if(D.lines[step].who===me){ nx.disabled=false;
-        var rec=null, exp=lineText(D.lines[step],step), fbEl=document.createElement('div'); fbEl.className='rpf'; r.appendChild(fbEl);
-        if(window.FB && FB.SR){ fbEl.innerHTML='🎤 Listening… say your line';
-          rec=FB.listen({onText:function(t){ fbEl.innerHTML='🎤 <i>'+esc(t)+'</i>'; }, onError:function(e){ fbEl.innerHTML= e==='not-allowed'?'🔒 Allow the microphone to get feedback.':'🎤 I didn’t hear you. Tap <b>Next</b> to continue.'; }});
-          rec.promise.then(function(said){ if(!said) return; var c=FB.compareLine(exp,said); fbEl.innerHTML='<div>'+c.html+'</div><b class="'+(c.pct>=80?'good':c.pct>=50?'mid':'low')+'">'+c.pct+'% clear '+(c.pct>=80?'🌟':c.pct>=50?'👍 Try the red words again':'💪 Listen again and repeat')+'</b>'; });
-        }
-        await new Promise(function(res){wait=res;}); if(rec) rec.stop(); nx.disabled=true; }
+        var exp=lineText(D.lines[step],step), fbEl=document.createElement('div'); fbEl.className='rpf'; r.appendChild(fbEl);
+        var turn={off:false, rec:null}; curTurn=turn;
+        var finished=new Promise(function(res){ wait=res; });
+        if(window.FB && FB.SR){ coach(turn, exp, fbEl).then(function(){ if(!turn.off && wait){ setTimeout(function(){ if(wait){var w=wait;wait=null;w();} }, 900); } }); }
+        else fbEl.innerHTML='Say your line out loud, then tap <b>Next</b>.';
+        await finished; turn.off=true; if(turn.rec) turn.rec.stop(); nx.disabled=true; }
       else { await say(lineText(D.lines[step],step), D.lines[step].who); }
       r.classList.remove('on'); step++; }
     if(t===token){ nx.disabled=true; box.insertAdjacentHTML('beforeend','<p class="score">🎬 Great job! Now swap roles.</p>'); } }
-  root.querySelectorAll('.role').forEach(function(b){ b.onclick=function(){ stop(); me=b.dataset.w; step=0; rp(); run(); }; });
-  nx.onclick=function(){ if(wait){var w=wait;wait=null;w();} };
+  var curTurn=null, PRAISE=['Great!','Excellent!','Perfect!','Well done!','Nice!'];
+  function tsay(text, slow){ var keep=rate; rate=slow?0.7:0.95; return say(text,'tutor').then(function(){ rate=keep; }); }
+  function hear(turn, ms, el, label){ return new Promise(function(res){ if(turn.off){res('');return;}
+    el.querySelector('.live2').innerHTML='🎤 '+label;
+    var rec=FB.listen({onText:function(t){ el.querySelector('.live2').innerHTML='🎤 <i>'+esc(t)+'</i>'; }, onError:function(e){ if(e==='not-allowed') el.querySelector('.live2').innerHTML='🔒 Allow the microphone to practice with the tutor.'; }});
+    turn.rec=rec; var tm=setTimeout(function(){ rec.stop(); }, ms);
+    rec.promise.then(function(s){ clearTimeout(tm); turn.rec=null; res(s||''); }); }); }
+  async function coach(turn, exp, el){
+    el.innerHTML='<div class="res"></div><div class="live2"></div><div class="tut"></div>';
+    var res=el.querySelector('.res'), tut=el.querySelector('.tut');
+    for(var attempt=1; attempt<=2 && !turn.off; attempt++){
+      var said=await hear(turn, 9000, el, attempt===1?'Your turn — say your line…':'Say the whole line again…');
+      if(turn.off) return;
+      if(!said){ tut.innerHTML='🧑‍🏫 <i>I didn’t hear you. Let’s try again.</i>'; await tsay('I didn’t hear you. Try again.'); continue; }
+      var c=FB.compareLine(exp,said);
+      res.innerHTML='<div>'+c.html+'</div><b class="'+(c.pct>=85?'good':c.pct>=50?'mid':'low')+'">'+c.pct+'% clear</b>';
+      el.querySelector('.live2').innerHTML='';
+      var miss=[]; c.missed.forEach(function(w){ if(w && miss.indexOf(w)<0 && w.length>1) miss.push(w); });
+      if(!miss.length || c.pct>=95){ tut.innerHTML='🧑‍🏫 <b>'+PRAISE[Math.floor(Math.random()*PRAISE.length)]+'</b> Your pronunciation was very clear.'; await tsay(PRAISE[Math.floor(Math.random()*PRAISE.length)]+' Very clear!'); return; }
+      if(attempt===2){ tut.innerHTML='🧑‍🏫 <b>Good effort!</b> Keep practicing: '+miss.slice(0,4).map(function(w){return '<span class="chipw">'+esc(w)+'</span>';}).join(' '); await tsay('Good effort! Let’s continue.'); return; }
+      miss.sort(function(a,b){return b.length-a.length;}); miss=miss.slice(0,3);
+      await tsay(miss.length>1?'Good try! Let’s practice these words.':'Good try! Let’s practice this word.');
+      for(var k=0;k<miss.length && !turn.off;k++){
+        var w=miss[k], tip=FB.tipFor(w);
+        tut.innerHTML='🧑‍🏫 Listen and repeat: <span class="chipw big2">'+esc(w)+'</span><div class="tipx">💡 '+esc(tip[0])+'<br><small>'+esc(tip[1])+'</small></div>';
+        await tsay(w, true); if(turn.off) return; await tsay(tip[0]); if(turn.off) return; await tsay('Your turn.');
+        var ok=false;
+        for(var tr=0; tr<2 && !turn.off && !ok; tr++){
+          var h=await hear(turn, 4500, el, 'Say: “'+esc(w)+'”');
+          ok = h && FB.sameWord(w,h);
+          if(ok){ tut.insertAdjacentHTML('beforeend','<div class="good">✅ '+esc(w)+' — '+PRAISE[k%PRAISE.length]+'</div>'); await tsay(PRAISE[(k+tr)%PRAISE.length]); }
+          else if(tr===0){ await tsay('Almost. Listen again.'); await tsay(w, true); }
+          else { tut.insertAdjacentHTML('beforeend','<div class="mid">🔁 Keep practicing “'+esc(w)+'”.</div>'); await tsay('Good effort. We’ll practice it later.'); }
+        }
+      }
+      if(turn.off) return;
+      await tsay('Now say the whole line again.');
+    }
+  }
+  root.querySelectorAll('.role').forEach(function(b){ b.onclick=function(){ if(curTurn){curTurn.off=true; if(curTurn.rec) curTurn.rec.stop();} if(wait){wait=null;} stop(); me=b.dataset.w; step=0; rp(); run(); }; });
+  nx.onclick=function(){ if(curTurn){ curTurn.off=true; if(curTurn.rec) curTurn.rec.stop(); } if(synth) synth.cancel(); if(wait){var w=wait;wait=null;w();} };
   var sp=root.querySelector('#sndPlay'); if(sp) sp.onclick=async function(){ stop(); var t=token;
     for(var i=1;i<D.sound.length;i++){ if(t!==token) return; var s=D.sound[i].replace(/^[^!:]*[!:]\s*/,''); await say(s.replace(/\/[^/]*\//g,' ').replace(/[↗↘|·]/g,', ')); } };
   var prs=root.querySelectorAll('.pr'), timer=null, cur=-1, ansB=root.querySelector('#ans'), live=root.querySelector('#live'), sfb=root.querySelector('#sfb'), secEl=root.querySelector('#sec'), recNow=null;
