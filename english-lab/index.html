@@ -186,7 +186,7 @@ function home(){
     <span class="bkic">${emoji}</span><span class="bklv">${lv}</span>
     <h2>${esc(name)}</h2><p class="bkage">${esc(age)}</p><p>${esc(desc)}</p>
     <span class="bkmeta">${meta}</span><span class="bkgo">Enter · Entrar →</span></a>`;
-  const books = Object.entries(BOOKS).map(([k, b]) => {
+  const books = card('funny-reading/', '👩‍👧‍👦', 'Phonics', '#E8566C', 'Funny Reading with Mama', '3–7 years · 3–7 años', 'Learn to read together, sound by sound: 4 phonics volumes for kids and their moms.', '4 volumes · coming soon') + Object.entries(BOOKS).map(([k, b]) => {
     const u = unitsOf(k), n = Object.values(u).reduce((s, l) => s + l.length, 0);
     return card('#' + k, b.emoji, b.lv, b.col, b.name, b.age, b.desc, `${Object.keys(u).length} units · ${n} tracks`);
   }).join('') + card('teen/', '🎓', 'B1', '#7C3AED', 'My English Adventure · Teen Edition', '13–15 years · 13–15 años', 'Talk, read and write: 25 B1 units, Sounds lab and tricky words.', 'B1 open · A1 & A2 coming soon');

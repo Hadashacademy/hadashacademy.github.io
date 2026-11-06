@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>English Lab · Funny Reading with Mama</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#14213D;--ink2:#5B6478;--bg:#FFF8F1;--card:#fff;--coral:#E8566C;--line:#F1E3D6}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:'Nunito',system-ui,sans-serif;color:var(--ink);background:var(--bg);font-size:17px;line-height:1.5}
+h1,h2,h3{font-family:'Fredoka','Nunito',sans-serif;margin:0;line-height:1.15}
+a{color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px 60px}
+.top{background:linear-gradient(120deg,#D9435B,#E8566C 55%,#F59E8B);color:#fff;padding:18px 0 40px;border-radius:0 0 28px 28px}
+.top .wrap{padding-bottom:0}
+.back{display:inline-flex;align-items:center;gap:6px;color:#fff;background:rgba(255,255,255,.2);border-radius:20px;padding:6px 14px;font-weight:700;margin-bottom:12px;text-decoration:none}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:50px;height:50px;border-radius:14px;background:#FFE3A3;display:flex;align-items:center;justify-content:center;font-size:28px;flex:none}
+.brand small{display:block;font-weight:700;letter-spacing:.14em;font-size:11px;opacity:.9}
+.brand h1{font-size:28px}
+.top p{margin:10px 0 0;opacity:.95}
+.top p span{display:block;font-size:15px;opacity:.85}
+.vols{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-top:-22px}
+.vol{position:relative;display:flex;flex-direction:column;background:var(--card);border-radius:22px;padding:18px;text-decoration:none;color:var(--ink);box-shadow:0 6px 20px rgba(20,33,61,.08);border-top:6px solid var(--v);transition:transform .15s,box-shadow .15s}
+.vol:hover,.vol:focus-visible{transform:translateY(-3px);box-shadow:0 10px 26px rgba(20,33,61,.14)}
+.vn{font-family:'Fredoka';font-size:13px;letter-spacing:.1em;color:var(--v);font-weight:700}
+.vol h2{font-size:20px;margin-top:4px}
+.vol p{margin:6px 0 0;font-size:14px;color:var(--ink2)}
+.vic{font-size:32px;width:56px;height:56px;border-radius:16px;background:color-mix(in srgb,var(--v) 14%,#fff);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.meta{font-size:12px;font-weight:700;color:var(--ink2);margin:12px 0 14px}
+.go{margin-top:auto;align-self:flex-start;background:var(--v);color:#fff;font-family:'Fredoka';border-radius:30px;padding:8px 16px;font-size:15px}
+.pill{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.05em;border-radius:10px;padding:3px 9px;background:#FFF0D6;color:#9A5B00}
+.box{background:var(--card);border-radius:22px;padding:20px;margin-top:18px;box-shadow:0 2px 0 var(--line)}
+.box h3{font-size:20px;margin-bottom:8px}
+.box p{margin:6px 0}
+.topics{display:grid;gap:8px;margin-top:12px;padding:0;list-style:none}
+.topics li{display:flex;align-items:center;gap:12px;background:var(--bg);border-radius:16px;padding:12px 14px;font-weight:700}
+.topics li b{background:var(--v);color:#fff;border-radius:10px;min-width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;font-family:'Fredoka';font-size:16px;flex:none}
+.topics li span:not(.pill){flex:1}
+.hero{margin-top:-22px;background:var(--card);border-radius:22px;padding:20px;box-shadow:0 6px 20px rgba(20,33,61,.08)}
+.note{font-size:13px;color:var(--ink2);margin-top:14px}
+.foot{text-align:center;font-size:13px;color:var(--ink2);margin-top:28px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+/* Funny Reading with Mama · one space per volume.
+   Each volume page has the address #v1, #v2, #v3, #v4 (use these for QR codes).
+   When a volume's activities are ready, add them to its "topics" list or link them here. */
+const VOLS = [
+  {id:'v1', n:1, icon:'🔤', col:'#E8566C', title:'Letter Sounds and CVC Words', pages:92, ready:false,
+   desc:'From the first vowel and consonant sounds to reading CVC words and word families.',
+   topics:['Vowel sounds: a, e, i, o, u','Consonant sounds','Blending sounds into CVC words','Word families','First Heart Words']},
+  {id:'v2', n:2, icon:'🤝', col:'#F08A24', title:'Digraphs and Blends', pages:104, ready:false,
+   desc:'Two letters, one sound — and consonant blends at the start and end of words.',
+   topics:['ff, ll, ss, zz','ck','sh · ch · th · wh','ng · nk','Initial blends with s, l and r','Final blends','17 new Heart Words']},
+  {id:'v3', n:3, icon:'🪄', col:'#2A9D8F', title:'Silent e and Vowel Teams', pages:98, ready:false,
+   desc:'Magic e, long vowel sounds and the vowel teams that make them.',
+   topics:['a_e · i_e · o_e','u_e · e_e','Open syllables','ai · ay','ee · ea','oa · ow · oe','igh · y · ie','Compound words and two-syllable words','y as /ē/','16 new Heart Words']},
+  {id:'v4', n:4, icon:'🦁', col:'#6C5CE7', title:'Bossy R, Vowel Sounds and Word Endings', pages:100, ready:false,
+   desc:'R-controlled vowels, special vowel sounds and the endings -s, -es, -ed and -ing.',
+   topics:['ar','or · ore','er · ir · ur','oo','ou · ow','oi · oy','au · aw · al','Soft c and soft g','-le and silent letters','-s · -es · -ed · -ing','12 new Heart Words']}
+];
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function header(back, backText, icon, small, title, sub){
+  return `<header class="top"><div class="wrap"><a class="back" href="${back}">${backText}</a>
+  <div class="brand"><span class="logo">${icon}</span><div><small>${small}</small><h1>${esc(title)}</h1></div></div>${sub || ''}</div></header>`;
+}
+function home(){
+  const cards = VOLS.map(v => `<a class="vol" href="#${v.id}" style="--v:${v.col}">
+    <span class="vic">${v.icon}</span><span class="vn">VOLUME ${v.n}</span><h2>${esc(v.title)}</h2>
+    <p>${esc(v.desc)}</p><span class="meta">${v.pages} pages · ${v.topics.length} topics ${v.ready ? '' : '· <span class="pill">COMING SOON</span>'}</span>
+    <span class="go">Open · Abrir →</span></a>`).join('');
+  return header('../', '← English Lab', '👩‍👧‍👦', 'ENGLISH LAB · PHONICS · AGES 3–7', 'Funny Reading with Mama',
+    `<p>Read together, sound by sound. Choose your volume. 📚<span>Lean juntos, sonido por sonido. Elijan el volumen que están usando.</span></p>`) +
+  `<main class="wrap"><div class="vols">${cards}</div>
+  <div class="box"><h3>💛 For moms and caregivers · Para mamás y cuidadores</h3>
+  <p>Each volume has its own space here. Soon you will find listening, sounds and reading practice for every lesson, with a QR code in the book.</p>
+  <p>Cada volumen tiene su propio espacio. Muy pronto encontrarán aquí audios, práctica de sonidos y lectura para cada lección, con un código QR en el libro.</p></div>
+  <p class="foot">Funny Reading with Mama · © 2026 Mercedes Moronta · Hadash Academy</p></main>`;
+}
+function volView(v){
+  const list = v.topics.map((t, i) => `<li><b>${i + 1}</b><span>${esc(t)}</span>${v.ready ? '' : '<span class="pill">SOON</span>'}</li>`).join('');
+  return header('#', '← All volumes · Todos los volúmenes', v.icon, 'FUNNY READING WITH MAMA · VOLUME ' + v.n, v.title).replace('class="top"', `class="top" style="background:linear-gradient(120deg,${v.col},${v.col}cc)"`) +
+  `<main class="wrap" style="--v:${v.col}"><div class="hero"><p style="margin:0">${esc(v.desc)}</p>
+  <p class="note" style="margin-top:8px">${v.pages} pages · ${v.topics.length} topics</p></div>
+  <div class="box"><h3>📖 What we learn · Lo que aprendemos</h3><ul class="topics">${list}</ul>
+  ${v.ready ? '' : '<p class="note">🚧 The activities for this volume are coming soon. · Las actividades de este volumen vienen muy pronto.</p>'}</div>
+  <p class="foot">Funny Reading with Mama · © 2026 Mercedes Moronta · Hadash Academy</p></main>`;
+}
+function render(){
+  const id = location.hash.slice(1), v = VOLS.find(x => x.id === id);
+  $('#app').innerHTML = v ? volView(v) : home();
+  scrollTo(0, 0);
+}
+addEventListener('hashchange', render); render();
+</script>
+</body>
+</html>
