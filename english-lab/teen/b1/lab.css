@@ -125,3 +125,16 @@ mark sup{font:700 9px Poppins;margin-left:1px}
 .chipw{display:inline-block;background:var(--card);border:2px solid var(--acc);color:var(--acc);border-radius:20px;padding:1px 10px;font:600 13px Poppins;margin:2px}
 .chipw.big2{font-size:18px;padding:3px 14px}
 .tipx{margin-top:6px;font-size:14px}.tipx small{color:var(--mut)}
+
+.probadge{display:inline-block;background:linear-gradient(90deg,#f59e0b,#f97316);color:#fff;border-radius:20px;padding:3px 10px;font:600 11.5px Poppins}
+.probadge.free{background:var(--tealt);color:var(--teal)}
+.wmid{color:#b45309;font-weight:600}.wom{color:var(--bad);text-decoration:line-through;opacity:.7}
+.rpf .rc{margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn.pulse{animation:pl 1.2s infinite}@keyframes pl{50%{box-shadow:0 0 0 6px color-mix(in srgb,var(--acc) 30%,transparent)}}
+
+.linkc{display:flex;gap:14px;align-items:center;text-decoration:none}
+.wordrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.pairx{display:inline-flex;gap:4px;align-items:center;background:var(--bg);border-radius:20px;padding:2px 6px}
+button.chipw{cursor:pointer;background:var(--card)}
+.out{margin-top:10px;font-size:15px;min-height:1em}
+.out small{color:var(--mut)}

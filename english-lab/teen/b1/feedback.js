@@ -149,10 +149,13 @@ function compareLine(expected, said){ // LCS alignment word by word; keeps the o
   var S=tok(said), n=E.length, m=S.length, L=[];
   for(var i=0;i<=n;i++){ L.push(new Array(m+1).fill(0)); }
   for(i=n-1;i>=0;i--) for(var j=m-1;j>=0;j--) L[i][j]= same(E[i],S[j]) ? 1+L[i+1][j+1] : Math.max(L[i+1][j],L[i][j+1]);
-  var ok=[]; i=0; j=0; while(i<n&&j<m){ if(same(E[i],S[j])){ok[i]=1;i++;j++;} else if(L[i+1][j]>=L[i][j+1]) i++; else j++; }
-  var good={}, missed=[]; idx.forEach(function(di,k){ good[di]=!!ok[k]; if(!ok[k]) missed.push(disp[di].replace(/^[^A-Za-zÀ-ÿ0-9’']+|[^A-Za-zÀ-ÿ0-9’']+$/g,'')); });
+  var ok=[], anchors=[[-1,-1]]; i=0; j=0; while(i<n&&j<m){ if(same(E[i],S[j])){ok[i]=1;anchors.push([i,j]);i++;j++;} else if(L[i+1][j]>=L[i][j+1]) i++; else j++; }
+  anchors.push([n,m]);
+  var heardAt={}; for(var q=0;q<anchors.length-1;q++){ var A=anchors[q], B=anchors[q+1], ei=B[0]-A[0]-1, sj=B[1]-A[1]-1;
+    if(ei>0 && ei===sj) for(var z=1;z<=ei;z++) heardAt[A[0]+z]=S[A[1]+z]; }
+  var good={}, missed=[], heard={}; idx.forEach(function(di,k){ good[di]=!!ok[k]; if(!ok[k]){ var w=disp[di].replace(/^[^A-Za-zÀ-ÿ0-9’']+|[^A-Za-zÀ-ÿ0-9’']+$/g,''); missed.push(w); if(heardAt[k]) heard[w]=heardAt[k]; } });
   var hit=ok.filter(Boolean).length;
-  return {pct: n? Math.round(hit*100/n):0, missed:missed,
+  return {pct: n? Math.round(hit*100/n):0, missed:missed, heard:heard,
     html: disp.map(function(w,di){ return di in good ? '<span class="'+(good[di]?'wok':'wno')+'">'+esc(w)+'</span>' : esc(w); }).join(' ')};
 }
 function sameWord(target, said){ var t=tok(target).join(' '); var S=tok(said); return S.some(function(x){ return same(x,t); }) || tok(said).join(' ').indexOf(t)>=0; }
@@ -183,5 +186,19 @@ function speakFeedback(text, secs, unit){
 }
 function fbList(good,next){ return (good.length?'<h4>👍 Well done</h4><ul>'+good.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>':'')+(next.length?'<h4>🎯 Next time</h4><ul>'+next.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>':''); }
 
-window.FB={sameWord:sameWord, tipFor:tipFor, writeHTML:writeHTML, bindWrite:bindWrite, SR:SR, listen:listen, compareLine:compareLine, speakFeedback:speakFeedback, fbList:fbList, ltCheck:ltCheck, esc:esc, store:store, TEACHER_WA:TEACHER_WA, words:words};
+
+/* My tricky words (saved on this device) */
+function addTricky(unit, w){ if(!w || w.length<2) return; var t=store('tricky')||{}; var k=w.toLowerCase().replace(/’/g,"'");
+  t[k]=t[k]||{u:unit,c:0,ok:0}; t[k].c++; t[k].u=unit; store('tricky',t); }
+function trickyOk(w){ var t=store('tricky')||{}, k=w.toLowerCase().replace(/’/g,"'"); if(t[k]){ t[k].ok++; if(t[k].ok>=3) delete t[k]; store('tricky',t); } }
+/* Record yourself and compare with the model */
+var recStream=null;
+function recordOnce(ms){ return navigator.mediaDevices.getUserMedia({audio:true}).then(function(st){ recStream=st;
+  return new Promise(function(res){ var chunks=[], mr; try{ mr=new MediaRecorder(st); }catch(e){ st.getTracks().forEach(function(t){t.stop();}); res(null); return; }
+    mr.ondataavailable=function(e){ if(e.data && e.data.size) chunks.push(e.data); };
+    mr.onstop=function(){ st.getTracks().forEach(function(t){t.stop();}); res(chunks.length? URL.createObjectURL(new Blob(chunks,{type:mr.mimeType||'audio/webm'})) : null); };
+    mr.start(); setTimeout(function(){ if(mr.state!=='inactive') mr.stop(); }, ms||5000);
+    recordOnce.stop=function(){ if(mr.state!=='inactive') mr.stop(); }; }); }).catch(function(){ return null; }); }
+
+window.FB={addTricky:addTricky, trickyOk:trickyOk, recordOnce:recordOnce, sameWord:sameWord, tipFor:tipFor, writeHTML:writeHTML, bindWrite:bindWrite, SR:SR, listen:listen, compareLine:compareLine, speakFeedback:speakFeedback, fbList:fbList, ltCheck:ltCheck, esc:esc, store:store, TEACHER_WA:TEACHER_WA, words:words};
 })();
