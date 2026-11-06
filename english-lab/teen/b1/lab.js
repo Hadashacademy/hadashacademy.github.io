@@ -51,7 +51,9 @@ function talkHTML(){
   }).join('');
   var people=[]; D.lines.forEach(function(l){ if(people.indexOf(l.who)<0) people.push(l.who); });
   var sound = D.sound && D.sound.length ? '<div class="card T"><div class="h">🔊 Sound smart</div><div class="tip">'+D.sound.map(function(s){return '<p>'+esc(s)+'</p>';}).join('')+'</div><div class="ctrl"><button class="btn sm" id="sndPlay">▶ Hear the examples</button></div></div>' : '';
-  var prompts = D.pairs && D.pairs.length ? '<div class="card T"><div class="h"><span class="n">🗣</span> Speaking challenge<small>alone or with a partner</small></div><p class="hint" style="margin:0 0 10px">Tap a question to hear it. Answer out loud in full sentences — try to talk for 20 seconds!</p><div class="prompts">'+D.pairs.map(function(p,i){return '<button class="pr" data-p="'+i+'">'+esc(p)+'</button>';}).join('')+'</div><div class="ctrl"><button class="btn sm" id="rnd">🎲 Random question</button><span class="score" id="sec"></span></div></div>' : '';
+  var mic = !!(window.FB && FB.SR);
+  var prompts = D.pairs && D.pairs.length ? '<div class="card T"><div class="h"><span class="n">3</span> Speaking challenge<small>with feedback</small></div><p class="hint" style="margin:0 0 10px">Choose a question and listen. Then '+(mic?'tap <b>🎤 Answer</b> and speak for 20–40 seconds. You’ll get feedback on your answer.':'answer out loud for 20–40 seconds. <b>Tip:</b> open this page in Chrome to get voice feedback.')+'</p><div class="prompts">'+D.pairs.map(function(p,i){return '<button class="pr" data-p="'+i+'">'+esc(p)+'</button>';}).join('')+'</div>'+
+    '<div class="ctrl"><button class="btn sm ghost" id="rnd">🎲 Random question</button>'+(mic?'<button class="btn" id="ans" disabled>🎤 Answer</button>':'')+'<span class="score" id="sec"></span></div><div class="live" id="live" hidden></div><div id="sfb"></div></div>' : '';
   return '<div class="card T"><div class="h"><span class="n">1</span> Listen and complete<small>Unit '+D.n+' · Talk</small></div>'+
     '<div class="scene">'+esc(D.setting)+'</div>'+
     '<div class="ctrl"><button class="btn" id="playAll">▶ Listen</button><button class="btn ghost sm" id="stopB">■ Stop</button>'+speedCtl()+'</div>'+
@@ -59,7 +61,7 @@ function talkHTML(){
     (D.after?'<p class="hint">'+esc(D.after)+'</p>':'')+
     '<div class="ctrl"><button class="btn" id="chk">✓ Check</button><button class="btn ghost" id="show">Show answers</button><span class="score" id="tsc"></span></div></div>'+
     '<div class="card T"><div class="h"><span class="n">2</span> Role-play<small>you are one of the characters</small></div>'+
-    '<p class="hint" style="margin:0">Choose your character. The app reads the other lines — read <b>your</b> lines out loud, then tap <b>Next</b>.</p>'+
+    '<p class="hint" style="margin:0">Choose your character. The app reads the other lines — say <b>your</b> lines out loud'+((window.FB&&FB.SR)?'. The 🎤 listens and shows which words were clear (<span class="wok">green</span>) or not (<span class="wno">red</span>).':', then tap <b>Next</b>.')+'</p>'+
     '<div class="ctrl">'+people.map(function(p){return '<button class="btn ghost sm role" data-w="'+esc(p)+'">I’m '+esc(p)+'</button>';}).join('')+'<button class="btn sm" id="next" disabled>Next ▶</button></div><div id="rpBox" class="dlg"></div></div>'+
     sound+prompts;
 }
@@ -81,7 +83,13 @@ function bindTalk(root){
   function rp(){ box.innerHTML=D.lines.map(function(l,i){return '<div class="ln'+(l.who===me?' me':'')+'" data-r="'+i+'"><b>'+esc(l.who)+'</b><span>'+esc(lineText(l,i))+'</span></div>';}).join(''); }
   async function run(){ var t=token; var rows=box.querySelectorAll('.ln');
     while(step<D.lines.length){ if(t!==token) return; var r=rows[step]; r.classList.add('on'); r.scrollIntoView({block:'nearest',behavior:'smooth'});
-      if(D.lines[step].who===me){ nx.disabled=false; await new Promise(function(res){wait=res;}); nx.disabled=true; }
+      if(D.lines[step].who===me){ nx.disabled=false;
+        var rec=null, exp=lineText(D.lines[step],step), fbEl=document.createElement('div'); fbEl.className='rpf'; r.appendChild(fbEl);
+        if(window.FB && FB.SR){ fbEl.innerHTML='🎤 Listening… say your line';
+          rec=FB.listen({onText:function(t){ fbEl.innerHTML='🎤 <i>'+esc(t)+'</i>'; }, onError:function(e){ fbEl.innerHTML= e==='not-allowed'?'🔒 Allow the microphone to get feedback.':'🎤 I didn’t hear you. Tap <b>Next</b> to continue.'; }});
+          rec.promise.then(function(said){ if(!said) return; var c=FB.compareLine(exp,said); fbEl.innerHTML='<div>'+c.html+'</div><b class="'+(c.pct>=80?'good':c.pct>=50?'mid':'low')+'">'+c.pct+'% clear '+(c.pct>=80?'🌟':c.pct>=50?'👍 Try the red words again':'💪 Listen again and repeat')+'</b>'; });
+        }
+        await new Promise(function(res){wait=res;}); if(rec) rec.stop(); nx.disabled=true; }
       else { await say(lineText(D.lines[step],step), D.lines[step].who); }
       r.classList.remove('on'); step++; }
     if(t===token){ nx.disabled=true; box.insertAdjacentHTML('beforeend','<p class="score">🎬 Great job! Now swap roles.</p>'); } }
@@ -89,12 +97,37 @@ function bindTalk(root){
   nx.onclick=function(){ if(wait){var w=wait;wait=null;w();} };
   var sp=root.querySelector('#sndPlay'); if(sp) sp.onclick=async function(){ stop(); var t=token;
     for(var i=1;i<D.sound.length;i++){ if(t!==token) return; var s=D.sound[i].replace(/^[^!:]*[!:]\s*/,''); await say(s.replace(/\/[^/]*\//g,' ').replace(/[↗↘|·]/g,', ')); } };
-  var prs=root.querySelectorAll('.pr'), timer=null;
-  function ask(i){ stop(); prs.forEach(function(p){p.classList.toggle('pick',+p.dataset.p===i);}); var q=D.pairs[i].replace(/^[^A-Za-z“"]+/,'');
-    say(q,'coach').then(function(){ var s=20, el=root.querySelector('#sec'); clearInterval(timer); el.textContent='⏱ '+s+'s — talk!';
-      timer=setInterval(function(){ s--; el.textContent= s>0 ? '⏱ '+s+'s' : '✅ Time! Nice work.'; if(s<=0) clearInterval(timer); },1000); }); }
+  var prs=root.querySelectorAll('.pr'), timer=null, cur=-1, ansB=root.querySelector('#ans'), live=root.querySelector('#live'), sfb=root.querySelector('#sfb'), secEl=root.querySelector('#sec'), recNow=null;
+  function ask(i){ stop(); if(recNow){recNow.stop();} cur=i; prs.forEach(function(p){p.classList.toggle('pick',+p.dataset.p===i);}); var q=D.pairs[i].replace(/^[^A-Za-z“"]+/,'');
+    if(ansB) ansB.disabled=false; if(sfb) sfb.innerHTML='';
+    say(q,'coach').then(function(){ if(ansB) return; var s=30; clearInterval(timer); secEl.textContent='⏱ '+s+'s — talk!';
+      timer=setInterval(function(){ s--; secEl.textContent= s>0 ? '⏱ '+s+'s' : '✅ Time! Nice work.'; if(s<=0) clearInterval(timer); },1000); }); }
   prs.forEach(function(p){ p.onclick=function(){ ask(+p.dataset.p); }; });
   var rn=root.querySelector('#rnd'); if(rn) rn.onclick=function(){ ask(Math.floor(Math.random()*D.pairs.length)); };
+  if(ansB) ansB.onclick=function(){
+    if(recNow){ recNow.stop(); return; }
+    stop(); var t0=Date.now(), s=0; live.hidden=false; live.textContent='🎤 Listening… start speaking.'; sfb.innerHTML='';
+    ansB.textContent='■ Stop'; clearInterval(timer);
+    timer=setInterval(function(){ s=Math.round((Date.now()-t0)/1000); secEl.textContent='⏱ '+s+'s'+(s<20?' — keep going!':' ✓'); if(s>=60 && recNow) recNow.stop(); },500);
+    var errMsg='';
+    recNow=FB.listen({continuous:true, onText:function(t){ live.innerHTML='🎤 <i>'+esc(t)+'</i>'; }, onError:function(e){ errMsg=e; }});
+    recNow.promise.then(function(said){
+      var secs=(Date.now()-t0)/1000; recNow=null; clearInterval(timer); ansB.textContent='🎤 Answer again';
+      if(!said){ live.innerHTML= errMsg==='not-allowed' ? '🔒 Please allow the microphone in your browser to get feedback.' : '🤔 I didn’t hear anything. Speak a little louder and try again.'; return; }
+      live.innerHTML='<b>What I heard:</b> “'+esc(said)+'”';
+      var f=FB.speakFeedback(said, secs, D.n);
+      sfb.innerHTML='<div class="fb">'+FB.fbList(f.good,f.next)+'<h4>🔎 Grammar check</h4><div id="sgc" class="hint">Checking…</div>'+
+        '<p class="lt">Voice-to-text by your browser; grammar check by <a href="https://languagetool.org" target="_blank">LanguageTool</a>. If a word was misheard, it isn’t your mistake!</p>'+
+        '<div class="send"><input id="sname" placeholder="Your name" value="'+esc(FB.store('name')||'')+'"><button class="btn wa" id="ssend">💬 Send to my teacher</button></div></div>';
+      var said2=said.charAt(0).toUpperCase()+said.slice(1)+(/[.!?]$/.test(said)?'':'.');
+      FB.ltCheck(said2).then(function(ms){ ms=ms.filter(function(m){return !/MORFOLOGIK|UPPERCASE|PUNCT|COMMA|SENTENCE_FRAGMENT/i.test(m.rule.id);});
+        sfb.querySelector('#sgc').innerHTML= ms.length ? '<ol class="errs">'+ms.slice(0,6).map(function(m){ return '<li><b>“'+esc(said2.substr(m.offset,m.length))+'”</b> — '+esc(m.message)+((m.replacements||[]).length?' Try: <b>'+esc(m.replacements[0].value)+'</b>':'')+'</li>'; }).join('')+'</ol>' : '<p class="fbg">✅ No grammar problems found.</p>';
+      }, function(){ sfb.querySelector('#sgc').textContent='Grammar check not available right now.'; });
+      sfb.querySelector('#ssend').onclick=function(){ var nm=sfb.querySelector('#sname').value.trim(); FB.store('name',nm);
+        var msg='📚 English Lab B1 · Unit '+D.n+' · Speaking\n👤 '+(nm||'Student')+'\n❓ '+D.pairs[cur].replace(/^[^A-Za-z“"]+/,'')+'\n\n🗣️ “'+said+'”\n\n— '+f.a.words+' words in '+Math.round(secs)+'s';
+        window.open('https://wa.me/'+FB.TEACHER_WA+'?text='+encodeURIComponent(msg),'_blank'); };
+    });
+  };
 }
 
 /* ---------- read ---------- */
@@ -154,17 +187,17 @@ function bindRead(root){
 /* ---------- page ---------- */
 function render(){
   stop();
-  var tab = location.hash==='#read' ? 'read' : 'talk';
+  var tab = location.hash==='#read' ? 'read' : location.hash==='#write' ? 'write' : 'talk';
   var t=D.title.replace(/(\S+…?\??!?)$/,'<em>$1</em>');
   var prev=D.n>1?'<a href="../unit-'+(D.n-1)+'/'+location.hash+'">← Unit '+(D.n-1)+'</a>':'', next=D.n<25?'<a href="../unit-'+(D.n+1)+'/'+location.hash+'">Unit '+(D.n+1)+' →</a>':'';
   app.innerHTML='<header class="top"><div class="wrap"><nav class="crumbs"><a href="../../">Teen Lab</a><a href="../">B1 · Adventurer</a>'+prev+next+'</nav>'+
     '<div class="kick">UNIT '+D.n+' · ENGLISH LAB B1</div><h1>'+t+'</h1><p>'+esc(D.sub)+'</p></div></header>'+
-    '<main class="wrap"><div class="tabs" role="tablist"><a role="tab" class="tab t" href="#talk" aria-selected="'+(tab==='talk')+'" style="text-decoration:none">🎧 Talk</a><a role="tab" class="tab r" href="#read" aria-selected="'+(tab==='read')+'" style="text-decoration:none">📖 Read</a></div>'+
-    '<div id="pane">'+(tab==='talk'?talkHTML():readHTML())+'</div>'+
+    '<main class="wrap"><div class="tabs" role="tablist"><a role="tab" class="tab t" href="#talk" aria-selected="'+(tab==='talk')+'" style="text-decoration:none">🎧 Talk</a><a role="tab" class="tab r" href="#read" aria-selected="'+(tab==='read')+'" style="text-decoration:none">📖 Read</a><a role="tab" class="tab w" href="#write" aria-selected="'+(tab==='write')+'" style="text-decoration:none">✍️ Write</a></div>'+
+    '<div id="pane">'+(tab==='talk'?talkHTML():tab==='read'?readHTML():FB.writeHTML(D))+'</div>'+
     (synth?'':'<div class="card">🔇 Your browser can’t read aloud. Try Chrome, Edge or Safari.</div>')+
     '<p class="foot">My English Adventure · Teen Edition · Level B1<br>© 2026 Mercedes Moronta · Hadash Academy</p></main>';
-  var pane=document.getElementById('pane'); if(tab==='talk') bindTalk(pane); else bindRead(pane);
-  document.title='Unit '+D.n+' · '+(tab==='talk'?'Talk':'Read')+' · English Lab B1';
+  var pane=document.getElementById('pane'); if(tab==='talk') bindTalk(pane); else if(tab==='read') bindRead(pane); else FB.bindWrite(pane,D);
+  document.title='Unit '+D.n+' · '+(tab==='talk'?'Talk':tab==='read'?'Read':'Write')+' · English Lab B1';
 }
 window.addEventListener('hashchange',function(){ render(); window.scrollTo(0,0); });
 render();
