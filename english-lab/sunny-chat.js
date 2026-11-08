@@ -131,12 +131,13 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
   }
 
   async function ask(messages) {
-    const r = await fetch(SUNNY_URL, {
+    let r;
+    try { r = await fetch(SUNNY_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: store.get(CODE_KEY, ''), messages })
-    });
+    }); } catch (e) { throw { code: 'down', det: 'sin conexión con el puente' }; }
     if (r.status === 401) { store.del(CODE_KEY); throw { code: 'bad_code' }; }
-    if (!r.ok) throw { code: 'down' };
+    if (!r.ok) { let det = 'HTTP ' + r.status; try { const j = await r.json(); if (j.error) det = j.error; } catch (e) {} throw { code: 'down', det }; }
     const d = await r.json();
     const t = String(d.text || d.reply || '').replace(/[*#`_]/g, '').trim();
     if (!t) throw { code: 'down' };
@@ -144,7 +145,7 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
   }
   function fail(e) {
     if (e && e.code === 'bad_code') return codeScreen('Ese código no funciona. Revísalo o pídele uno nuevo a tu profesora.');
-    status('Sunny no pudo responder. Revisa tu internet y vuelve a intentarlo.', true);
+    status('Sunny no pudo responder. Revisa tu internet y vuelve a intentarlo.' + (e && e.det ? ' (Detalle: ' + e.det + ')' : ''), true);
   }
 
   async function start() {
