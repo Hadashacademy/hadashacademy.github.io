@@ -1,75 +1,76 @@
 /*
- * Hadash Academy · Study Island — Sunny bridge (OpenAI)
- * Runs on Cloudflare Workers (free plan). It keeps the OpenAI key secret: the web page
- * never sees it. Study Island sends the conversation here, the bridge asks OpenAI and
- * returns Sunny's answer. It never stores conversations or personal data.
+ * Hadash Academy · Sunny bridge (Azure OpenAI in Microsoft Foundry)
+ * Runs on Cloudflare Workers (free plan). It keeps the Azure key secret: the web page never
+ * sees it. Study Island sends the conversation here, the bridge asks Azure and returns
+ * Sunny's answer. It never stores conversations or personal data.
  *
- * If anything fails (no balance, daily limit, OpenAI down), the bridge answers with an
- * error and Study Island switches by itself to the free guided-practice mode.
+ * If anything fails (no credit, Azure down, wrong code), the bridge answers with an error
+ * and Study Island switches by itself to the free guided-practice mode.
  *
  * Settings in Cloudflare (Worker → Settings → Variables and Secrets):
- *   OPENAI_KEY      (Secret)  your OpenAI API key (sk-...) — NEVER put it in the web page
- *   ALLOWED_ORIGIN  (Text)    https://hadashacademy.github.io
- *   MODEL           (Text)    optional, default gpt-4.1-mini (fast for voice, low cost)
- *   ACCESS_CODES    (Text)    optional, student codes separated by commas (e.g. LUNA24,SOL25).
- *                             If empty, any student can use Sunny.
- *   DAILY_LIMIT     (Text)    optional, Sunny answers per student per day (default 120)
- * Optional: a KV namespace bound as LIMITS to apply DAILY_LIMIT.
+ *   AZURE_KEY      (Secret)  API key from Microsoft Foundry — NEVER put it in the web page
+ *   STUDENT_CODES  (Secret)  personal student codes separated by commas (HADASH-XXXXX,...)
  */
+
+const AZURE_ENDPOINT = "https://mercedes-moronta22-1910-resource.openai.azure.com/openai/v1/chat/completions";
+const MODEL = "gpt-4.1-mini";
+const ALLOWED_ORIGIN = "https://hadashacademy.github.io";
+
+const SAFETY = `You work for Hadash Academy, an English academy for Spanish-speaking children, teens and adults (levels A1 to C1). Follow the teacher instructions given in the first message of the conversation. If there are none, act as Sunny: a friendly English tutor who adapts to the student's level, gently corrects mistakes (show the correct sentence, explain briefly why) and ends with a short question. Never discuss romantic, sexual, violent or adult topics; if the student brings them up, kindly change the subject.`;
+
+const cors = {
+  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Max-Age": "86400",
+  "Vary": "Origin",
+  "Cache-Control": "no-store",
+};
+
 export default {
-  async fetch(req, env) {
-    const allowed = env.ALLOWED_ORIGIN || 'https://hadashacademy.github.io';
-    const cors = { 'Access-Control-Allow-Origin': allowed, 'Vary': 'Origin', 'Cache-Control': 'no-store' };
-    if (req.method === 'OPTIONS') {
-      return new Response(null, { headers: { ...cors, 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '86400' } });
-    }
-    if (req.method !== 'POST' || (req.headers.get('Origin') || '') !== allowed) {
-      return json({ error: 'forbidden' }, 403, cors);
-    }
-    if (!env.OPENAI_KEY) return json({ error: 'not configured' }, 503, cors);
+  async fetch(request, env) {
+    if (request.method === "OPTIONS") return new Response(null, { headers: cors });
+    if (request.method !== "POST") return new Response("Sunny is awake ☀️", { headers: cors });
+    if ((request.headers.get("Origin") || "") !== ALLOWED_ORIGIN) return json({ error: "forbidden" }, 403);
+    if (!env.AZURE_KEY) return json({ error: "not_configured" }, 503);
 
     let body;
-    try { body = await req.json(); } catch (e) { return json({ error: 'bad request' }, 400, cors); }
-    const code = String(body.code || '').trim().toUpperCase().slice(0, 40);
+    try { body = await request.json(); } catch { return json({ error: "bad_request" }, 400); }
 
-    const codes = String(env.ACCESS_CODES || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
-    if (codes.length && !codes.includes(code)) return json({ error: 'code' }, 401, cors);
+    // Personal student code: valid codes live in the STUDENT_CODES secret (comma separated)
+    const validCodes = String(env.STUDENT_CODES || "").split(",").map(c => c.trim().toUpperCase()).filter(Boolean);
+    const code = String(body.code || "").trim().toUpperCase().slice(0, 40);
+    if (!code || !validCodes.includes(code)) return json({ error: "invalid_code" }, 401);
 
-    // Only plain text turns, limited in number and size, so nobody can run up the bill.
-    const msgs = (Array.isArray(body.messages) ? body.messages : [])
-      .filter(m => m && (m.role === 'user' || m.role === 'assistant'))
-      .map(m => ({ role: m.role, content: String(m.content || '').slice(0, 6000) }));
-    if (!msgs.length || msgs.length > 40) return json({ error: 'bad request' }, 400, cors);
-
-    if (env.LIMITS) {
-      const who = code + '|' + (req.headers.get('CF-Connecting-IP') || '');
-      const key = new Date().toISOString().slice(0, 10) + ':' + who;
-      const used = parseInt((await env.LIMITS.get(key)) || '0', 10);
-      if (used >= Number(env.DAILY_LIMIT || 120)) return json({ error: 'daily limit' }, 429, cors);
-      await env.LIMITS.put(key, String(used + 1), { expirationTtl: 172800 });
-    }
+    // Only plain text turns, limited in number and size, so nobody can run up the bill
+    const history = (Array.isArray(body.messages) ? body.messages : [])
+      .filter(m => m && (m.role === "user" || m.role === "assistant"))
+      .map(m => ({ role: m.role, content: String(m.content || "").slice(0, 6000) }));
+    if (!history.length || history.length > 40) return json({ error: "bad_request" }, 400);
 
     let r;
     try {
-      r = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + env.OPENAI_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: env.MODEL || 'gpt-4.1-mini', messages: msgs, max_tokens: 400, temperature: 0.7 }),
+      r = await fetch(AZURE_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "api-key": env.AZURE_KEY },
+        body: JSON.stringify({
+          model: MODEL,
+          messages: [{ role: "system", content: SAFETY }, ...history],
+          max_tokens: 400,
+          temperature: 0.7,
+        }),
       });
-    } catch (e) {
-      return json({ error: 'openai unreachable' }, 502, cors);
+    } catch {
+      return json({ error: "azure_unreachable" }, 502);
     }
-    if (!r.ok) {
-      // 429 from OpenAI = no balance left or too many requests → Study Island uses the free mode.
-      return json({ error: 'openai ' + r.status }, r.status === 429 ? 503 : 502, cors);
-    }
-    const d = await r.json().catch(() => null);
-    const text = d && d.choices && d.choices[0] && d.choices[0].message ? String(d.choices[0].message.content || '').trim() : '';
-    if (!text) return json({ error: 'empty' }, 502, cors);
-    return json({ text }, 200, cors);
+    if (!r.ok) return json({ error: "azure_" + r.status }, r.status === 429 ? 503 : 502);
+    const data = await r.json().catch(() => null);
+    const text = String(data?.choices?.[0]?.message?.content || "").trim();
+    if (!text) return json({ error: "empty" }, 502);
+    return json({ text, reply: text }, 200);
   },
 };
 
-function json(obj, status, headers) {
-  return new Response(JSON.stringify(obj), { status, headers: { ...headers, 'Content-Type': 'application/json' } });
+function json(obj, status) {
+  return new Response(JSON.stringify(obj), { status, headers: { ...cors, "Content-Type": "application/json" } });
 }
