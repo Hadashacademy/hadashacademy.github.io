@@ -1759,13 +1759,19 @@ async function openWith(code){
     return JSON.parse(new TextDecoder().decode(plain));
   }catch(e){return null}
 }
+/* Código personal (HADASH-E2025xx): el puente lo valida y devuelve el código de la clase. */
+async function unlockWith(code){
+  try{const r=await fetch(window.SUNNY_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"unlock",code:code.trim(),messages:[{role:"user",content:"unlock"}]})});
+    if(!r.ok)return null;const d=await r.json();if(!d.classCode)return null;
+    const lv=await openWith(d.classCode);return lv?{lv,cc:d.classCode}:null}catch(e){return null}
+}
 function boot(levels){
   LEVELS=levels;prep();maxStars=LEVELS.reduce((a,l)=>a+l.mods.length*3,0);drawStars();home();
 }
 function lock(msg){
   view={name:"lock"};
   app.innerHTML=`<h2>Escribe el código de la clase</h2>
-  <p class="sub">Tu profesora te da este código. Solo lo escribes una vez en esta computadora.</p>
+  <p class="sub">Escribe tu código personal (por ejemplo HADASH-E202501) o el código de la clase. Solo lo escribes una vez en esta computadora.</p>
   <form class="panel" id="lockf" autocomplete="off">
     <label for="code" style="font-weight:700">Código de acceso</label>
     <input id="code" type="password" style="font-size:1.4rem;padding:12px;border:3px solid var(--line);border-radius:12px;background:var(--bg);color:var(--fg)" aria-describedby="lockerr" autocapitalize="off" spellcheck="false">
@@ -1776,9 +1782,10 @@ function lock(msg){
   inp.focus();
   f.onsubmit=async e=>{e.preventDefault();
     const code=inp.value;if(!code.trim())return;
-    const lv=await openWith(code);
+    let lv=await openWith(code),cc=code;
+    if(!lv&&window.SUNNY_URL){const r=await unlockWith(code);if(r){lv=r.lv;cc=r.cc;store.set("hadash-sunny-code",code.trim().toUpperCase());if(!sampleFn)sampleFn=webSample}}
     if(!lv){const m="Ese código no es correcto. Revisa y escríbelo otra vez.";document.getElementById("lockerr").textContent=m;say([[m,"es"]]);tone(false);inp.select();return}
-    store.set("hadash-code",code);tone(true);boot(lv);
+    store.set("hadash-code",cc);tone(true);boot(lv);
     say([["¡Bienvenido! Elige tu nivel. Presiona 1, 2 o 3.","es"]]);
   };
   say([["Escribe el código de la clase y presiona Enter.","es"]]);

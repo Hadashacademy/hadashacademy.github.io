@@ -9,7 +9,8 @@
  *
  * Settings in Cloudflare (Worker → Settings → Variables and Secrets):
  *   AZURE_KEY      (Secret)  API key from Microsoft Foundry — NEVER put it in the web page
- *   STUDENT_CODES  (Secret)  personal student codes separated by commas (HADASH-XXXXX,...)
+ *   STUDENT_CODES  (Secret)  personal student codes separated by commas (HADASH-E202501,...)
+ *   CLASS_CODE     (Secret)  the Study Island class code, so a personal code also opens the lessons
  */
 
 const AZURE_ENDPOINT = "https://mercedes-moronta22-1910-resource.openai.azure.com/openai/v1/chat/completions";
@@ -41,6 +42,12 @@ export default {
     const validCodes = String(env.STUDENT_CODES || "").split(",").map(c => c.trim().toUpperCase()).filter(Boolean);
     const code = String(body.code || "").trim().toUpperCase().slice(0, 40);
     if (!code || !validCodes.includes(code)) return json({ error: "invalid_code" }, 401);
+
+    // Study Island: a valid personal code also opens the lessons (returns the class code)
+    if (body.action === "unlock") {
+      if (!env.CLASS_CODE) return json({ error: "not_configured" }, 503);
+      return json({ classCode: env.CLASS_CODE }, 200);
+    }
 
     // Only plain text turns, limited in number and size, so nobody can run up the bill
     const history = (Array.isArray(body.messages) ? body.messages : [])
