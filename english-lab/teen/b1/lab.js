@@ -14,8 +14,8 @@ function store(k,v){try{if(v===undefined)return JSON.parse(localStorage.getItem(
 /* ---------- speech ---------- */
 var synth = window.speechSynthesis, voices = [], rate = 1, token = 0;
 function loadVoices(){ if(!synth) return; var v=synth.getVoices().filter(function(x){return /^en[-_]/i.test(x.lang);});
-  var pref=v.filter(function(x){return /Google|Natural|Samantha|Daniel|Karen|Moira|Aria|Jenny|Guy|Microsoft/i.test(x.name);});
-  voices = pref.concat(v.filter(function(x){return pref.indexOf(x)<0;})); }
+  voices = v.sort(function(x,y){return vq(y)-vq(x);}); }
+function vq(v){const n=v.name+' '+(v.voiceURI||''),l=(v.lang||'').replace('_','-').toLowerCase();let s=1;if(/natural|neural/i.test(n))s=6;else if(/online/i.test(n))s=5;else if(/google|premium|enhanced|siri/i.test(n))s=4;else if(/samantha|ava|allison|alex|daniel|karen|moira|paulina|monica|juan/i.test(n))s=3;if(/zira|david|mark|hazel|helena|sabina|espeak|compact/i.test(n))s=0;if(l==='en-us'||l==='es-us'||l==='es-mx'||l==='es-419')s+=0.5;return s}
 if(synth){loadVoices(); synth.onvoiceschanged=loadVoices;}
 var cast = {};
 function voiceFor(who){ if(!voices.length) return null; if(!(who in cast)) cast[who]=Object.keys(cast).length; return voices[cast[who] % voices.length]; }

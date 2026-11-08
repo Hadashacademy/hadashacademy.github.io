@@ -187,21 +187,53 @@ ${transcript}`;
     try {
       const t = await ask([{ role: 'user', content: prompt }]);
       bubble('ai', t); status('Estos son tus consejos. Presiona ↺ New para otra conversación.');
-      speak(t, 'es-ES');
+      speak(t, 'es');
     } catch (e) { fail(e); }
     busy = false;
   }
 
   /* ---------- voz ---------- */
+  /* Voces: se escoge la más natural disponible (Edge: "Online (Natural)"; Chrome: "Google");
+     el español entre paréntesis se lee con voz en español y el inglés entre comillas, con voz en inglés. */
+  function vq(v) {
+    const n = v.name + ' ' + (v.voiceURI || ''), l = (v.lang || '').replace('_', '-').toLowerCase();
+    let s = 1;
+    if (/natural|neural/i.test(n)) s = 6; else if (/online/i.test(n)) s = 5;
+    else if (/google|premium|enhanced|siri/i.test(n)) s = 4;
+    else if (/samantha|ava|allison|karen|moira|paulina|monica/i.test(n)) s = 3;
+    if (/zira|david|mark|hazel|helena|sabina|espeak|compact/i.test(n)) s = 0;
+    if (/\b(female|aria|jenny|ava|emma|michelle|samantha|allison|google us english|paulina|dalia|elena|sabina|monica)\b/i.test(n)) s += 0.3;
+    if (/\b(guy|andrew|brian|eric|christopher|roger|steffan|daniel|alex|jorge|juan|tony)\b/i.test(n)) s -= 0.3;
+    if (['en-us', 'es-us', 'es-mx', 'es-419', 'es-do'].includes(l)) s += 0.5;
+    return s;
+  }
+  function bestVoice(lang) {
+    const vs = (speechSynthesis.getVoices() || []).filter(v => (v.lang || '').toLowerCase().startsWith(lang));
+    return vs.sort((a, b) => vq(b) - vq(a))[0] || null;
+  }
+  function parts(text, base) {
+    const out = [], push = (t, l) => { t = t.replace(/[*_#>`]/g, '').trim(); if (t && /[a-z0-9áéíóúñ]/i.test(t)) out.push([t, l]); };
+    const inner = (seg, l) => { if (l === 'es') seg.split(/("[^"]*"|“[^”]*”)/).forEach(x => /^["“]/.test(x) ? push(x.slice(1, -1), 'en') : push(x, 'es')); else push(seg, 'en'); };
+    if (base === 'es') { inner(text, 'es'); return out; }
+    text.split(/(\([^)]*\))/).forEach(x => { if (!x.trim()) return; x.startsWith('(') ? inner(x.slice(1, -1), 'es') : inner(x, 'en'); });
+    return out;
+  }
   function speak(text, lang) {
     try {
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang || 'en-US'; u.rate = level < 2 ? 0.85 : 0.95;
-      const vs = speechSynthesis.getVoices().filter(v => v.lang && v.lang.startsWith(u.lang.slice(0, 2)));
-      const f = vs.find(v => /female|samantha|zira|jenny|aria|google us english/i.test(v.name)) || vs[0];
-      if (f) u.voice = f;
-      speechSynthesis.speak(u);
+      const en = bestVoice('en'), es = bestVoice('es');
+      parts(text, lang && lang.startsWith('es') ? 'es' : 'en').forEach(([t, l]) => {
+        // frases cortas: suenan más naturales y Chrome no corta los textos largos
+        (t.match(/[^.!?]+[.!?]*/g) || [t]).forEach(sent => {
+          if (!sent.trim()) return;
+          const u = new SpeechSynthesisUtterance(sent.trim());
+          u.lang = l === 'en' ? 'en-US' : 'es-US';
+          const v = l === 'en' ? en : es; if (v) u.voice = v;
+          const natural = v && vq(v) >= 4;
+          u.rate = l === 'en' ? (level < 2 ? 0.9 : 1) * (natural ? 1 : 0.95) : 1;
+          speechSynthesis.speak(u);
+        });
+      });
     } catch (e) {}
   }
   function stopSpeak() { try { speechSynthesis.cancel(); } catch (e) {} }

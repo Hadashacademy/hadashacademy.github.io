@@ -106,7 +106,8 @@ const icon = k => ({Listening:'🎧',Conversation:'💬',Workbook:'📒'})[k];
 
 /* ---------- speech ---------- */
 let voices = [];
-function loadVoices(){ voices = (speechSynthesis.getVoices()||[]).filter(v => /^en/i.test(v.lang)); }
+function vq(v){const n=v.name+' '+(v.voiceURI||''),l=(v.lang||'').replace('_','-').toLowerCase();let s=1;if(/natural|neural/i.test(n))s=6;else if(/online/i.test(n))s=5;else if(/google|premium|enhanced|siri/i.test(n))s=4;else if(/samantha|ava|allison|alex|daniel|karen|moira|paulina|monica|juan/i.test(n))s=3;if(/zira|david|mark|hazel|helena|sabina|espeak|compact/i.test(n))s=0;if(l==='en-us'||l==='es-us'||l==='es-mx'||l==='es-419')s+=0.5;return s}
+function loadVoices(){ voices = (speechSynthesis.getVoices()||[]).filter(v => /^en/i.test(v.lang)).sort((x, y) => vq(y) - vq(x)); }
 if ('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
 const FEM = /\b(female|woman|samantha|victoria|karen|moira|tessa|fiona|veena|zira|aria|jenny|ava|ana|allison|susan|hazel|libby|sonia|michelle|emma|joanna|salli|kimberly|ivy|kendra|nicky|serena|catherine|natasha|clara|martha|kathy|shelley|sandy|flo|grandma|nora|amy|ruth|google us english|x-sfg|x-tpc|x-tpf|x-iob|x-iog|x-gba|x-gbc|x-gbg|x-fis)\b/i;
 const MAL = /\b(male|man|alex|daniel|fred|tom|aaron|arthur|oliver|gordon|rishi|david|mark|guy|ryan|george|christopher|eric|brian|matthew|joey|justin|william|liam|andrew|roger|steffan|davis|jason|tony|grandpa|rocko|reed|eddy|ralph|albert|stephen|x-iol|x-iom|x-tpd|x-gbb|x-gbd|x-rjs)\b/i;
@@ -337,5 +338,5 @@ function render(){
 }
 addEventListener('hashchange', render); render();
 </script>
-<script src="/english-lab/sunny-chat.js?v=4"></script></body>
+<script src="/english-lab/sunny-chat.js?v=5"></script></body>
 </html>

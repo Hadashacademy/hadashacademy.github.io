@@ -13,7 +13,7 @@ var GROUPS=[
  {t:'-ed endings: /t/, /d/ or /ɪd/', tip:'After t or d say “id”; otherwise the -ed is just a short t or d.', es:'Después de t o d se dice “id”; si no, solo suena t o d.', words:['walked','watched','played','cleaned','wanted','needed','started','decided']}
 ];
 function say(t,slow){ return new Promise(function(res){ var s=window.speechSynthesis; if(!s){res();return;} s.cancel(); var u=new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=slow?0.7:0.95;
-  var v=s.getVoices().filter(function(x){return /^en[-_]US/i.test(x.lang);}); if(v.length) u.voice=v.find(function(x){return /Google|Natural|Aria|Jenny|Samantha/i.test(x.name);})||v[0];
+  var v=s.getVoices().filter(function(x){return /^en[-_]US/i.test(x.lang);}); if(v.length) u.voice=v.sort(function(x,y){return vq(y)-vq(x);})[0];
   u.onend=u.onerror=function(){res();}; s.speak(u); }); }
 function check(w, out){
   out.innerHTML='🎤 Say “'+esc(w)+'”…';
@@ -58,3 +58,4 @@ function render(){
 }
 render();
 })();
+function vq(v){const n=v.name+' '+(v.voiceURI||''),l=(v.lang||'').replace('_','-').toLowerCase();let s=1;if(/natural|neural/i.test(n))s=6;else if(/online/i.test(n))s=5;else if(/google|premium|enhanced|siri/i.test(n))s=4;else if(/samantha|ava|allison|alex|daniel|karen|moira|paulina|monica|juan/i.test(n))s=3;if(/zira|david|mark|hazel|helena|sabina|espeak|compact/i.test(n))s=0;if(l==='en-us'||l==='es-us'||l==='es-mx'||l==='es-419')s+=0.5;return s}
