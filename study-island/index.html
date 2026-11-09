@@ -112,7 +112,7 @@ function parseQ(block){return block.split("\n").map(s=>s.trim()).filter(Boolean)
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
 let scores=store.get("hadash-book-scores",{});
 let fullVoice=store.get("hadash-voice",true);
-let unlockAll=store.get("hadash-unlock-all",false);
+let unlockAll=store.get("hadash-unlock-all",true);
 const app=document.getElementById("app"), live=document.getElementById("live");
 let view={name:"home"};
 const starsOf=id=>{const s=scores[id];if(s==null)return 0;return s>=90?3:s>=60?2:s>=30?1:0};
