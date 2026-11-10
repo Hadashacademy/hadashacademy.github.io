@@ -234,8 +234,8 @@ function readHTML(){
     (qb?'<div class="card R"><div class="h"><span class="n">2</span> '+(D.qb.length && isTF(D.ansR[String(nA+1)])?'True, False or Doesn’t say?':'Your ideas')+'</div>'+qb+'<div class="ctrl"><span class="score" id="tfs"></span></div></div>':'')+
     (D.qc?'<div class="card R"><div class="h"><span class="n">3</span> Language detective</div><p style="margin:0">'+esc(D.qc)+'</p><p class="hint">Look at the article above and find them. Check with your teacher or a partner.</p></div>':'')+
     '<div class="card R"><div class="h"><span class="n">⏱</span> Reading fluency challenge</div>'+
-    '<p style="margin:0 0 6px">Read the whole article <b>out loud</b>. Tap <b>Start</b>, read, then tap <b>Stop</b>. A1 goal: about <b>60 words per minute</b> with good pronunciation.</p>'+
-    '<div class="timer"><button class="btn" id="fl">▶ Start</button><span class="big" id="flt">0:00</span><span class="hint">'+words+' words</span><span class="score" id="flr"></span></div></div>';
+    '<p style="margin:0 0 6px">Read the whole text <b>out loud</b>. Tap <b>Start</b>, read, then tap <b>Stop</b>. '+((window.FB&&FB.SR)?'Ollie listens and tells you your <b>score</b> and what to practice. ':'')+'A1 goal: about <b>60 words per minute</b>.</p>'+
+    '<div class="timer"><button class="btn" id="fl">▶ Start</button><span class="big" id="flt">0:00</span><span class="hint">'+words+' words</span><span class="score" id="flr"></span></div><div class="live" id="fllive" hidden></div><div id="flfb"></div></div>';
 }
 function bindRead(root){
   bindSpeed(root);
@@ -258,11 +258,41 @@ function bindRead(root){
     var sh=q.querySelector('.sh'); if(sh) sh.onclick=function(){ m.innerHTML= a ? 'Model answer: <b>'+esc(a)+'</b> — your words can be different!' : 'Check with your teacher.'; };
   });
   var fl=root.querySelector('#fl'), t0=0, iv=null, words=D.paras.join(' ').split(/\s+/).length;
-  fl.onclick=function(){ if(!iv){ stop(); t0=Date.now(); fl.textContent='■ Stop'; root.querySelector('#flr').textContent='';
-      iv=setInterval(function(){ var s=Math.floor((Date.now()-t0)/1000); root.querySelector('#flt').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); },250); }
-    else { clearInterval(iv); iv=null; fl.textContent='▶ Try again'; var sec=(Date.now()-t0)/1000, wpm=Math.round(words/(sec/60));
-      var best=store('u'+D.n+'wpm')||0; if(wpm>best && sec>10) store('u'+D.n+'wpm',wpm);
-      root.querySelector('#flr').textContent= sec<10 ? 'Too fast — did you read it all? 😉' : wpm+' words/min '+(wpm>=60?'🚀 Great reading!':wpm>=45?'👍 Almost there!':'💪 Keep practicing!')+(best?' · best: '+Math.max(best,wpm):''); } };
+  var text=D.paras.map(function(p){ return p.replace(/^\d+\.\s*/,'').replace(/^[A-Z][A-Za-z.’ ]{0,14}:\s+/,''); }).join(' '), heard='', rec=null, reading=false;
+  var live=root.querySelector('#fllive'), fb=root.querySelector('#flfb'), mic=!!(window.FB && FB.SR);
+  function listenLoop(){ if(!reading) return; rec=FB.listen({continuous:true, onText:function(t){ live.innerHTML='🎤 <i>'+esc((heard+' '+t).trim().split(/\s+/).slice(-14).join(' '))+'</i>'; }, onError:function(e){ if(e==='not-allowed'){ live.innerHTML='🔒 Please allow the microphone to get Ollie’s feedback.'; } }});
+    rec.promise.then(function(t){ heard=(heard+' '+(t||'')).trim(); if(reading) listenLoop(); }); }
+  function score10(acc,wpm){ var sp=Math.min(1,wpm/60); return Math.max(1,Math.round((acc/100)*7+sp*3)); }
+  fl.onclick=function(){
+    if(!iv){ stop(); t0=Date.now(); heard=''; fb.innerHTML=''; fl.textContent='■ Stop'; root.querySelector('#flr').textContent='';
+      iv=setInterval(function(){ var s=Math.floor((Date.now()-t0)/1000); root.querySelector('#flt').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); },250);
+      if(mic){ reading=true; live.hidden=false; live.innerHTML='🎤 Listening… start reading.'; listenLoop(); }
+      return; }
+    clearInterval(iv); iv=null; fl.textContent='▶ Try again'; var sec=(Date.now()-t0)/1000, wpm=Math.round(words/(sec/60));
+    var best=store('u'+D.n+'wpm')||0; if(wpm>best && sec>10) store('u'+D.n+'wpm',wpm);
+    root.querySelector('#flr').textContent= sec<10 ? 'Too fast — did you read it all? 😉' : wpm+' words/min'+(best?' · best: '+Math.max(best,wpm):'');
+    if(sec<10){ say('Hmm, that was very fast. Did you read it all? Try again!','coach'); return; }
+    if(!mic){ say(wpm>=60?'Great reading! You read '+wpm+' words per minute.':'Good try! You read '+wpm+' words per minute. Read again a little faster.','coach'); return; }
+    reading=false; live.innerHTML='⏳ Ollie is checking your reading…'; if(rec) rec.stop();
+    setTimeout(function(){
+      live.hidden=true;
+      if(!heard){ fb.innerHTML='<div class="fb"><p>🤔 I didn’t hear you. Read a little louder, close to the microphone, and try again.</p></div>'; say('I could not hear you. Read a little louder and try again.','coach'); return; }
+      var C=FB.compareLine(text, heard), acc=C.pct, sc=score10(acc,Math.min(wpm,90));
+      var miss=[]; C.missed.forEach(function(w){ if(w && miss.indexOf(w.toLowerCase())<0 && miss.length<6) miss.push(w.toLowerCase()); });
+      var stars=sc>=9?3:sc>=7?2:sc>=5?1:0, prevS=store('u'+D.n+'rs')||0; if(sc>prevS) store('u'+D.n+'rs',sc);
+      var head=sc>=9?'🏆 Excellent reading!':sc>=7?'🌟 Very good!':sc>=5?'👍 Good try!':'💪 Keep practicing!';
+      var tips=[]; if(acc<85) tips.push('Read slowly and say every word.'); if(wpm<45) tips.push('Read the text two more times to read faster.'); else if(wpm>110) tips.push('Slow down a little so every word is clear.'); if(!tips.length) tips.push('Try reading with expression, like a storyteller!');
+      fb.innerHTML='<div class="fb"><h4 style="margin:0 0 6px">'+head+' &nbsp;<span style="font-size:22px">'+(stars?'⭐'.repeat(stars):'☆')+'</span></h4>'+
+        '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px"><span class="chipw" style="font-size:16px">Score: <b>'+sc+' / 10</b></span><span class="chipw">Words read well: <b>'+acc+'%</b></span><span class="chipw">Speed: <b>'+wpm+'</b> words/min</span></div>'+
+        '<div class="art" style="margin:6px 0;line-height:1.8">'+C.html+'</div>'+
+        (miss.length?'<p style="margin:8px 0 4px"><b>Practice these words:</b> '+miss.map(function(w){return '<button class="chipw pw" data-w="'+esc(w)+'">🔈 '+esc(w)+'</button>';}).join(' ')+'</p>':'')+
+        '<p style="margin:6px 0 0"><b>Tip:</b> '+esc(tips.join(' '))+'</p><p class="lt">Green = Ollie heard it · Red = practice it. The browser’s voice recognition is not perfect — if a word was misheard, it isn’t your mistake!</p></div>';
+      fb.querySelectorAll('.pw').forEach(function(b){ b.onclick=function(){ say(b.dataset.w,'coach'); }; });
+      var msg=head.replace(/^[^A-Za-z]+/,'')+' Your score is '+sc+' out of 10. You read '+acc+' percent of the words well, at '+wpm+' words per minute. '+
+        (miss.length?'Practice these words: '+miss.slice(0,3).join(', ')+'. ':'')+tips[0];
+      say(msg,'coach');
+    }, 900);
+  };
 }
 
 /* ---------- page ---------- */
