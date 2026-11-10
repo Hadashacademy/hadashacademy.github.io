@@ -1,0 +1,10 @@
+/* Junior theme: bright, light and friendly */
+:root,:root[data-theme="dark"]{--ink:#26304a;--mut:#5d6580;--pur:#F26B00;--pur2:#c45500;--lav:#FFF3E6;--teal:#1673E6;--tealt:#EAF1FF;--cor:#E8566C;--cort:#FFEEF1;--line:#F1E6D8;--bg:#FFFAF2;--card:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#26304a;--mut:#5d6580;--bg:#FFFAF2;--card:#fff;--line:#F1E6D8;--lav:#FFF3E6;--tealt:#EAF1FF;--cort:#FFEEF1}}
+.top{background:linear-gradient(130deg,#F26B00,#F5A300 55%,#FFC93C)!important}
+.top h1 em{color:#fff}
+.tab{border-radius:20px!important}
+.card{border-radius:22px!important}
+.btn{border-radius:999px!important}
+body{font-size:17px}
+.dlg .ln b{color:#1673E6}

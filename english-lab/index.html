@@ -201,7 +201,7 @@ function home(){
   <main class="wrap"><div class="books">${cats}</div>
   <p class="note noprint">Teacher: <a href="#qr">print the QR codes</a></p></main>`;
 }
-const PARTS = {book: {name: 'Student’s Book', emoji: '📘', kinds: ['Conversation', 'Listening'], desc: 'Conversations and listenings from every unit of the Student’s Book.'},
+const PARTS = {book: {name: 'Student’s Book · Audio', emoji: '📘', kinds: ['Conversation', 'Listening'], desc: 'Conversations and listenings from every unit of the Student’s Book.'},
                wb: {name: 'Workbook', emoji: '📗', kinds: ['Workbook'], desc: 'New listening stories with quizzes for every unit of the Workbook.'}};
 const partOf = t => t.kind === 'Workbook' ? 'wb' : 'book';
 const lvCard = (href, emoji, col, title, desc, pill, off) => `<a class="lvc2${off ? ' off' : ''}" ${off ? '' : `href="${href}"`} style="--b:${col}"><span class="bd">${emoji}</span><div><h2>${title}</h2><p>${desc}</p></div><span class="pill">${pill}</span></a>`;
@@ -214,7 +214,8 @@ function kidsView(){
 }
 function chooserView(key){
   const B = BOOKS[key];
-  const items = Object.entries(PARTS).map(([p, P]) => { const n = DATA.tracks.filter(t => B.test(t.unit) && t.id !== 'wb01-1' && P.kinds.includes(t.kind)).length;
+  const act = key === 'book1' ? lvCard('junior/a1/book/', '🎧', '#F26B00', 'Student’s Book · Talk · Read · Write', '24 units · fill the gaps, role-play with the microphone, reading questions and writing with feedback.', 'OPEN →') : '';
+  const items = act + Object.entries(PARTS).map(([p, P]) => { const n = DATA.tracks.filter(t => B.test(t.unit) && t.id !== 'wb01-1' && P.kinds.includes(t.kind)).length;
     return lvCard(`#${key}-${p}`, P.emoji, p === 'wb' ? '#13A08C' : B.col, P.name, n ? `${n} tracks · ${P.desc}` : 'Coming soon · Muy pronto.', n ? 'OPEN →' : 'SOON', !n); }).join('');
   return `<header class="top" style="background:linear-gradient(120deg,${B.col},${B.col}cc)"><div class="wrap"><a class="back" href="#kids">← Junior</a>
   <div class="brand"><span class="logo">${B.emoji}</span><div><small>ENGLISH LAB · LEVEL ${B.lv}</small><h1>${esc(B.name)}</h1></div></div><p style="margin:8px 0 0;opacity:.95">Choose your book. · Elige tu libro.</p></div></header>
