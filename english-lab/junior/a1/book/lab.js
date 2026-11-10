@@ -47,7 +47,8 @@ function talkHTML(){
       if(p.num) return '<span class="num">('+esc(p.num)+')</span> ';
       var g=GAPS[gi++]; return '<input class="gap" data-i="'+(gi-1)+'" placeholder="'+esc(g.hint||'…')+'" aria-label="Gap '+esc(g.num)+(g.hint?' ('+esc(g.hint)+')':'')+'" autocomplete="off" autocapitalize="off" spellcheck="false">';
     }).join('');
-    return '<div class="ln" data-l="'+li+'"><b>'+esc(l.who)+'</b><span>'+html+'</span></div>';
+    var fc=(window.LAB_FACES||{})[l.who]; var av=fc?'<span class="jav">'+fc+'</span>':'<span class="jav jl">'+esc(l.who.charAt(0))+'</span>';
+    return '<div class="ln" data-l="'+li+'">'+av+'<b>'+esc(l.who)+'</b><span>'+html+'</span></div>';
   }).join('');
   var people=[]; D.lines.forEach(function(l){ if(people.indexOf(l.who)<0) people.push(l.who); });
   var sound = D.sound && D.sound.length ? '<div class="card T"><div class="h">🔊 Sound smart</div><div class="tip">'+D.sound.map(function(s){return '<p>'+esc(s)+'</p>';}).join('')+'</div><div class="ctrl"><button class="btn sm" id="sndPlay">▶ Hear the examples</button></div></div>' : '';

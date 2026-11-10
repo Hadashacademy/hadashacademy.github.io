@@ -8,3 +8,5 @@
 .btn{border-radius:999px!important}
 body{font-size:17px}
 .dlg .ln b{color:#1673E6}
+.jav{display:inline-flex;width:38px;height:38px;border-radius:50%;overflow:hidden;background:#fff;border:2px solid #fff;box-shadow:0 0 0 2px #F5A300;vertical-align:middle;margin-right:8px;align-items:center;justify-content:center;flex:none}
+.jav svg{width:42px;height:42px}.jav.jl{background:#F26B00;color:#fff;font:700 16px Poppins}
