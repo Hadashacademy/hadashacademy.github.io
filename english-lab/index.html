@@ -214,7 +214,8 @@ function kidsView(){
 }
 function chooserView(key){
   const B = BOOKS[key];
-  const act = key === 'book1' ? lvCard('junior/a1/book/', '🎧', '#F26B00', 'Student’s Book · Talk · Read · Write', '24 units · fill the gaps, role-play with the microphone, reading questions and writing with feedback.', 'OPEN →') : '';
+  const act = key === 'book1' ? lvCard('junior/a1/book/', '🎧', '#F26B00', 'Student’s Book · Talk · Read · Write', '24 units · fill the gaps, role-play with the microphone, reading questions and writing with feedback.', 'OPEN →')
+    + lvCard('junior/a1/little/', '🦉', '#1FAE6B', 'Little Explorers', 'For our youngest learners · listen and tap, say it, story time and trace letters — Ollie gives every instruction with his voice.', 'OPEN →') : '';
   const items = act + Object.entries(PARTS).map(([p, P]) => { const n = DATA.tracks.filter(t => B.test(t.unit) && t.id !== 'wb01-1' && P.kinds.includes(t.kind)).length;
     return lvCard(`#${key}-${p}`, P.emoji, p === 'wb' ? '#13A08C' : B.col, P.name, n ? `${n} tracks · ${P.desc}` : 'Coming soon · Muy pronto.', n ? 'OPEN →' : 'SOON', !n); }).join('');
   return `<header class="top" style="background:linear-gradient(120deg,${B.col},${B.col}cc)"><div class="wrap"><a class="back" href="#kids">← Junior</a>
