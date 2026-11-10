@@ -135,7 +135,8 @@ function voiceFor(name){ return voices.length ? pick(name).v : null; }
 let slow = false;
 let AUD = {}, curA = null;
 fetch('audio/manifest.json').then(r => r.ok ? r.json() : {}).then(m => { AUD = m || {}; }).catch(() => {});
-function stopAll(){ try { speechSynthesis.cancel(); } catch(e){} if (curA){ const a = curA; curA = null; a.pause(); a.dispatchEvent(new Event('ended')); } }
+let spTok = 0;
+function stopAll(){ spTok++; try { speechSynthesis.cancel(); } catch(e){} if (curA){ const a = curA; curA = null; a.pause(); a.dispatchEvent(new Event('ended')); } }
 function playFile(f){
   return new Promise(res => {
     const a = new Audio('audio/' + f); curA = a; a.preservesPitch = true; a.playbackRate = slow ? 0.8 : 1;
@@ -144,18 +145,31 @@ function playFile(f){
     const pr = a.play(); if (pr && pr.catch) pr.catch(() => done(false));
   });
 }
+const LETTER = {A:'ay',B:'bee',C:'see',D:'dee',E:'ee',F:'eff',G:'gee',H:'aitch',I:'eye',J:'jay',K:'kay',L:'el',M:'em',N:'en',O:'oh',P:'pee',Q:'cue',R:'are',S:'ess',T:'tee',U:'you',V:'vee',W:'double you',X:'ex',Y:'why',Z:'zee'};
+const SPELLED = /\b[A-Z](?:(?:-|\.\s)[A-Z]){2,}\b\.?/;
+function spellParts(text){ // "I'm Kevin. K-E-V-I-N." -> ["I'm Kevin.", {l:"K"}, {l:"E"}, ...]
+  const out = []; let rest = text, m;
+  while ((m = rest.match(SPELLED))){ const pre = rest.slice(0, m.index).trim(); if (pre) out.push(pre);
+    m[0].replace(/[^A-Z]/g, '').split('').forEach(c => out.push({l:c})); rest = rest.slice(m.index + m[0].length); }
+  if (rest.trim()) out.push(rest.trim()); return out; }
+async function speakSpelled(name, text){ // letter by letter, with a short pause, so children hear every letter
+  const my = spTok;
+  for (const p of spellParts(text)){ if (my !== spTok) return;
+    if (typeof p === 'string'){ await ttsSpeak(name, p); await new Promise(r => setTimeout(r, 250)); }
+    else { await ttsSpeak(name, LETTER[p.l] || p.l, 0.8); await new Promise(r => setTimeout(r, slow ? 650 : 450)); } } }
 function speak(name, text){
+  if (SPELLED.test(text)) return speakSpelled(name, text);
   const f = AUD[name + '|' + text];
   if (!f) return ttsSpeak(name, text);
   return playFile(f).then(ok => ok ? undefined : ttsSpeak(name, text));
 }
-function ttsSpeak(name, text){
+function ttsSpeak(name, text, rf){
   return new Promise(res => {
     if (!('speechSynthesis' in window)) return res();
     const u = new SpeechSynthesisUtterance(text);
     const sp = DATA.speakers[name] || {pitch:1, rate:1};
     const pk = voices.length ? pick(name) : {v:null, pitch: (sp.g === 'm' ? 0.6 : 1.25)};
-    u.lang = 'en-US'; u.pitch = pk.pitch; u.rate = sp.rate * (slow ? 0.75 : 1);
+    u.lang = 'en-US'; u.pitch = pk.pitch; u.rate = sp.rate * (slow ? 0.75 : 1) * (rf || 1);
     if (pk.v) u.voice = pk.v;
     u.onend = res; u.onerror = res;
     speechSynthesis.speak(u);
