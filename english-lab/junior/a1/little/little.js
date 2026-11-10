@@ -27,7 +27,7 @@ function burst(el){ var b=document.createElement('div'); b.className='burst'; b.
 
 /* ---------- layout ---------- */
 var ACTS=[['listen','🎧','Workbook listening','Listen and tap the picture you hear.'],['tap','👆','Listen and tap','Listen. Tap the right picture.'],
-          ['say','🎤','Say it!','Listen. Then say the word.'],['story','📖','Story time','Listen to the story.'],['trace','✏️','Trace','Trace the letter with your finger.']];
+          ['say','🎤','Say it!','Listen. Then say the word.'],['story','📖','Story time','Listen, read and answer.'],['trace','✏️','Trace','Trace the letter with your finger.']];
 function header(){
   var prev=N>1?'<a class="nav" href="../unit-'+(N-1)+'/">◀</a>':'<span></span>', next=N<24?'<a class="nav" href="../unit-'+(N+1)+'/">▶</a>':'<span></span>';
   return '<header class="top"><div class="wrap"><nav class="crumbs"><a href="../../../../#kids">Junior</a><a href="../../../../#book1">Book 1</a><a href="../">Little Explorers</a></nav>'+
@@ -121,26 +121,144 @@ function sayAct(pane){
   say('Listen. Then say the word. Tap the microphone and say it!').then(show);
 }
 
-/* ---------- story with highlighted words ---------- */
+/* ---------- story: listen · now you read · questions ---------- */
+var NUMW={'0':'zero','1':'one','2':'two','3':'three','4':'four','5':'five','6':'six','7':'seven','8':'eight','9':'nine','10':'ten','11':'eleven','12':'twelve'};
+function tok(s){ return String(s).toLowerCase().replace(/[’]/g,"'").replace(/(\d+):00/g,"$1 o'clock").replace(/\d+/g,function(d){return ' '+(NUMW[d]||d)+' ';}).replace(/[^a-z' ]+/g,' ').split(/\s+/).filter(Boolean); }
+function same(a,b){ a=a.replace(/'/g,''); b=b.replace(/'/g,''); return a===b || a+'s'===b || a===b+'s' || (a==='oclock'&&b==='clock') || (a==='mom'&&b==='mum') || (a==='hooray'&&/^hur?ray$/.test(b)); }
+function compare(expected, said){ // word-by-word LCS: which story words were heard
+  var disp=expected.split(/\s+/), E=disp.map(function(w){ return tok(w).join(''); }), S=tok(said), n=E.length, m=S.length, L=[], i, j;
+  for(i=0;i<=n;i++) L.push(new Array(m+1).fill(0));
+  for(i=n-1;i>=0;i--) for(j=m-1;j>=0;j--) L[i][j]= E[i]&&same(E[i],S[j]) ? 1+L[i+1][j+1] : Math.max(L[i+1][j],L[i][j+1]);
+  var ok=new Array(n).fill(false); i=0; j=0; while(i<n&&j<m){ if(E[i]&&same(E[i],S[j])){ ok[i]=true; i++; j++; } else if(L[i+1][j]>=L[i][j+1]) i++; else j++; }
+  var cnt=E.filter(Boolean).length, hit=ok.filter(Boolean).length;
+  return {ok:ok, pct: cnt?Math.round(hit*100/cnt):0, missed: disp.filter(function(w,k){ return E[k] && !ok[k]; }).map(clean)};
+}
+function clean(w){ return w.replace(/^[^A-Za-z0-9’']+|[^A-Za-z0-9’']+$/g,''); }
+function hear1(onText){ // one listening turn; resolves with what was heard ('' if nothing)
+  return new Promise(function(res){ var rec=new SR(), fin='', last='';
+    rec.lang='en-US'; rec.interimResults=true; rec.maxAlternatives=1;
+    rec.onresult=function(e){ var t='', f=''; for(var k=0;k<e.results.length;k++){ if(e.results[k].isFinal) f+=e.results[k][0].transcript+' '; else t+=e.results[k][0].transcript; } fin=f; last=(f+t).trim(); if(onText) onText(last); };
+    rec.onerror=function(e){ if(e.error==='not-allowed') res('#denied'); };
+    rec.onend=function(){ res((fin||last).trim()); };
+    try{ rec.start(); }catch(e){ res(''); } }); }
+function stars(n,of){ var h=''; for(var k=0;k<(of||3);k++) h+='<span class="'+(k<n?'son':'')+'">★</span>'; return '<span class="stars">'+h+'</span>'; }
 function storyAct(pane){
-  var html=D.story.map(function(s,si){ var off=0; return '<p class="sl" data-s="'+si+'">'+s.split(' ').map(function(w,wi){ var h='<span class="sw" data-c="'+off+'">'+esc(w)+'</span>'; off+=w.length+1; return h; }).join(' ')+'</p>'; }).join('');
-  var pics=D.words.slice(0,4).map(function(w){return '<span>'+w[0]+'</span>';}).join('');
-  pane.innerHTML=ollieBar('Listen to the story. Look at the words!')+'<div class="story"><div class="spics">'+pics+'</div>'+html+'<div class="row"><button class="btn" id="go">▶ Read to me</button><button class="btn ghost" id="slow">🐢 Slow</button></div><p class="hint">Tap any word to hear it.</p></div>';
-  var rate=.85, played=false;
-  async function read(){ hush(); var my=token; var lines=pane.querySelectorAll('.sl');
-    for(var si=0;si<lines.length;si++){ if(my!==token) return; var spans=[].slice.call(lines[si].querySelectorAll('.sw')); var got=false;
-      lines[si].classList.add('now');
-      var timers=[]; var est=function(){ var t=0; spans.forEach(function(sp,k){ timers.push(setTimeout(function(){ if(!got){ spans.forEach(function(x){x.classList.remove('lit');}); sp.classList.add('lit'); } }, t)); t+= (260+sp.textContent.length*55)/rate; }); };
-      est();
-      await say(D.story[si], {rate:rate, onWord:function(ci){ got=true; spans.forEach(function(x){ x.classList.toggle('lit', +x.dataset.c===ci || (+x.dataset.c<=ci && ci< +x.dataset.c+x.textContent.length)); }); }});
-      timers.forEach(clearTimeout); spans.forEach(function(x){x.classList.remove('lit');}); lines[si].classList.remove('now');
-      await new Promise(function(r){setTimeout(r,350);}); }
-    if(my===token && !played){ played=true; finish(pane,'story','What a nice story!'); } }
-  pane.querySelector('#go').onclick=function(){ rate=.85; read(); };
-  pane.querySelector('#slow').onclick=function(){ rate=.6; read(); };
-  pane.querySelector('#rep').onclick=function(){ say('Listen to the story. Look at the words!'); };
-  pane.querySelectorAll('.sw').forEach(function(s){ s.onclick=function(){ hush(); s.classList.add('lit'); say(s.textContent.replace(/[^A-Za-z’']/g,''),{rate:.7}).then(function(){ s.classList.remove('lit'); }); }; });
-  say('Listen to the story. Tap Read to me!');
+  var cur='listen', gen=0;
+  function tabs(){ return '<div class="stabs">'+[['listen','📖 Listen'],['read','🎤 Now you read!'],['qs','❓ Questions']].map(function(t){ return '<a class="stab'+(t[0]===cur?' on':'')+'" data-m="'+t[0]+'">'+t[1]+'</a>'; }).join('')+'</div>'; }
+  function mode(m){ hush(); gen++; cur=m; pane.innerHTML=''; ({listen:listenMode, read:readMode, qs:qsMode})[m](); }
+  pane.onclick=function(e){ var t=e.target.closest && e.target.closest('.stab'); if(t) mode(t.dataset.m); };
+  function spans(s){ var off=0; return s.split(' ').map(function(w,wi){ var h='<span class="sw" data-c="'+off+'" data-i="'+wi+'">'+esc(w)+'</span>'; off+=w.length+1; return h; }).join(' '); }
+  function tapWords(root){ root.querySelectorAll('.sw').forEach(function(s){ s.onclick=function(){ hush(); s.classList.add('lit'); say(clean(s.textContent),{rate:.7}).then(function(){ s.classList.remove('lit'); }); }; }); }
+
+  /* 1 · listen with highlighted words */
+  function listenMode(){ var g=gen;
+    var pics=D.words.slice(0,4).map(function(w){return '<span>'+w[0]+'</span>';}).join('');
+    pane.innerHTML=ollieBar('Listen to the story. Look at the words!')+tabs()+'<div class="story"><div class="spics">'+pics+'</div>'+D.story.map(function(s,si){ return '<p class="sl" data-s="'+si+'">'+spans(s)+'</p>'; }).join('')+
+      '<div class="row"><button class="btn" id="go">▶ Read to me</button><button class="btn ghost" id="slow">🐢 Slow</button></div><p class="hint">Tap any word to hear it.</p><div id="nx"></div></div>';
+    var rate=.85;
+    async function read(){ hush(); var my=token; var lines=pane.querySelectorAll('.sl');
+      for(var si=0;si<lines.length;si++){ if(my!==token) return; var sp=[].slice.call(lines[si].querySelectorAll('.sw')); var got=false;
+        lines[si].classList.add('now');
+        var timers=[], t=0; sp.forEach(function(x){ timers.push(setTimeout(function(){ if(!got){ sp.forEach(function(y){y.classList.remove('lit');}); x.classList.add('lit'); } }, t)); t+=(260+x.textContent.length*55)/rate; });
+        await say(D.story[si], {rate:rate, onWord:function(ci){ got=true; sp.forEach(function(x){ x.classList.toggle('lit', +x.dataset.c<=ci && ci< +x.dataset.c+x.textContent.length); }); }});
+        timers.forEach(clearTimeout); sp.forEach(function(x){x.classList.remove('lit');}); lines[si].classList.remove('now');
+        await new Promise(function(r){setTimeout(r,350);}); }
+      if(my!==token || g!==gen) return;
+      pane.querySelector('#nx').innerHTML='<div class="row"><button class="btn mic" id="toread">🎤 Now you read!</button></div>';
+      pane.querySelector('#toread').onclick=function(){ mode('read'); };
+      say('Now it is your turn. Tap Now you read!'); }
+    pane.querySelector('#go').onclick=function(){ rate=.85; read(); };
+    pane.querySelector('#slow').onclick=function(){ rate=.6; read(); };
+    pane.querySelector('#rep').onclick=function(){ say('Listen to the story. Tap Read to me!'); };
+    tapWords(pane);
+    say('Listen to the story. Tap Read to me!');
+  }
+
+  /* 2 · now you read: Ollie listens, green words, stars, practice tray */
+  function readMode(){
+    var g=gen, i=0, best=D.story.map(function(){return null;}), tray={};
+    function trayHTML(){ var ks=Object.keys(tray); if(!ks.length) return '';
+      return '<div class="tray"><b>🎯 Practice these words</b><p>Tap a word. Listen. Say it!</p><div class="tw2">'+ks.map(function(w){ return '<button class="pw'+(tray[w]?' pok':'')+'" data-w="'+esc(w)+'">'+(tray[w]?'✅ ':'🔊 ')+esc(w)+'</button>'; }).join('')+'</div><div class="heard" id="ph"></div></div>'; }
+    function bindTray(){ pane.querySelectorAll('.pw').forEach(function(b){ b.onclick=function(){ practice(b); }; }); }
+    function practice(b){ if(b.classList.contains('rec')) return; var w=b.dataset.w, ph=pane.querySelector('#ph'); hush();
+      b.classList.add('rec'); ph.textContent='';
+      say(w,{rate:.65}).then(function(){ return say('Your turn!',{rate:.9}); }).then(function(){
+        if(!SR){ b.classList.remove('rec'); tray[w]=1; b.className='pw pok'; b.textContent='✅ '+w; return; }
+        ph.textContent='👂 Listening…';
+        return hear1(function(t){ ph.textContent='👂 '+t; }).then(function(t){ b.classList.remove('rec');
+          if(t==='#denied'){ ph.textContent='🔒 Please allow the microphone.'; return; }
+          if(!t){ ph.textContent='I didn’t hear you.'; say('I didn’t hear you. Tap the word and say it louder!'); return; }
+          var r=compare(w,t); ph.textContent='I heard: “'+t+'”';
+          if(r.pct===100){ tray[w]=1; b.className='pw pok'; b.textContent='✅ '+w; burst(b); say(cheer()+' '+w+'!'); }
+          else say('Almost! Listen: '+w+'. Tap and try again!'); }); }); }
+    function show(){ if(g!==gen) return;
+      if(i>=D.story.length) return summary();
+      var s=D.story[i], r=best[i];
+      pane.innerHTML=ollieBar('Read the sentence. Tap the microphone!')+tabs()+
+        '<div class="prog">'+D.story.map(function(_,k){return '<span class="'+(best[k]?'ok':k===i?'cur':'')+'"></span>';}).join('')+'</div>'+
+        '<div class="card1 rd"><p class="sl big">'+spans(s)+'</p><div id="st">'+(r?stars(r.stars):'')+'</div>'+
+        '<div class="row"><button class="btn ghost" id="hear">🔊 Listen</button>'+(SR?'<button class="btn mic" id="mic">🎤 I read</button>':'<button class="btn mic" id="did">✅ I read it!</button>')+
+        (r?'<button class="btn" id="nxt">'+(i<D.story.length-1?'Next ▶':'Finish 🏁')+'</button>':'')+'</div><div class="heard" id="hd"></div></div>'+trayHTML();
+      if(r) paint(r);
+      var card=pane.querySelector('.rd'), hd=pane.querySelector('#hd');
+      tapWords(card); bindTray();
+      pane.querySelector('#hear').onclick=function(){ hush(); say(s,{rate:.7}); };
+      pane.querySelector('#rep').onclick=function(){ say('Read the sentence. Tap the microphone and read it out loud!'); };
+      if(pane.querySelector('#nxt')) pane.querySelector('#nxt').onclick=function(){ i++; show(); };
+      if(!SR){ pane.querySelector('#did').onclick=function(){ best[i]={stars:3, ok:null}; say(cheer()).then(function(){ i++; show(); }); }; }
+      else pane.querySelector('#mic').onclick=function(){ var b=this; hush(); b.classList.add('rec'); b.textContent='👂 Listening…'; hd.textContent='';
+        card.querySelectorAll('.sw').forEach(function(x){ x.classList.remove('wok','wno'); });
+        hear1(function(t){ if(g!==gen) return; hd.textContent='👂 '+t; var c=compare(s,t); paint(c, true); }).then(function(t){ if(g!==gen) return; b.classList.remove('rec'); b.textContent='🎤 I read';
+          if(t==='#denied'){ hd.textContent='🔒 Please allow the microphone.'; return; }
+          if(!t){ hd.textContent='I didn’t hear you.'; say('I didn’t hear you. Read a little louder!'); return; }
+          var c=compare(s,t); c.stars=c.pct>=90?3:c.pct>=60?2:1;
+          if(!best[i] || c.pct>=best[i].pct) best[i]=c;
+          c.missed.forEach(function(w){ if(!(w in tray)) tray[w]=0; });
+          var msg = c.stars===3 ? cheer()+' You read it all! Three stars!' :
+                    c.stars===2 ? 'Good reading! Two stars! Practice '+(c.missed.length>1?'these words':'this word')+': '+c.missed.join(', ')+'.' :
+                    'Nice try! One star. Listen and read again. You can do it!';
+          if(c.stars===3) burst(card);
+          show(); paint(c); pane.querySelector('#st').innerHTML=stars(c.stars); pane.querySelector('#hd').textContent='I heard: “'+t+'”'; say(msg); }); };
+      if(!r) say(s,{rate:.75}).then(function(){ return say('Now you read it!'); });
+    }
+    function paint(c, live){ pane.querySelectorAll('.rd .sw').forEach(function(x,k){ if(c.ok===null) return; x.classList.toggle('wok', !!c.ok[k]); x.classList.toggle('wno', !live && !c.ok[k] && !!clean(x.textContent)); }); }
+    function summary(){
+      var tot=best.reduce(function(a,b){return a+(b?b.stars:0);},0), max=D.story.length*3, left=Object.keys(tray).filter(function(w){return !tray[w];});
+      pane.innerHTML=ollieBar('You read the whole story!')+tabs()+'<div class="card1"><div class="bigE" style="font-size:80px">🏅</div><div style="font-size:24px;font-weight:800">'+tot+' / '+max+' stars</div>'+stars(Math.round(tot/max*3))+
+        '<div class="lines">'+D.story.map(function(s,k){ return '<p>'+(best[k]?stars(best[k].stars):'')+' '+esc(s)+'</p>'; }).join('')+'</div>'+
+        '<div class="row"><button class="btn ghost" id="again">🔁 Read again</button><button class="btn" id="toq">❓ Questions</button></div></div>'+trayHTML();
+      bindTray(); store('u'+N+'read', tot);
+      pane.querySelector('#again').onclick=function(){ i=0; best=best.map(function(){return null;}); show(); };
+      pane.querySelector('#toq').onclick=function(){ mode('qs'); };
+      pane.querySelector('#rep').onclick=function(){ say('You got '+tot+' stars out of '+max+'.'); };
+      var msg = tot>=max-1 ? 'Wow! You got '+tot+' stars out of '+max+'! You are a super reader!' :
+                tot>=max*0.6 ? 'Good job! You got '+tot+' stars out of '+max+'.'+(left.length?' Tap the words below and practice them.':'') :
+                'You got '+tot+' stars. Keep going! Listen to the story again and practice the words below.';
+      say(msg).then(function(){ return say('Now, answer my questions! Tap Questions.'); });
+    }
+    say('Now you read! Read each sentence out loud. I am listening!').then(show);
+  }
+
+  /* 3 · questions: Ollie asks, the child taps a picture */
+  function qsMode(){
+    var Q=(D.qs||[]).map(function(q){ var o=q[1].map(function(x,k){return {e:x[0], w:x[1], ok:k===0};}).sort(function(){return Math.random()-.5;}); return {q:q[0], o:o}; });
+    var g=gen, i=0, score=0;
+    function show(){ if(g!==gen) return;
+      if(i>=Q.length){ var msg=score===Q.length?'Perfect! You know the story!':'You did it! Great listening!'; store('u'+N+'qs', score);
+        pane.innerHTML=ollieBar(msg)+tabs(); pane.querySelector('#rep').onclick=function(){ say(msg); }; finish(pane,'story',msg); return; }
+      var r=Q[i], tries=0;
+      pane.innerHTML=ollieBar(r.q)+tabs()+'<div class="prog">'+Q.map(function(_,k){return '<span class="'+(k<i?'ok':k===i?'cur':'')+'"></span>';}).join('')+'</div>'+
+        '<div class="q"><button class="play" id="pl">🔊 Question '+(i+1)+'</button></div><div class="opts">'+r.o.map(function(o,k){ return '<button class="op qo" data-k="'+k+'"><span>'+o.e+'</span><small>'+esc(o.w)+'</small></button>'; }).join('')+'</div>';
+      var ask=function(){ hush(); return say(r.q.replace('…?','what?'),{rate:.8}); };
+      pane.querySelector('#pl').onclick=ask; pane.querySelector('#rep').onclick=ask;
+      pane.querySelectorAll('.op').forEach(function(b){ b.onclick=function(){ var o=r.o[+b.dataset.k]; hush();
+        if(o.ok){ b.classList.add('right'); burst(b); if(!tries) score++; say(cheer()+' '+o.w+'!').then(function(){ i++; show(); }); }
+        else { tries++; b.classList.add('wrong'); setTimeout(function(){b.classList.remove('wrong');},600); say('Oops! Not '+o.w+'. Listen again.').then(ask); } }; });
+      ask();
+    }
+    say('Question time! Listen and tap the picture.').then(show);
+  }
+  mode('listen');
 }
 
 /* ---------- trace letters with your finger ---------- */
