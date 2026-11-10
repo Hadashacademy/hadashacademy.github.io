@@ -19,7 +19,8 @@ function say(text, opt){ opt=opt||{}; return new Promise(function(res){
   if(!synth){ res(); return; } var my=token;
   var u=new SpeechSynthesisUtterance(text); u.lang='en-US'; u.rate=opt.rate||0.85; u.pitch=opt.pitch||1.15; if(voice) u.voice=voice;
   if(opt.onWord) u.onboundary=function(e){ if(e.name==='word'||e.name===undefined) opt.onWord(e.charIndex); };
-  u.onend=u.onerror=function(){ res(); }; synth.speak(u); }); }
+  var done=false, fin=function(){ if(!done){ done=true; res(); } };
+  u.onend=u.onerror=fin; setTimeout(fin, 2500+text.length*110/(u.rate||1)); synth.speak(u); }); }
 function hush(){ token++; if(synth) synth.cancel(); }
 var CHEERS=['Yes! Great job!','Super!','Wonderful!','You did it!','Fantastic!','Well done!'];
 function cheer(){ return CHEERS[Math.floor(Math.random()*CHEERS.length)]; }
@@ -79,7 +80,7 @@ function rounds(pane, list, key, intro){
     }; });
     ask();
   }
-  say(intro).then(show);
+  say(intro); show();
 }
 function listenAct(pane, act){ rounds(pane, D.listen, 'listen', 'Listen and tap the picture you hear. It is the same as page 3 of your workbook!'); }
 function tapAct(pane, act){
@@ -118,7 +119,7 @@ function sayAct(pane){
     };
     say('Say: '+w[1], {rate:.75});
   }
-  say('Listen. Then say the word. Tap the microphone and say it!').then(show);
+  say('Listen. Then say the word. Tap the microphone and say it!'); show();
 }
 
 /* ---------- story: listen · now you read · questions ---------- */
@@ -236,7 +237,7 @@ function storyAct(pane){
                 'You got '+tot+' stars. Keep going! Listen to the story again and practice the words below.';
       say(msg).then(function(){ return say('Now, answer my questions! Tap Questions.'); });
     }
-    say('Now you read! Read each sentence out loud. I am listening!').then(show);
+    say('Now you read! Read each sentence out loud. I am listening!'); show();
   }
 
   /* 3 · questions: Ollie asks, the child taps a picture */
@@ -256,7 +257,7 @@ function storyAct(pane){
         else { tries++; b.classList.add('wrong'); setTimeout(function(){b.classList.remove('wrong');},600); say('Oops! Not '+o.w+'. Listen again.').then(ask); } }; });
       ask();
     }
-    say('Question time! Listen and tap the picture.').then(show);
+    show();
   }
   mode('listen');
 }
@@ -294,7 +295,7 @@ function traceAct(pane){
     pane.querySelector('#hearL').onclick=hearL; pane.querySelector('#rep').onclick=function(){ say('Trace the letter with your finger.').then(hearL); };
     hearL();
   }
-  say('Trace the letter with your finger. Start at the top!').then(show);
+  say('Trace the letter with your finger. Start at the top!'); show();
 }
 
 window.addEventListener('hashchange', function(){ render(); scrollTo(0,0); });
