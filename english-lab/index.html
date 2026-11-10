@@ -146,7 +146,7 @@ function playFile(f){
   });
 }
 const LETTER = {A:'ay',B:'bee',C:'see',D:'dee',E:'ee',F:'eff',G:'gee',H:'aitch',I:'eye',J:'jay',K:'kay',L:'el',M:'em',N:'en',O:'oh',P:'pee',Q:'cue',R:'are',S:'ess',T:'tee',U:'you',V:'vee',W:'double you',X:'ex',Y:'why',Z:'zee'};
-const SPELLED = /\b[A-Z](?:(?:-|\.\s)[A-Z]){2,}\b\.?/;
+const SPELLED = /\b[A-Z](?:-[A-Z]){2,}\b\.?|\b[A-Z](?:\.\s[A-Z]){2,}\.?/;
 function spellParts(text){ // "I'm Kevin. K-E-V-I-N." -> ["I'm Kevin.", {l:"K"}, {l:"E"}, ...]
   const out = []; let rest = text, m;
   while ((m = rest.match(SPELLED))){ const pre = rest.slice(0, m.index).trim(); if (pre) out.push(pre);

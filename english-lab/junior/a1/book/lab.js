@@ -21,7 +21,7 @@ var cast = {};
 function voiceFor(who){ if(!voices.length) return null; if(!(who in cast)) cast[who]=Object.keys(cast).length; return voices[cast[who] % voices.length]; }
 function stop(){ token++; if(synth) synth.cancel(); document.querySelectorAll('.on').forEach(function(e){e.classList.remove('on');}); }
 var LETTER={A:'ay',B:'bee',C:'see',D:'dee',E:'ee',F:'eff',G:'gee',H:'aitch',I:'eye',J:'jay',K:'kay',L:'el',M:'em',N:'en',O:'oh',P:'pee',Q:'cue',R:'are',S:'ess',T:'tee',U:'you',V:'vee',W:'double you',X:'ex',Y:'why',Z:'zee'};
-var SPELLED=/\b[A-Z](?:(?:-|\.\s)[A-Z]){2,}\b\.?/;
+var SPELLED=/\b[A-Z](?:-[A-Z]){2,}\b\.?|\b[A-Z](?:\.\s[A-Z]){2,}\.?/;
 function say(text, who){ // spelled words (N-I-N-A) are said letter by letter with pauses
   if(!SPELLED.test(text)) return say1(text, who);
   var parts=[], rest=text, m; while((m=rest.match(SPELLED))){ var pre=rest.slice(0,m.index).trim(); if(pre) parts.push([pre,250]); m[0].replace(/[^A-Z]/g,'').split('').forEach(function(c){ parts.push([LETTER[c]||c, 450]); }); rest=rest.slice(m.index+m[0].length); }
