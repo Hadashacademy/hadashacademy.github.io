@@ -42,7 +42,7 @@ function groupHTML(g,i){
     '<div class="wordrow">'+items+'</div>'+(g.pairs?'<div class="ctrl"><button class="btn sm game">👂 Listen &amp; choose</button><span class="score gs"></span></div><div class="gq"></div>':'')+'<div class="out"></div></div>';
 }
 function render(){
-  app.innerHTML='<header class="top"><div class="wrap"><nav class="crumbs"><a href="../../">Teen Lab</a><a href="../">B1 · Adventurer</a></nav><div class="kick">ENGLISH LAB B1 · PRONUNCIATION</div><h1>Sounds <em>lab</em></h1><p>The sounds that are hardest for Spanish speakers — listen, choose and say them.</p>'+
+  app.innerHTML='<header class="top"><div class="wrap"><nav class="crumbs"><a href="../../../">Teen Lab</a><a href="../../">B1 · Adventurer</a><a href="../">Student\u2019s Book</a></nav><div class="kick">ENGLISH LAB B1 · PRONUNCIATION</div><h1>Sounds <em>lab</em></h1><p>The sounds that are hardest for Spanish speakers — listen, choose and say them.</p>'+
    (window.PRO&&PRO.available()?'<p><span class="probadge">⭐ Pro tutor on</span></p>':'')+'</div></header><main class="wrap">'+tricky()+GROUPS.map(groupHTML).join('')+
    '<p class="foot">Tap a word to hear it, then say it. Voice recognition is done by your browser'+(window.PRO&&PRO.available()?' or by Microsoft Azure (Pro tutor)':'')+'.<br>© 2026 Mercedes Moronta · Hadash Academy</p></main>';
   app.querySelectorAll('.tw').forEach(function(b){ b.onclick=function(){ var w=b.dataset.w, out=document.getElementById('tout'); say(w,true).then(function(){ return check(w,out); }).then(function(ok){ if(ok){ FB.trickyOk(w); var t=FB.store('tricky')||{}; if(!t[w]){ b.remove(); out.innerHTML+=' 🎉 Removed from your list!'; } else b.querySelector('small').textContent='U'+t[w].u+' · '+t[w].ok+'/3'; } }); }; });
