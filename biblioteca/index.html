@@ -137,14 +137,13 @@ async function getPage(i){
 function wm(){
   var w=document.getElementById('wm'), s=''; for(var y=-1;y<9;y++) for(var x=-1;x<5;x++) s+='<span style="left:'+(x*26+(y%2)*13)+'%;top:'+(y*12)+'%">'+esc(CODE)+' · Hadash Academy</span>'; w.innerHTML=s;
 }
-function stamp(c,W,H){ /* watermark drawn INTO the page image: can't be hidden or cropped away */
-  var fs=Math.max(14,Math.round(W/34)), txt=CODE+' · Hadash Academy', stepY=fs*5.2;
-  c.save(); c.translate(W/2,H/2); c.rotate(-Math.PI/6); c.font='700 '+fs+'px Poppins, Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle';
-  var stepX=c.measureText(txt).width+fs*4;
-  var R=Math.hypot(W,H)/2+stepX;
+function stamp(c,W,H){ /* light watermark drawn INTO the page image: can't be hidden or cropped away */
+  var fs=Math.max(12,Math.round(W/42)), txt=CODE+' · Hadash Academy', stepY=fs*7.5;
+  c.save(); c.translate(W/2,H/2); c.rotate(-Math.PI/6); c.font='600 '+fs+'px Poppins, Arial, sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  var stepX=c.measureText(txt).width+fs*6, R=Math.hypot(W,H)/2+stepX, o=Math.max(1,fs/14);
   for(var y=-R,row=0;y<R;y+=stepY,row++) for(var x=-R+(row%2)*stepX/2;x<R;x+=stepX){
-    c.lineWidth=Math.max(2,fs/7); c.strokeStyle='rgba(255,255,255,0.32)'; c.strokeText(txt,x,y);
-    c.fillStyle='rgba(11,26,58,0.24)'; c.fillText(txt,x,y); }
+    c.fillStyle='rgba(255,255,255,0.13)'; c.fillText(txt,x+o,y+o);   /* shows on dark pages */
+    c.fillStyle='rgba(37,99,235,0.10)'; c.fillText(txt,x,y); }       /* soft blue on light pages */
   c.restore(); }
 async function draw(){
   var my=++tok; ld.style.display='block'; pn.value=page; document.getElementById('pt').textContent='/ '+B.n;
