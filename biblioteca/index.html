@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Biblioteca · Hadash Academy</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#0b1a3a;--deep:#081330;--card:#11234d;--line:#22386d;--gold:#e0b25a;--gold2:#c9932f;--ink:#eef3ff;--mut:#9fb0d6;--cy:#22d3ee;--lime:#a3e635}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--navy);color:var(--ink);font:16px/1.5 Inter,system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+a{color:inherit}
+button{font:inherit;cursor:pointer}
+.wrap{max-width:1080px;margin:0 auto;padding:0 16px}
+header.top{background:linear-gradient(130deg,#081330,#123a8f 65%,#2563EB);padding:22px 0 54px}
+.crumbs{display:flex;gap:8px;flex-wrap:wrap}
+.crumbs a,.crumbs button{background:#ffffff1f;border:0;color:#fff;text-decoration:none;font:600 .82rem Poppins;padding:6px 12px;border-radius:999px}
+.kick{font:700 .72rem Poppins;letter-spacing:.2em;color:#7dd3fc;margin-top:18px}
+h1{font:800 clamp(1.9rem,5vw,2.8rem)/1.1 Poppins;margin:6px 0}
+h1 em{font-style:normal;color:var(--gold)}
+header p{color:#cfe0ff;margin:0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:-30px;position:relative}
+.panel h2{font:700 1.15rem Poppins;margin:0 0 6px}
+.in{width:100%;font:600 1.2rem Inter;letter-spacing:.06em;text-transform:uppercase;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--deep);color:#fff;-webkit-user-select:text;user-select:text}
+.in:focus{outline:none;border-color:var(--cy)}
+.btn{background:linear-gradient(90deg,var(--gold),var(--gold2));color:#1b1405;border:0;border-radius:999px;padding:11px 22px;font:700 .95rem Poppins}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.err{color:#fca5a5;min-height:1.4em;margin:8px 0 0;font-weight:600}
+.folder{margin:30px 0 8px}
+.folder h2{font:800 1.25rem Poppins;margin:0;display:flex;align-items:center;gap:10px}
+.folder h2 span.ic{width:38px;height:38px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem}
+.folder p{color:var(--mut);margin:2px 0 0 48px;font-size:.92rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:16px;margin-top:14px}
+.bk{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;text-align:left;color:var(--ink);display:flex;flex-direction:column;gap:8px;transition:transform .2s,border-color .2s}
+.bk:hover,.bk:focus-visible{transform:translateY(-4px);border-color:var(--gold);outline:none}
+.bk img{width:100%;aspect-ratio:3/3.9;object-fit:cover;border-radius:8px;background:var(--deep);pointer-events:none}
+.bk b{font:700 .92rem/1.25 Poppins}
+.bk small{color:var(--mut);font-size:.8rem}
+.bk .pr{height:5px;background:var(--deep);border-radius:4px;overflow:hidden}
+.bk .pr i{display:block;height:100%;background:var(--cy)}
+.foot{color:var(--mut);font-size:.82rem;text-align:center;margin:40px 0 30px}
+/* reader */
+#rd{position:fixed;inset:0;background:#050b1c;display:none;flex-direction:column;z-index:10}
+#rd.on{display:flex}
+.bar{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--deep);border-bottom:1px solid var(--line)}
+.bar .t{flex:1;min-width:0;font:600 .9rem Poppins;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ib{background:var(--card);border:1px solid var(--line);color:#fff;border-radius:10px;min-width:40px;height:40px;padding:0 10px;font-weight:700}
+.pg{display:flex;align-items:center;gap:6px;font-size:.9rem;color:var(--mut)}
+.pg input{width:58px;height:36px;text-align:center;border-radius:8px;border:1px solid var(--line);background:var(--card);color:#fff;font:600 .95rem Inter;-webkit-user-select:text;user-select:text}
+#stage{flex:1;overflow:auto;position:relative;display:flex;justify-content:center;align-items:flex-start;touch-action:pan-x pan-y}
+#stage.fit{align-items:center;overflow:hidden}
+#cv{display:block;background:#fff;box-shadow:0 10px 40px #000;margin:10px auto}
+#wm{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+#wm span{position:absolute;font:700 15px Poppins;color:#0b1a3a;opacity:.07;transform:rotate(-30deg);white-space:nowrap}
+#ld{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:var(--mut);font-weight:600}
+.nav{display:flex;gap:10px;padding:8px 10px;background:var(--deep);border-top:1px solid var(--line)}
+.nav .ib{flex:1;height:46px;font-size:1rem}
+@media print{body{display:none!important}}
+</style></head>
+<body oncontextmenu="return false">
+<div id="app"></div>
+<div id="rd" role="dialog" aria-label="Lector">
+  <div class="bar">
+    <button class="ib" id="back" aria-label="Volver a la biblioteca">← </button>
+    <div class="t" id="rt"></div>
+    <button class="ib" id="zo" aria-label="Alejar">−</button><button class="ib" id="zi" aria-label="Acercar">+</button>
+    <div class="pg"><input id="pn" inputmode="numeric" aria-label="Página"><span id="pt"></span></div>
+  </div>
+  <div id="stage" class="fit"><canvas id="cv" aria-label="Página del libro"></canvas><div id="wm"></div><div id="ld">Abriendo…</div></div>
+  <div class="nav"><button class="ib" id="prev">◀ Anterior</button><button class="ib" id="next">Siguiente ▶</button></div>
+</div>
+<script>
+(function(){
+'use strict';
+var CODE_KEY='hadash-sunny-code', app=document.getElementById('app'), CAT=null, KEYS=null, K=null, CODE='';
+var FOLDERS=[
+  {id:'junior',ic:'🧒',bg:'#F26B00',t:'Junior',d:'My English Adventure Book 1 y Little Explorers'},
+  {id:'teen',ic:'🎧',bg:'#2563EB',t:'Teen Edition',d:'Libros y workbooks para adolescentes'},
+  {id:'funny',ic:'📖',bg:'#E8566C',t:'Funny Reading with Mama',d:'Lectura en casa, del primer sonido a la lectura fluida'}];
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function get(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function hex(h){var a=new Uint8Array(h.length/2);for(var i=0;i<a.length;i++)a[i]=parseInt(h.substr(i*2,2),16);return a;}
+
+async function unlock(code){
+  code=String(code||'').trim().toUpperCase(); if(!code) return false;
+  var km=await crypto.subtle.importKey('raw',new TextEncoder().encode(code),'PBKDF2',false,['deriveKey']);
+  for(var i=0;i<KEYS.w.length;i++){ var w=KEYS.w[i];
+    try{ var wk=await crypto.subtle.deriveKey({name:'PBKDF2',salt:hex(w.s),iterations:KEYS.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
+      var raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:hex(w.i)},wk,hex(w.d));
+      K=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']); CODE=code; return true; }catch(e){}
+  }
+  return false;
+}
+
+function head(kick,title,sub,crumbs){
+  return '<header class="top"><div class="wrap"><nav class="crumbs">'+crumbs+'</nav><div class="kick">'+kick+'</div><h1>'+title+'</h1><p>'+sub+'</p></div></header>';
+}
+function login(msg){
+  app.innerHTML=head('HADASH ACADEMY','Biblioteca <em>digital</em>','Tus libros y workbooks para leer en línea.','<a href="../">← Hadash Academy</a><a href="../english-lab/">English Lab</a>')+
+   '<main class="wrap"><form class="panel" id="lf" autocomplete="off"><h2>🔑 Escribe tu código de estudiante</h2>'+
+   '<p style="margin:0;color:var(--mut)">Es el mismo código que usas con Sunny (por ejemplo HADASH-E202501). Solo lo escribes una vez en este equipo.</p>'+
+   '<div class="row"><input class="in" id="cd" placeholder="HADASH-E2025…" autocapitalize="characters" spellcheck="false" aria-label="Código de estudiante"><button class="btn" type="submit">Entrar</button></div>'+
+   '<p class="err" id="er" role="alert">'+(msg||'')+'</p></form>'+
+   '<p class="foot">Los libros se leen en línea · © 2026 Mercedes Moronta · Hadash Academy</p></main>';
+  var f=document.getElementById('lf'), cd=document.getElementById('cd'); cd.focus();
+  f.onsubmit=async function(e){e.preventDefault(); var b=f.querySelector('button'); b.disabled=true; b.textContent='Revisando…';
+    var ok=await unlock(cd.value); b.disabled=false; b.textContent='Entrar';
+    if(ok){ set(CODE_KEY,CODE); home(); } else { document.getElementById('er').textContent='Ese código no funciona. Revísalo o pídele uno a tu profesora.'; cd.select(); } };
+}
+function home(){
+  closeReader();
+  var html=head('HADASH ACADEMY · BIBLIOTECA','Mis <em>libros</em>','Elige un libro para leer. Tu página se guarda sola.','<a href="../">← Hadash Academy</a><a href="../english-lab/">English Lab</a><button id="out">Salir</button>')+'<main class="wrap"><div class="panel" style="padding:14px 18px">👋 Hola, <b>'+esc(CODE)+'</b>. Estos libros son solo para leer en línea.</div>';
+  FOLDERS.forEach(function(F){ var bs=CAT.books.filter(function(b){return b.f===F.id;}); if(!bs.length) return;
+    html+='<section class="folder"><h2><span class="ic" style="background:'+F.bg+'">'+F.ic+'</span>'+esc(F.t)+'</h2><p>'+esc(F.d)+'</p><div class="grid">'+
+      bs.map(function(b){ var last=get('lib:'+b.id,1), pc=Math.round(100*last/b.n);
+        return '<button class="bk" data-b="'+b.id+'"><img src="c/'+b.id+'.jpg" alt="" draggable="false"><b>'+esc(b.t)+'</b><small>'+esc(b.s)+' · '+b.n+' págs.'+(last>1?' · pág. '+last:'')+'</small><div class="pr"><i style="width:'+(last>1?pc:0)+'%"></i></div></button>'; }).join('')+'</div></section>'; });
+  html+='<p class="foot">© 2026 Mercedes Moronta · Hadash Academy · Prohibida su copia o distribución</p></main>';
+  app.innerHTML=html;
+  app.querySelectorAll('.bk').forEach(function(x){ x.onclick=function(){ openBook(x.dataset.b); }; });
+  document.getElementById('out').onclick=function(){ try{localStorage.removeItem(CODE_KEY);}catch(e){} K=null; CODE=''; login(); };
+}
+
+/* ---------- reader ---------- */
+var rd=document.getElementById('rd'), cv=document.getElementById('cv'), stage=document.getElementById('stage'), ld=document.getElementById('ld'), pn=document.getElementById('pn');
+var B=null, page=1, zoom=1, cache=new Map(), tok=0;
+async function getPage(i){
+  var key=B.id+':'+i; if(cache.has(key)) return cache.get(key);
+  var pr=(async function(){ var r=await fetch('b/'+B.p+'/'+String(i).padStart(3,'0')+'.bin'); if(!r.ok) throw new Error('net');
+    var buf=new Uint8Array(await r.arrayBuffer());
+    var plain=await crypto.subtle.decrypt({name:'AES-GCM',iv:buf.slice(0,12)},K,buf.slice(12));
+    return await createImageBitmap(new Blob([plain],{type:'image/webp'})); })();
+  cache.set(key,pr); pr.catch(function(){cache.delete(key);});
+  if(cache.size>8){ var k0=cache.keys().next().value; cache.delete(k0); }
+  return pr;
+}
+function wm(){
+  var w=document.getElementById('wm'), s=''; for(var y=-1;y<9;y++) for(var x=-1;x<5;x++) s+='<span style="left:'+(x*26+(y%2)*13)+'%;top:'+(y*12)+'%">'+esc(CODE)+' · Hadash Academy</span>'; w.innerHTML=s;
+}
+async function draw(){
+  var my=++tok; ld.style.display='block'; pn.value=page; document.getElementById('pt').textContent='/ '+B.n;
+  document.getElementById('prev').disabled=page<=1; document.getElementById('next').disabled=page>=B.n;
+  try{ var bm=await getPage(page); if(my!==tok) return;
+    var sw=stage.clientWidth-20, sh=stage.clientHeight-20, r=bm.width/bm.height;
+    var w=Math.min(sw, sh*r)*zoom; var h=w/r; var dpr=Math.min(window.devicePixelRatio||1,2);
+    cv.width=Math.round(w*dpr); cv.height=Math.round(h*dpr); cv.style.width=w+'px'; cv.style.height=h+'px';
+    var c=cv.getContext('2d'); c.imageSmoothingQuality='high'; c.drawImage(bm,0,0,cv.width,cv.height);
+    stage.classList.toggle('fit',zoom===1); ld.style.display='none'; set('lib:'+B.id,page);
+    [page+1,page+2,page-1].forEach(function(p){ if(p>=1&&p<=B.n) getPage(p).catch(function(){}); });
+  }catch(e){ if(my===tok) ld.textContent='No se pudo abrir esta página. Revisa tu conexión.'; }
+}
+function go(p){ p=Math.max(1,Math.min(B.n,p|0)); if(p===page&&cv.width) return; page=p; stage.scrollTop=0; draw(); }
+function openBook(id){
+  B=CAT.books.filter(function(b){return b.id===id;})[0]; if(!B) return;
+  page=get('lib:'+id,1); zoom=1; ld.textContent='Abriendo…';
+  document.getElementById('rt').textContent=B.t+' · '+B.s; rd.classList.add('on'); wm(); history.pushState({r:1},'' ,'#'+id); draw();
+}
+function closeReader(){ rd.classList.remove('on'); B=null; }
+document.getElementById('back').onclick=function(){ history.back(); };
+window.addEventListener('popstate',function(){ if(rd.classList.contains('on')) closeReader(); });
+document.getElementById('prev').onclick=function(){ go(page-1); };
+document.getElementById('next').onclick=function(){ go(page+1); };
+document.getElementById('zi').onclick=function(){ zoom=Math.min(3,zoom+0.5); draw(); };
+document.getElementById('zo').onclick=function(){ zoom=Math.max(1,zoom-0.5); draw(); };
+pn.onchange=function(){ go(+pn.value); };
+window.addEventListener('resize',function(){ if(B) draw(); });
+document.addEventListener('keydown',function(e){
+  if((e.ctrlKey||e.metaKey)&&/^[spc]$/i.test(e.key)){ e.preventDefault(); return; }
+  if(!B||e.target===pn) return;
+  if(e.key==='ArrowRight'||e.key==='PageDown'||e.key===' '){ e.preventDefault(); go(page+1); }
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); go(page-1); }
+  else if(e.key==='Escape') history.back();
+});
+var sx=null; stage.addEventListener('touchstart',function(e){ if(e.touches.length===1&&zoom===1) sx=e.touches[0].clientX; else sx=null; },{passive:true});
+stage.addEventListener('touchend',function(e){ if(sx===null) return; var dx=e.changedTouches[0].clientX-sx; if(Math.abs(dx)>50) go(page+(dx<0?1:-1)); sx=null; });
+document.addEventListener('dragstart',function(e){ e.preventDefault(); });
+
+(async function(){
+  try{ var r=await Promise.all([fetch('catalog.json',{cache:'no-cache'}),fetch('keys.json',{cache:'no-cache'})]); CAT=await r[0].json(); KEYS=await r[1].json(); }
+  catch(e){ app.innerHTML='<p class="wrap" style="padding:40px 16px">No se pudo cargar la biblioteca. Revisa tu conexión.</p>'; return; }
+  var saved=get(CODE_KEY,''); if(saved && await unlock(saved)) { home(); var h=location.hash.slice(1); if(h) { history.replaceState(null,'',location.pathname); openBook(h); } } else login();
+})();
+})();
+</script>
+</body></html>
