@@ -1,0 +1,9 @@
+.wbtop{background:linear-gradient(130deg,#0b4f6c,#13a08c 60%,#5eead4)}
+.wbtop .crumbs a{color:#fff}
+.gn{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--teal);color:#fff;font:700 11px Poppins;margin:0 4px 0 2px;vertical-align:1px}
+.gap.shown{border-color:#f5b301;background:#fef9c3;color:#713f12}
+.ch:disabled{cursor:default}
+.wbnote{background:#fff8e6;border-color:#f6e2a8}
+.fin .big{font:700 28px Poppins;color:var(--teal);margin:4px 0}
+.card{--acc:var(--teal)}
+.lvc.wbk .bd{background:#13a08c}

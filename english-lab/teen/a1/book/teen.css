@@ -1,0 +1,7 @@
+/* Teen A1 theme: navy + blue + cyan (tech) */
+:root,:root[data-theme="dark"]{--pur:#2563EB;--pur2:#1D4ED8;--lav:#EEF4FF;--teal:#0E9FB8;--tealt:#E6F8FB}
+.top{background:linear-gradient(130deg,#0b1a3a,#123a8f 60%,#2563EB)!important}
+.top .kick{color:#7dd3fc!important}.top h1 em{color:#a3e635}
+.dlg .ln b{color:#2563EB}
+[hidden]{display:none!important}
+.jav{display:inline-flex;width:34px;height:34px;border-radius:50%;background:#0b1a3a;color:#22d3ee;font:700 15px Poppins;align-items:center;justify-content:center;margin-right:8px;flex:none;border:2px solid #22d3ee}
