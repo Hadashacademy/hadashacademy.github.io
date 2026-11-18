@@ -2146,7 +2146,7 @@ const _home=home;
 home=function(){
   _home();
   const ul=app.querySelector(".list.levels");
-  if(ul){ul.insertAdjacentHTML("beforeend",`<li><button class="btn" id="oBtn"><span class="big"><kbd>O</kbd>Ordena la oración</span><span>Como un Duolingo hablado</span><small>Sunny dice las palabras en desorden y tú dices la oración. De 3 palabras en A1 hasta oraciones largas de B1.</small></button></li>
+  if(ul){ul.insertAdjacentHTML("beforeend",`<li><button class="btn" id="oBtn"><span class="big"><kbd>O</kbd>Ordena la oración</span><span>Escucha, ordena y habla</span><small>Sunny dice las palabras en desorden y tú dices la oración. De 3 palabras en A1 hasta oraciones largas de B1.</small></button></li>
   <li><button class="btn" id="rBtn"><span class="big"><kbd>L</kbd>Lectura y shadowing</span><span>Lee, repite y contesta</span><small>Sunny lee frase por frase y tú repites igualito. El micrófono te dice qué palabras mejorar. Dos velocidades: Slow y Normal.</small></button></li>`);
     document.getElementById("oBtn").onclick=()=>orderHub();document.getElementById("rBtn").onclick=()=>readHub()}
   const sub=app.querySelector("p.sub");if(sub)sub.textContent="Presiona 1, 2 o 3 para elegir el nivel, 4 para pronunciación, 5 para conversar con Sunny, 6 para verbos, 7 para he, she, it, 8 para países, 9 para listening, 0 para Real American English, O para ordenar oraciones, L para lectura y shadowing, o J para hablar con Sunny ahora mismo. Presiona H para escuchar la ayuda.";
