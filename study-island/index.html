@@ -1919,7 +1919,7 @@ learn=function(m,i){
     const it=m.items[0];say([["Ahora las palabras. Tarjeta 1.","es"],...cardParts(it)]);return}
   return _learn(m,i)};
 
-/* ---------- Ordena la oración (como un Duolingo hablado) ---------- */
+/* ---------- Ordena la oración ---------- */
 function orderStages(){return LEVELS.flatMap(l=>(l.order||[]).map(o=>({...o,lvName:l.name})))}
 function orderProg(){return store.get("hadash-order",{})}
 const stageDone=id=>(orderProg()[id]||0)>=8;
