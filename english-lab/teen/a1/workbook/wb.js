@@ -14,7 +14,7 @@ function vq(v){var n=v.name+' '+(v.voiceURI||''),l=(v.lang||'').replace('_','-')
 function loadVoices(){ if(!synth) return; voices = synth.getVoices().filter(function(x){return /^en[-_]/i.test(x.lang);}).sort(function(a,b){return vq(b)-vq(a);}); }
 if(synth){loadVoices(); synth.onvoiceschanged=loadVoices;}
 var cast = {};
-function voiceFor(who){ if(!voices.length) return null; if(!(who in cast)) cast[who]=Object.keys(cast).length; return voices[cast[who] % voices.length]; }
+function voiceFor(who){ if(window.HV){var hv=HV.forWho(who);if(hv)return hv;} if(!voices.length) return null; if(!(who in cast)) cast[who]=Object.keys(cast).length; return voices[cast[who] % voices.length]; }
 function stop(){ token++; if(synth) synth.cancel(); document.querySelectorAll('.ln.on').forEach(function(e){e.classList.remove('on');}); }
 function say(text, who){ return new Promise(function(res){
   if(!synth){res();return;}

@@ -18,7 +18,7 @@ function loadVoices(){ if(!synth) return; var v=synth.getVoices().filter(functio
 function vq(v){const n=v.name+' '+(v.voiceURI||''),l=(v.lang||'').replace('_','-').toLowerCase();let s=1;if(/natural|neural/i.test(n))s=6;else if(/online/i.test(n))s=5;else if(/google|premium|enhanced|siri/i.test(n))s=4;else if(/samantha|ava|allison|alex|daniel|karen|moira|paulina|monica|juan/i.test(n))s=3;if(/zira|david|mark|hazel|helena|sabina|espeak|compact/i.test(n))s=0;if(l==='en-us'||l==='es-us'||l==='es-mx'||l==='es-419')s+=0.5;return s}
 if(synth){loadVoices(); synth.onvoiceschanged=loadVoices;}
 var cast = {};
-function voiceFor(who){ if(!voices.length) return null; if(!(who in cast)) cast[who]=Object.keys(cast).length; return voices[cast[who] % voices.length]; }
+function voiceFor(who){ if(window.HV){var hv=HV.forWho(who);if(hv)return hv;} if(!voices.length) return null; if(!(who in cast)) cast[who]=Object.keys(cast).length; return voices[cast[who] % voices.length]; }
 function stop(){ token++; if(synth) synth.cancel(); document.querySelectorAll('.on').forEach(function(e){e.classList.remove('on');}); }
 function say(text, who){ return new Promise(function(res){
   if(!synth){res();return;}
