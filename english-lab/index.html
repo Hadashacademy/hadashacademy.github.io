@@ -221,7 +221,7 @@ const partOf = t => t.kind === 'Workbook' ? 'wb' : 'book';
 const lvCard = (href, emoji, col, title, desc, pill, off) => `<a class="lvc2${off ? ' off' : ''}" ${off ? '' : `href="${href}"`} style="--b:${col}"><span class="bd">${emoji}</span><div><h2>${title}</h2><p>${desc}</p></div><span class="pill">${pill}</span></a>`;
 function kidsView(){
   const items = Object.entries(BOOKS).map(([k, b]) => { const n = DATA.tracks.filter(t => b.test(t.unit) && t.id !== 'wb01-1').length;
-    return lvCard('#' + k, b.emoji, b.col, `${esc(b.name)} <small>· ${b.lv}</small>`, `${Object.keys(unitsOf(k)).length} units · ${n} tracks · ${esc(b.desc)}`, 'OPEN →'); }).join('');
+    return lvCard('#' + k, b.emoji, b.col, `${esc(b.name)} <small>· ${b.lv}</small>`, `${Object.keys(unitsOf(k)).length} units · ${n} tracks · ${esc(b.desc)}`, 'OPEN →'); }).join('') + lvCard('junior/b1/', '🧭', '#1FAE6B', 'My English Adventure Junior · B1 <small>· B1</small>', 'World Explorers · Student’s Book, Workbook (Preliminary-style) and Little Explorers B1.', 'OPEN →');
   return `<header class="top" style="background:linear-gradient(120deg,#F26B00,#F5A300)"><div class="wrap"><a class="back" href="#">← English Lab</a>
   <div class="brand"><span class="logo">🧒</span><div><small>ENGLISH LAB · JUNIOR</small><h1>Junior</h1></div></div><p style="margin:8px 0 0;opacity:.95">Choose your book. · Elige tu libro.</p></div></header>
   <main class="wrap"><div class="lv2">${items}</div></main>`;
