@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Códigos de estudiantes · Hadash Academy</title>
+<script src="/hadash-auth.js?v=1"></script>
+<style>
+:root{--bg:#fbf7ef;--card:#fff;--fg:#1d2b3a;--mut:#5b6875;--line:#e3dccd;--acc:#f5a623;--ok:#2e7d4f;--warn:#b5651d}
+@media (prefers-color-scheme:dark){:root{--bg:#121a24;--card:#1c2632;--fg:#eef3f8;--mut:#a9b6c2;--line:#2f3d4d}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;line-height:1.45}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}h1{margin:0 0 4px;font-size:1.7rem}p.s{margin:0 0 18px;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+input{font-size:1.1rem;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);width:100%;max-width:280px}
+button{font:inherit;font-weight:700;padding:9px 14px;border-radius:10px;border:0;background:var(--acc);color:#1d2b3a;cursor:pointer}
+button.sec{background:transparent;border:2px solid var(--line);color:var(--fg)}button:disabled{opacity:.5;cursor:default}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}th{font-size:.85rem;color:var(--mut);font-weight:600}
+td.c{font-family:ui-monospace,Consolas,monospace;font-weight:700;white-space:nowrap}.u{color:var(--warn);font-weight:600}.f{color:var(--ok);font-weight:600}
+.er{color:#c0392b;font-weight:600;min-height:1.3em}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+@media (max-width:520px){th:nth-child(2),td:nth-child(2){display:none}}
+</style></head><body><main>
+<h1>Códigos de estudiantes</h1>
+<p class="s">Hadash Academy · Página solo para la maestra. Cada código funciona en un solo equipo: el primero donde el estudiante lo escribe. Si cambia de teléfono o computadora, o borró los datos del navegador, pulsa <b>Liberar</b> y el código quedará listo para su equipo nuevo.</p>
+<div id="app" class="card"></div>
+</main>
+<script>
+(function(){
+var app=document.getElementById('app'), KEY='hadash-teacher-code';
+function get(){try{return JSON.parse(localStorage.getItem(KEY)||'""')}catch(e){return ''}}
+function set(v){try{localStorage.setItem(KEY,JSON.stringify(v))}catch(e){}}
+async function call(body){
+  var r=await fetch(HadashAuth.url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  var d={};try{d=await r.json()}catch(e){} return {status:r.status,d:d};
+}
+function login(msg){
+  app.innerHTML='<form id="f" autocomplete="off"><p style="margin-top:0"><b>Escribe tu código de maestra</b></p><div class="row"><input id="c" type="password" aria-label="Código de maestra" autocapitalize="characters" spellcheck="false"><button>Entrar</button></div><p class="er" role="alert">'+(msg||'')+'</p></form>';
+  var c=document.getElementById('c');c.focus();
+  document.getElementById('f').onsubmit=function(e){e.preventDefault();var v=c.value.trim().toUpperCase();if(v){set(v);load();}};
+}
+async function load(){
+  var t=get(); if(!t) return login();
+  app.innerHTML='<p>Cargando…</p>';
+  var r; try{ r=await call({action:'codes',code:t}); }catch(e){ app.innerHTML='<p class="er">No hay conexión. Revisa tu internet.</p>'; return; }
+  if(r.status!==200){ set(''); return login(r.status===503?'Falta configurar la memoria de equipos en Cloudflare.':'Ese código no es de maestra.'); }
+  var rows=r.d.codes||[], used=rows.filter(function(x){return x.used}).length;
+  app.innerHTML='<div class="row" style="justify-content:space-between;margin-bottom:8px"><span><b>'+rows.length+'</b> códigos · <span class="u">'+used+' en uso</span> · <span class="f">'+(rows.length-used)+' libres</span></span><button class="sec" id="rf">↻ Actualizar</button></div>'+
+    '<table><thead><tr><th>Código</th><th>Estado</th><th></th></tr></thead><tbody>'+rows.map(function(x){
+      return '<tr><td class="c">'+x.code+'</td><td>'+(x.used?'<span class="u">En uso desde '+(x.since||'')+'</span>':'<span class="f">Libre (sin equipo)</span>')+'</td><td style="text-align:right">'+(x.used?'<button data-c="'+x.code+'">Liberar</button>':'')+'</td></tr>';
+    }).join('')+'</tbody></table><p class="er" id="er" role="alert"></p><p style="margin:12px 0 0"><button class="sec" id="out">Salir</button></p>';
+  document.getElementById('rf').onclick=load;
+  document.getElementById('out').onclick=function(){set('');login();};
+  app.querySelectorAll('[data-c]').forEach(function(b){b.onclick=async function(){
+    if(!confirm('¿Liberar '+b.dataset.c+'? El estudiante podrá usarlo en un equipo nuevo.')) return;
+    b.disabled=true;b.textContent='Liberando…';
+    var x=await call({action:'release',code:t,target:b.dataset.c});
+    if(x.status===200) load(); else {document.getElementById('er').textContent='No se pudo liberar. Intenta otra vez.';b.disabled=false;b.textContent='Liberar';}
+  };});
+}
+load();
+})();
+</script>
+</body></html>

@@ -1,6 +1,6 @@
 /* Hadash Academy · English Lab — Sunny con IA (Azure OpenAI a través del puente de Cloudflare)
    Añade un botón "Talk with Sunny" en las páginas del English Lab. El estudiante escribe su
-   código personal (HADASH-E2025xx) una sola vez; el mismo código sirve en Study Island.
+   código personal (HADASH-######) una sola vez; el mismo código sirve en Study Island.
    Niveles A1 a C1. Sunny conversa, corrige con cariño y, al final, da consejos. */
 (function () {
   const SUNNY_URL = 'https://hadash-sunny.dream-inenglish25.workers.dev/';
@@ -95,14 +95,15 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
 
   function codeScreen(msg) {
     shell(`<p style="margin:0;font-weight:800">Escribe tu código de Sunny</p>
-      <p style="margin:0">Tu profesora te da un código personal, por ejemplo <b>HADASH-E202501</b>. Solo lo escribes una vez en esta computadora.</p>
+      <p style="margin:0">Tu profesora te da un código personal, <b>HADASH-</b> y 6 números. Solo lo escribes una vez en este equipo.</p>
       <p class="sn-st sn-err" role="alert">${msg ? esc(msg) : ''}</p>`,
-      `<form class="sn-row" id="sn-cf" autocomplete="off"><input class="sn-in" id="sn-code" aria-label="Código de Sunny" autocapitalize="characters" spellcheck="false" placeholder="HADASH-E2025..."><button class="sn-btn sn-pri" type="submit">Entrar</button></form>`);
+      `<form class="sn-row" id="sn-cf" autocomplete="off"><input class="sn-in" id="sn-code" aria-label="Código de Sunny" autocapitalize="characters" spellcheck="false" placeholder="HADASH-"><button class="sn-btn sn-pri" type="submit">Entrar</button></form>`);
     const inp = dlg.querySelector('#sn-code'); inp.focus();
     dlg.querySelector('#sn-cf').onsubmit = e => {
       e.preventDefault();
-      const c = inp.value.trim().toUpperCase(); if (!c) return;
-      store.set(CODE_KEY, c); chatScreen();
+      let c = inp.value.replace(/\s+/g, '').toUpperCase(); if (!c) return; if (/^\d{6}$/.test(c)) c = 'HADASH-' + c;
+      if (!window.HadashAuth) { store.set(CODE_KEY, c); return chatScreen(); }
+      HadashAuth.check(c).then(r => r.ok ? chatScreen() : codeScreen(r.message));
     };
   }
 
@@ -139,9 +140,9 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
     let r;
     try { r = await fetch(SUNNY_URL, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code: store.get(CODE_KEY, ''), messages })
+      body: JSON.stringify({ code: store.get(CODE_KEY, ''), device: window.HadashAuth ? HadashAuth.device() : '', messages })
     }); } catch (e) { throw { code: 'down', det: 'sin conexión con el puente' }; }
-    if (r.status === 401) { store.del(CODE_KEY); throw { code: 'bad_code' }; }
+    if (r.status === 401 || r.status === 403) { let j = {}; try { j = await r.clone().json(); } catch (e) {} if (r.status === 401 || j.error === 'device_locked') { if (window.HadashAuth) HadashAuth.forget(); else store.del(CODE_KEY); throw { code: 'bad_code', msg: window.HadashAuth && HadashAuth.errorMessage(r.status, j.error) }; } }
     if (!r.ok) { let det = 'HTTP ' + r.status; try { const j = await r.json(); if (j.error) det = j.error; } catch (e) {} throw { code: 'down', det }; }
     const d = await r.json();
     const t = String(d.text || d.reply || '').replace(/[*#`_]/g, '').trim();
@@ -149,7 +150,7 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
     return t;
   }
   function fail(e) {
-    if (e && e.code === 'bad_code') return codeScreen('Ese código no funciona. Revísalo o pídele uno nuevo a tu profesora.');
+    if (e && e.code === 'bad_code') return codeScreen(e.msg || 'Ese código no funciona. Revísalo o pídele uno nuevo a tu profesora.');
     status('Sunny no pudo responder. Revisa tu internet y vuelve a intentarlo.' + (e && e.det ? ' (Detalle: ' + e.det + ')' : ''), true);
   }
 

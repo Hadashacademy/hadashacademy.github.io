@@ -1,16 +1,16 @@
 /*
- * Hadash Academy · Sunny bridge (Azure OpenAI in Microsoft Foundry)
+ * Hadash Academy · Sunny bridge (Azure OpenAI in Microsoft Foundry) + student codes
  * Runs on Cloudflare Workers (free plan). It keeps the Azure key secret: the web page never
- * sees it. Study Island sends the conversation here, the bridge asks Azure and returns
- * Sunny's answer. It never stores conversations or personal data.
+ * sees it. It also checks the student codes for Study Island, the English Lab and the library,
+ * and ties each student code to the first device where it is used.
+ * It never stores conversations or personal data (only: code → random device id + date).
  *
- * If anything fails (no credit, Azure down, wrong code), the bridge answers with an error
- * and Study Island switches by itself to the free guided-practice mode.
- *
- * Settings in Cloudflare (Worker → Settings → Variables and Secrets):
+ * Settings in Cloudflare (Worker → Settings):
  *   AZURE_KEY      (Secret)  API key from Microsoft Foundry — NEVER put it in the web page
- *   STUDENT_CODES  (Secret)  personal student codes separated by commas (HADASH-E202501,...)
+ *   STUDENT_CODES  (Secret)  student codes separated by commas (tied to one device each)
+ *   TEACHER_CODES  (Secret)  teacher codes separated by commas (any device, can release codes)
  *   CLASS_CODE     (Secret)  the Study Island class code, so a personal code also opens the lessons
+ *   DEVICES        (KV namespace binding)  remembers which device each student code belongs to
  */
 
 const AZURE_ENDPOINT = "https://mercedes-moronta22-1910-resource.openai.azure.com/openai/v1/chat/completions";
@@ -28,27 +28,56 @@ const cors = {
   "Cache-Control": "no-store",
 };
 
+const list = s => String(s || "").split(",").map(c => c.trim().toUpperCase()).filter(Boolean);
+
 export default {
   async fetch(request, env) {
     if (request.method === "OPTIONS") return new Response(null, { headers: cors });
     if (request.method !== "POST") return new Response("Sunny is awake ☀️", { headers: cors });
     if ((request.headers.get("Origin") || "") !== ALLOWED_ORIGIN) return json({ error: "forbidden" }, 403);
-    if (!env.AZURE_KEY) return json({ error: "not_configured" }, 503);
 
     let body;
     try { body = await request.json(); } catch { return json({ error: "bad_request" }, 400); }
 
-    // Personal student code: valid codes live in the STUDENT_CODES secret (comma separated)
-    const validCodes = String(env.STUDENT_CODES || "").split(",").map(c => c.trim().toUpperCase()).filter(Boolean);
+    const students = list(env.STUDENT_CODES), teachers = list(env.TEACHER_CODES);
     const code = String(body.code || "").trim().toUpperCase().slice(0, 40);
-    if (!code || !validCodes.includes(code)) return json({ error: "invalid_code" }, 401);
+    const isTeacher = !!code && teachers.includes(code);
+    if (!code || (!isTeacher && !students.includes(code))) return json({ error: "invalid_code" }, 401);
 
-    // Study Island: a valid personal code also opens the lessons (returns the class code)
-    if (body.action === "unlock") {
-      if (!env.CLASS_CODE) return json({ error: "not_configured" }, 503);
-      return json({ classCode: env.CLASS_CODE }, 200);
+    // Teacher tools: see which codes are in use and free a code when a student changes device
+    if (body.action === "codes" || body.action === "release") {
+      if (!isTeacher) return json({ error: "forbidden" }, 403);
+      if (!env.DEVICES) return json({ error: "not_configured" }, 503);
+      if (body.action === "release") {
+        const t = String(body.target || "").trim().toUpperCase();
+        if (!students.includes(t)) return json({ error: "unknown_code" }, 404);
+        await env.DEVICES.delete("dev:" + t);
+        return json({ ok: true }, 200);
+      }
+      const rows = await Promise.all(students.map(async c => {
+        const v = await env.DEVICES.get("dev:" + c, "json");
+        return { code: c, used: !!v, since: v ? v.t : null };
+      }));
+      return json({ codes: rows }, 200);
     }
 
+    // Student codes: one device per code (the first device where the code is used)
+    if (!isTeacher) {
+      if (!env.DEVICES) return json({ error: "not_configured" }, 503);
+      const device = String(body.device || "").trim().slice(0, 64);
+      if (!/^[a-f0-9]{16,64}$/.test(device)) return json({ error: "no_device" }, 400);
+      const v = await env.DEVICES.get("dev:" + code, "json");
+      if (!v) await env.DEVICES.put("dev:" + code, JSON.stringify({ d: device, t: new Date().toISOString().slice(0, 10) }));
+      else if (v.d !== device) return json({ error: "device_locked" }, 403);
+    }
+
+    // Study Island, English Lab, library: a valid code also opens the lessons (returns the class code)
+    if (body.action === "unlock") {
+      if (!env.CLASS_CODE) return json({ error: "not_configured" }, 503);
+      return json({ classCode: env.CLASS_CODE, teacher: isTeacher }, 200);
+    }
+
+    if (!env.AZURE_KEY) return json({ error: "not_configured" }, 503);
     // Only plain text turns, limited in number and size, so nobody can run up the bill
     const history = (Array.isArray(body.messages) ? body.messages : [])
       .filter(m => m && (m.role === "user" || m.role === "assistant"))
