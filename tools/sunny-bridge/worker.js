@@ -12,6 +12,8 @@
  *   STUDENT_CODES  (Secret)  student codes (matrículas) separated by commas (HADASH-000000,...)
  *   TEACHER_CODE   (Secret)  the teacher's code: works on any device and can free student codes
  *   CLASS_CODE     (Secret)  the Study Island class code, so a personal code also opens the lessons
+ *   CONTENT_KEY    (Secret)  64-character key that opens the encrypted lessons. The bridge gives it
+ *                            only to a device with a valid matrícula, so a shared code is useless.
  * KV namespace binding:
  *   DEVICES        each student code is tied to the first device where it is typed
  *                  (key "dev:CODE" → {"device":"…","since":"2026-11-20"}). The teacher frees a
@@ -83,12 +85,12 @@ export default {
     }
 
     // Is this device still allowed? (pages ask this when they open)
-    if (body.action === "check") return json({ ok: true, role: isTeacher ? "teacher" : "student" }, 200);
+    if (body.action === "check") return json({ ok: true, role: isTeacher ? "teacher" : "student", ck: env.CONTENT_KEY || undefined }, 200);
 
     // Study Island: a valid personal code also opens the lessons (returns the class code)
     if (body.action === "unlock") {
       if (!env.CLASS_CODE) return json({ error: "not_configured" }, 503);
-      return json({ classCode: env.CLASS_CODE, role: isTeacher ? "teacher" : "student" }, 200);
+      return json({ classCode: env.CLASS_CODE, role: isTeacher ? "teacher" : "student", ck: env.CONTENT_KEY || undefined }, 200);
     }
 
     // Only plain text turns, limited in number and size, so nobody can run up the bill
