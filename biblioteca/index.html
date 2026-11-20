@@ -69,6 +69,7 @@ header p{color:#cfe0ff;margin:0}
   <div id="stage" class="fit"><canvas id="cv" aria-label="Página del libro"></canvas><div id="wm"></div><div id="ld">Abriendo…</div></div>
   <div class="nav"><button class="ib" id="prev">◀ Anterior</button><button class="ib" id="next">Siguiente ▶</button></div>
 </div>
+<script src="/access.js" data-no-gate></script>
 <script>
 (function(){
 'use strict';
@@ -99,14 +100,14 @@ function head(kick,title,sub,crumbs){
 function login(msg){
   app.innerHTML=head('HADASH ACADEMY','Biblioteca <em>digital</em>','Tus libros y workbooks para leer en línea.','<a href="../">← Hadash Academy</a><a href="../english-lab/">English Lab</a>')+
    '<main class="wrap"><form class="panel" id="lf" autocomplete="off"><h2>🔑 Escribe tu código de estudiante</h2>'+
-   '<p style="margin:0;color:var(--mut)">Es el mismo código que usas con Sunny (por ejemplo HADASH-E202501). Solo lo escribes una vez en este equipo.</p>'+
-   '<div class="row"><input class="in" id="cd" placeholder="HADASH-E2025…" autocapitalize="characters" spellcheck="false" aria-label="Código de estudiante"><button class="btn" type="submit">Entrar</button></div>'+
+   '<p style="margin:0;color:var(--mut)">Es tu matrícula, la misma de Study Island y el English Lab (por ejemplo HADASH-000000). Solo la escribes una vez en este equipo.</p>'+
+   '<div class="row"><input class="in" id="cd" placeholder="HADASH-…" autocapitalize="characters" spellcheck="false" aria-label="Código de estudiante"><button class="btn" type="submit">Entrar</button></div>'+
    '<p class="err" id="er" role="alert">'+(msg||'')+'</p></form>'+
    '<p class="foot">Los libros se leen en línea · © 2026 Mercedes Moronta · Hadash Academy</p></main>';
   var f=document.getElementById('lf'), cd=document.getElementById('cd'); cd.focus();
   f.onsubmit=async function(e){e.preventDefault(); var b=f.querySelector('button'); b.disabled=true; b.textContent='Revisando…';
-    var ok=await unlock(cd.value); b.disabled=false; b.textContent='Entrar';
-    if(ok){ set(CODE_KEY,CODE); home(); } else { document.getElementById('er').textContent='Ese código no funciona. Revísalo o pídele uno a tu profesora.'; cd.select(); } };
+    var r=await HadashAccess.enter(cd.value), ok=r.ok&&await unlock(cd.value); b.disabled=false; b.textContent='Entrar';
+    if(ok){ set(CODE_KEY,CODE); home(); } else { document.getElementById('er').textContent=r.ok?HadashAccess.MSG.invalid_code:(HadashAccess.MSG[r.error]||HadashAccess.MSG.down); cd.select(); } };
 }
 function home(){
   closeReader();
@@ -186,7 +187,8 @@ document.addEventListener('dragstart',function(e){ e.preventDefault(); });
 (async function(){
   try{ var r=await Promise.all([fetch('catalog.json',{cache:'no-cache'}),fetch('keys.json',{cache:'no-cache'})]); CAT=await r[0].json(); KEYS=await r[1].json(); }
   catch(e){ app.innerHTML='<p class="wrap" style="padding:40px 16px">No se pudo cargar la biblioteca. Revisa tu conexión.</p>'; return; }
-  var saved=get(CODE_KEY,''); if(saved && await unlock(saved)) { home(); var h=location.hash.slice(1); if(h) { history.replaceState(null,'',location.pathname); openBook(h); } } else login();
+  var saved=get(CODE_KEY,''); if(saved && await unlock(saved)) { home();
+    HadashAccess.verify().then(function(v){ if(v.error){ K=null; CODE=''; closeReader(); login(HadashAccess.MSG[v.error]); } }); var h=location.hash.slice(1); if(h) { history.replaceState(null,'',location.pathname); openBook(h); } } else login();
 })();
 })();
 </script>

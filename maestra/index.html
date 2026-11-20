@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Hadash Academy · Panel de la maestra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&display=swap" rel="stylesheet">
+<script src="/access.js" data-no-gate></script>
+<style>
+:root{--navy:#12264D;--gold:#C9A227;--bg:#F7F3EA;--card:#fff;--mut:#5B6478;--ok:#127A3A;--no:#B42318}
+*{box-sizing:border-box}body{margin:0;font-family:Montserrat,system-ui,sans-serif;background:var(--bg);color:var(--navy)}
+header{background:var(--navy);color:#fff;padding:22px 0 30px}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px}
+header small{letter-spacing:.16em;color:var(--gold);font-weight:700;font-size:12px}header h1{margin:4px 0 0;font-size:28px}
+header a{color:#fff;opacity:.85;font-size:14px}
+.card{background:var(--card);border-radius:18px;padding:20px;margin-top:-14px;box-shadow:0 8px 24px rgba(18,38,77,.08);border:1px solid #EADFC4}
+.card+.card{margin-top:16px}
+input{font:inherit;font-size:18px;padding:10px 12px;border:2px solid #D9CFB8;border-radius:10px;width:100%}
+input:focus{outline:3px solid var(--gold);border-color:var(--navy)}
+button{font:inherit;font-weight:700;border-radius:24px;padding:9px 18px;border:2px solid var(--navy);background:var(--navy);color:#fff;cursor:pointer}
+button.ghost{background:#fff;color:var(--navy)}button.danger{background:var(--no);border-color:var(--no)}
+button:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stats{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0 14px}
+.stat{background:var(--bg);border-radius:12px;padding:10px 14px;font-weight:700}.stat b{font-size:22px;display:block}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #EFE7D4;vertical-align:middle}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+td.code{font-family:ui-monospace,Menlo,monospace;font-weight:700;white-space:nowrap}
+.pill{display:inline-block;border-radius:10px;padding:3px 10px;font-size:13px;font-weight:800}
+.on{background:#E3F4E8;color:var(--ok)}.off{background:#F1EDE4;color:var(--mut)}
+td input{font-size:15px;padding:6px 8px}
+.msg{min-height:1.4em;font-weight:700}.msg.err{color:var(--no)}.msg.ok{color:var(--ok)}
+.note{color:var(--mut);font-size:14px;line-height:1.5}
+@media (max-width:640px){th:nth-child(4),td:nth-child(4){display:none}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><small>HADASH ACADEMY</small><h1>Panel de la maestra</h1><a href="/">← Volver a la página principal</a></div></header>
+<main class="wrap" id="app"></main>
+<script>
+(function(){
+'use strict';
+var app=document.getElementById('app'),T_KEY='hadash-teacher',N_KEY='hadash-teacher-names';
+function get(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}}
+function set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fecha(d){if(!d)return '';var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
+var teacher=sessionStorage.getItem(T_KEY)||'';
+
+function login(msg){
+  app.innerHTML='<div class="card"><form id="lf" autocomplete="off"><h2 style="margin-top:0">Entra con tu código de maestra</h2>'+
+  '<p class="note">Aquí ves qué códigos de estudiante están en uso y puedes liberar uno cuando un estudiante cambia de equipo.</p>'+
+  '<label for="tc" style="font-weight:700">Código de maestra</label><input id="tc" type="password" autocapitalize="characters" spellcheck="false" style="margin:8px 0 12px">'+
+  '<p class="msg err" id="er" role="alert">'+esc(msg||'')+'</p><button type="submit">Entrar</button></form></div>';
+  var f=document.getElementById('lf'),i=document.getElementById('tc');i.focus();
+  f.onsubmit=async function(e){e.preventDefault();var c=i.value.trim().toUpperCase();if(!c)return;
+    var b=f.querySelector('button');b.disabled=true;b.textContent='Revisando…';
+    var r=await HadashAccess.ask('status',c);b.disabled=false;b.textContent='Entrar';
+    if(r.ok){teacher=c;sessionStorage.setItem(T_KEY,c);draw(r.data.codes);return}
+    document.getElementById('er').textContent=r.error==='invalid_code'?'Ese no es el código de la maestra.':(r.status===503?'El puente todavía no tiene activada la matrícula (falta el KV DEVICES en Cloudflare).':'No pude conectar con el puente. Revisa tu internet.');
+  };
+}
+async function load(msg,cls){
+  var r=await HadashAccess.ask('status',teacher);
+  if(!r.ok){sessionStorage.removeItem(T_KEY);teacher='';return login(r.error==='invalid_code'?'Vuelve a escribir tu código.':'No pude cargar los códigos. Intenta otra vez.')}
+  draw(r.data.codes,msg,cls);
+}
+function draw(codes,msg,cls){
+  var names=get(N_KEY,{}),on=codes.filter(function(c){return c.active}).length;
+  app.innerHTML='<div class="card"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Códigos de estudiantes</h2>'+
+  '<div class="row"><button class="ghost" id="rf">Actualizar</button><button class="ghost" id="out">Salir</button></div></div>'+
+  '<div class="stats"><div class="stat"><b>'+codes.length+'</b>códigos</div><div class="stat"><b>'+on+'</b>en uso</div><div class="stat"><b>'+(codes.length-on)+'</b>libres</div></div>'+
+  '<p class="msg '+(cls||'')+'" id="msg" role="status">'+esc(msg||'')+'</p>'+
+  '<table><thead><tr><th>#</th><th>Código</th><th>Estudiante</th><th>Estado</th><th></th></tr></thead><tbody>'+
+  codes.map(function(c,i){return '<tr><td>'+(i+1)+'</td><td class="code">'+esc(c.code)+'</td>'+
+    '<td><input data-n="'+esc(c.code)+'" value="'+esc(names[c.code]||'')+'" placeholder="Nombre" aria-label="Nombre del estudiante con el código '+esc(c.code)+'"></td>'+
+    '<td>'+(c.active?'<span class="pill on">En uso desde '+fecha(c.since)+'</span>':'<span class="pill off">Libre</span>')+'</td>'+
+    '<td>'+(c.active?'<button class="ghost" data-r="'+esc(c.code)+'">Liberar</button>':'')+'</td></tr>'}).join('')+
+  '</tbody></table></div>'+
+  '<div class="card note"><b>¿Cómo funciona?</b><br>Cada código se amarra al primer equipo donde el estudiante lo escribe (computadora, tablet o celular, y en ese navegador). '+
+  'Si el estudiante cambia de equipo, cambia de navegador o borra los datos del navegador, libera su código aquí y él lo vuelve a escribir en el equipo nuevo. '+
+  'Tu código de maestra funciona en cualquier equipo. Los nombres que escribes se guardan solo en este equipo.</div>';
+  app.querySelectorAll('[data-n]').forEach(function(i){i.onchange=function(){var n=get(N_KEY,{});n[i.dataset.n]=i.value.trim();set(N_KEY,n)}});
+  app.querySelectorAll('[data-r]').forEach(function(b){b.onclick=async function(){
+    var c=b.dataset.r;
+    if(b.dataset.sure!=='1'){b.dataset.sure='1';b.className='danger';b.textContent='¿Seguro? Liberar';
+      document.getElementById('msg').className='msg';document.getElementById('msg').textContent='Presiona otra vez para liberar '+c+'. El estudiante tendrá que escribir el código de nuevo en su equipo.';return}
+    b.disabled=true;b.textContent='Liberando…';
+    var r=await HadashAccess.ask('release',teacher,{target:c});
+    load(r.ok?'Listo: '+c+' quedó libre. El estudiante ya puede escribirlo en su equipo nuevo.':'No se pudo liberar '+c+'. Intenta otra vez.',r.ok?'ok':'err');
+  }});
+  document.getElementById('rf').onclick=function(){load()};
+  document.getElementById('out').onclick=function(){sessionStorage.removeItem(T_KEY);teacher='';login()};
+}
+teacher?load():login();
+})();
+</script>
+</body>
+</html>

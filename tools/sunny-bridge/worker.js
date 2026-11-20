@@ -9,8 +9,13 @@
  *
  * Settings in Cloudflare (Worker → Settings → Variables and Secrets):
  *   AZURE_KEY      (Secret)  API key from Microsoft Foundry — NEVER put it in the web page
- *   STUDENT_CODES  (Secret)  personal student codes separated by commas (HADASH-E202501,...)
+ *   STUDENT_CODES  (Secret)  student codes (matrículas) separated by commas (HADASH-000000,...)
+ *   TEACHER_CODE   (Secret)  the teacher's code: works on any device and can free student codes
  *   CLASS_CODE     (Secret)  the Study Island class code, so a personal code also opens the lessons
+ * KV namespace binding:
+ *   DEVICES        each student code is tied to the first device where it is typed
+ *                  (key "dev:CODE" → {"device":"…","since":"2026-11-20"}). The teacher frees a
+ *                  code from hadashacademy.github.io/maestra so the student can use another device.
  */
 
 const AZURE_ENDPOINT = "https://mercedes-moronta22-1910-resource.openai.azure.com/openai/v1/chat/completions";
@@ -38,15 +43,52 @@ export default {
     let body;
     try { body = await request.json(); } catch { return json({ error: "bad_request" }, 400); }
 
-    // Personal student code: valid codes live in the STUDENT_CODES secret (comma separated)
-    const validCodes = String(env.STUDENT_CODES || "").split(",").map(c => c.trim().toUpperCase()).filter(Boolean);
-    const code = String(body.code || "").trim().toUpperCase().slice(0, 40);
-    if (!code || !validCodes.includes(code)) return json({ error: "invalid_code" }, 401);
+    // ---- Matrícula: a student code works on ONE device; the teacher code works anywhere ----
+    const up = v => String(v || "").trim().toUpperCase();
+    const teacher = up(env.TEACHER_CODE);
+    const studentCodes = String(env.STUDENT_CODES || "").split(",").map(up).filter(Boolean);
+    const code = up(body.code).slice(0, 40);
+    const device = String(body.device || "").trim().slice(0, 64);
+    const isTeacher = !!teacher && code === teacher;
+
+    // Teacher tools (page /maestra): list codes and free a code
+    if (body.action === "status" || body.action === "release") {
+      if (!isTeacher) return json({ error: "invalid_code" }, 401);
+      if (!env.DEVICES) return json({ error: "not_configured" }, 503);
+      if (body.action === "release") {
+        const target = up(body.target);
+        if (!studentCodes.includes(target)) return json({ error: "unknown_code" }, 404);
+        await env.DEVICES.delete("dev:" + target);
+        return json({ ok: true, released: target }, 200);
+      }
+      const list = await Promise.all(studentCodes.map(async c => {
+        const v = await env.DEVICES.get("dev:" + c, "json");
+        return { code: c, active: !!v, since: v ? v.since : null };
+      }));
+      return json({ codes: list }, 200);
+    }
+
+    if (!code || (!isTeacher && !studentCodes.includes(code))) return json({ error: "invalid_code" }, 401);
+    if (!isTeacher) {
+      if (!env.DEVICES) return json({ error: "not_configured" }, 503);
+      if (!/^[a-z0-9-]{16,64}$/i.test(device)) return json({ error: "no_device" }, 400);
+      const key = "dev:" + code;
+      const saved = await env.DEVICES.get(key, "json");
+      if (!saved) {
+        // First use: tie the code to this device
+        await env.DEVICES.put(key, JSON.stringify({ device, since: new Date().toISOString().slice(0, 10) }));
+      } else if (saved.device !== device) {
+        return json({ error: "other_device" }, 409);
+      }
+    }
+
+    // Is this device still allowed? (pages ask this when they open)
+    if (body.action === "check") return json({ ok: true, role: isTeacher ? "teacher" : "student" }, 200);
 
     // Study Island: a valid personal code also opens the lessons (returns the class code)
     if (body.action === "unlock") {
       if (!env.CLASS_CODE) return json({ error: "not_configured" }, 503);
-      return json({ classCode: env.CLASS_CODE }, 200);
+      return json({ classCode: env.CLASS_CODE, role: isTeacher ? "teacher" : "student" }, 200);
     }
 
     // Only plain text turns, limited in number and size, so nobody can run up the bill
