@@ -83,15 +83,12 @@ function get(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}ca
 function set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
 function hex(h){var a=new Uint8Array(h.length/2);for(var i=0;i<a.length;i++)a[i]=parseInt(h.substr(i*2,2),16);return a;}
 
+/* Los libros se abren solo con la llave que el puente entrega a un equipo con matrícula válida. */
 async function unlock(code){
   code=String(code||'').trim().toUpperCase(); if(!code) return false;
-  var km=await crypto.subtle.importKey('raw',new TextEncoder().encode(code),'PBKDF2',false,['deriveKey']);
-  for(var i=0;i<KEYS.w.length;i++){ var w=KEYS.w[i];
-    try{ var wk=await crypto.subtle.deriveKey({name:'PBKDF2',salt:hex(w.s),iterations:KEYS.iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt']);
-      var raw=await crypto.subtle.decrypt({name:'AES-GCM',iv:hex(w.i)},wk,hex(w.d));
-      K=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']); CODE=code; return true; }catch(e){}
-  }
-  return false;
+  if(!HadashAccess.ck()) await HadashAccess.verify();
+  try{ var h=(await HadashAccess.decrypt(KEYS.ck)).trim();
+    K=await crypto.subtle.importKey('raw',hex(h),'AES-GCM',false,['decrypt']); CODE=code; return true; }catch(e){ return false; }
 }
 
 function head(kick,title,sub,crumbs){

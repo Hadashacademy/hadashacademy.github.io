@@ -6,7 +6,7 @@
 (function () {
   'use strict';
   var URL_ = 'https://hadash-sunny.dream-inenglish25.workers.dev/';
-  var CODE_KEY = 'hadash-sunny-code', DEV_KEY = 'hadash-device', OK_KEY = 'hadash-access-ok';
+  var CODE_KEY = 'hadash-sunny-code', DEV_KEY = 'hadash-device', OK_KEY = 'hadash-access-ok', CK_KEY = 'hadash-ck';
   function get(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
   function del(k) { try { localStorage.removeItem(k); } catch (e) {} }
@@ -30,7 +30,7 @@
     try { r = await fetch(URL_, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); }
     catch (e) { return { offline: true, error: 'down' }; }
     var d = {}; try { d = await r.json(); } catch (e) {}
-    if (r.ok) return { ok: true, role: d.role || 'student', data: d };
+    if (r.ok) { if (/^[0-9a-f]{64}$/.test(d.ck || '')) set(CK_KEY, d.ck); return { ok: true, role: d.role || 'student', data: d }; }
     if (r.status === 401) return { error: 'invalid_code' };
     if (r.status === 409) return { error: 'other_device' };
     return { offline: true, error: 'down', status: r.status };
@@ -40,7 +40,7 @@
     var c = get(CODE_KEY, '');
     if (!c) return { error: 'none' };
     var r = await ask('check', c);
-    if (r.error === 'invalid_code' || r.error === 'other_device') { del(CODE_KEY); del(OK_KEY); del('hadash-code'); return r; }
+    if (r.error === 'invalid_code' || r.error === 'other_device') { del(CODE_KEY); del(OK_KEY); del(CK_KEY); del('hadash-code'); return r; }
     if (r.ok) set(OK_KEY, r.role);
     return { ok: true, role: r.role || get(OK_KEY, 'student') };
   }
@@ -49,7 +49,62 @@
     if (r.ok) { set(CODE_KEY, String(code).trim().toUpperCase()); set(OK_KEY, r.role); if (r.data && r.data.classCode) set('hadash-code', r.data.classCode); }
     return r;
   }
-  window.HadashAccess = { url: URL_, device: device, code: function () { return get(CODE_KEY, ''); }, ask: ask, verify: verify, enter: enter, MSG: MSG };
+  /* ---------- Contenido cifrado ---------- */
+  var ckCache = null;
+  function b64(s) { var b = atob(s), a = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a; }
+  async function key() {
+    var h = get(CK_KEY, '');
+    if (!/^[0-9a-f]{64}$/.test(h)) return null;
+    if (ckCache && ckCache.h === h) return ckCache.k;
+    var k = await crypto.subtle.importKey('raw', new Uint8Array(h.match(/../g).map(function (x) { return parseInt(x, 16); })), 'AES-GCM', false, ['decrypt']);
+    ckCache = { h: h, k: k }; return k;
+  }
+  async function teacherKey(salt) {
+    var code = String(get(CODE_KEY, '')).toUpperCase();
+    var km = await crypto.subtle.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: salt, iterations: 150000, hash: 'SHA-256' }, km, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  }
+  async function decrypt(box) {
+    if (box.t) {
+      try { return new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(box.iv) }, await teacherKey(b64(box.s)), b64(box.d))); }
+      catch (e) { var err = new Error('teacher_only'); err.teacherOnly = true; throw err; }
+    }
+    var k = await key(); if (!k) throw new Error('no key');
+    var p = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64(box.iv) }, k, b64(box.d));
+    return new TextDecoder().decode(p);
+  }
+  /* Abre una página cifrada: descifra el HTML y sus archivos de datos y la muestra. */
+  async function openVault() {
+    var el = document.getElementById('hz-vault'); if (!el) return false;
+    var html = await decrypt(JSON.parse(el.textContent));
+    var re = /<script([^>]*?)\ssrc=["']([^"']+)["']([^>]*)>\s*<\/script>/gi, parts = [], last = 0, m;
+    while ((m = re.exec(html))) {
+      parts.push(html.slice(last, m.index)); last = re.lastIndex;
+      var src = m[2], url = new URL(src, location.href), tag = m[0];
+      if (url.origin === location.origin && !/\/access\.js$/.test(url.pathname)) {
+        var txt = await (await fetch(url.href, { cache: 'no-cache' })).text();
+        if (/^\{"hzv":1/.test(txt)) txt = await decrypt(JSON.parse(txt));
+        tag = '<script' + m[1] + m[3] + '>' + txt.replace(/<\/script/gi, '<\\/script') + '\n<\/script>';
+      }
+      parts.push(tag);
+    }
+    parts.push(html.slice(last));
+    document.open(); document.write(parts.join('')); document.close();
+    return true;
+  }
+  /* Los archivos de datos (.json) cifrados se descifran solos al pedirlos */
+  var _fetch = window.fetch.bind(window);
+  window.fetch = async function (input, init) {
+    var r = await _fetch(input, init);
+    try {
+      var u = new URL(typeof input === 'string' ? input : input.url, location.href);
+      if (u.origin !== location.origin || !/\.json$/.test(u.pathname) || !r.ok) return r;
+      var t = await r.clone().text();
+      if (!/^\{"hzv":1/.test(t)) return r;
+      return new Response(await decrypt(JSON.parse(t)), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    } catch (e) { return r; }
+  };
+  window.HadashAccess = { url: URL_, device: device, code: function () { return get(CODE_KEY, ''); }, ask: ask, verify: verify, enter: enter, MSG: MSG, decrypt: decrypt, ck: function () { return get(CK_KEY, ''); } };
 
   /* ---------- Puerta para páginas sueltas (English Lab) ---------- */
   if (document.currentScript && document.currentScript.hasAttribute('data-no-gate')) return;
@@ -69,6 +124,7 @@
 
   function speak(t) { try { speechSynthesis.cancel(); var u = new SpeechSynthesisUtterance(t); u.lang = 'es-ES'; speechSynthesis.speak(u); } catch (e) {} }
   function gate(msg) {
+    try { msg = msg || sessionStorage.getItem('hz-msg') || ''; sessionStorage.removeItem('hz-msg'); } catch (e) {}
     root.classList.add('hz-lock');
     var g = document.getElementById('hz-gate'); if (g) g.remove();
     g = document.createElement('div'); g.id = 'hz-gate'; g.setAttribute('role', 'dialog'); g.setAttribute('aria-modal', 'true'); g.setAttribute('aria-labelledby', 'hz-t');
@@ -85,13 +141,34 @@
       b.disabled = true; b.textContent = 'Revisando…'; e.className = 'err'; e.textContent = '';
       var r = await enter(inp.value);
       b.disabled = false; b.textContent = 'Entrar';
-      if (r.ok) { e.className = 'ok'; e.textContent = '¡Listo! Bienvenido.'; speak('¡Listo! Bienvenido.'); setTimeout(function () { g.remove(); root.classList.remove('hz-lock'); }, 400); return; }
+      if (r.ok) { e.className = 'ok'; e.textContent = '¡Listo! Bienvenido.'; speak('¡Listo! Bienvenido.'); setTimeout(function () { reveal(); }, 400); return; }
       e.textContent = MSG[r.error] || MSG.down; speak(e.textContent); inp.select();
     };
   }
+  function teacherOnly() {
+    root.classList.remove('hz-lock');
+    document.body.innerHTML = '<main style="font-family:system-ui,sans-serif;max-width:560px;margin:18vh auto;padding:24px;text-align:center;color:#14213D">' +
+      '<div style="font-size:44px" aria-hidden="true">🔒</div><h1 style="font-size:24px">Esta sección es solo para la maestra</h1>' +
+      '<p style="color:#5B6478">Pronto estará disponible para los estudiantes.</p><p><a href="/english-lab/">← Volver al English Lab</a></p></main>';
+    speak('Esta sección es solo para la maestra.');
+  }
+  function reveal() {
+    if (!document.getElementById('hz-vault')) { var g = document.getElementById('hz-gate'); if (g) g.remove(); root.classList.remove('hz-lock'); return; }
+    openVault().catch(function (e) { if (e && e.teacherOnly) return teacherOnly(); gate(MSG.down); });
+  }
   function start() {
     if (!hasCode) return gate();
-    verify().then(function (r) { if (r.error) gate(MSG[r.error]); });
+    var vault = !!document.getElementById('hz-vault');
+    if (vault && get(CK_KEY, '')) {
+      // Abre al instante con la llave guardada y revisa la matrícula en segundo plano
+      openVault().catch(function (e) { if (e && e.teacherOnly) return teacherOnly(); del(CK_KEY); location.reload(); });
+      verify().then(function (r) { if (r.error) { try { sessionStorage.setItem('hz-msg', MSG[r.error]); } catch (e) {} location.reload(); } });
+      return;
+    }
+    verify().then(function (r) {
+      if (r.error) return gate(MSG[r.error]);
+      if (vault) { if (get(CK_KEY, '')) reveal(); else gate(MSG.down); }
+    });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();

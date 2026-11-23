@@ -1,4 +1,1 @@
-/* English Lab settings.
-   azureTokenUrl: address of the Hadash token server (Cloudflare Worker) for the Pro pronunciation tutor.
-   Leave it empty ('') to use only the free tutor. */
-window.LAB_CONFIG = { azureTokenUrl: '' };
+{"hzv":1,"iv":"Vt1a8VFMqAC+gYzQ","d":"oTJK+enhQav51XSSWIUhIvVi3Eowomqus92n4oWYcOYheaLUs00/h9Gf4blcp88hGmdNLvUi1QVsX7vk7rhDDxBHPTX80lTNaFm+DfOh1GkMY8nyQAC8KCB4UZlq2K23aANcmyj6QMlAs2pCxC6edflERYh8Nd8qomG/21bV+EXQaqc6Nimi1ODWeOYaEIJHhkNGKLyph5C9D9YseIoPgoKkHl5le9H3VKdachw503+loZYqivWSrYg+QWC8ZKmWT2pOksxBz24eMPOy4KjIQXqSEeFDhUrGOHH1IlQbCBDXbdqef0CeIjw1eE3YaPdud/1hvw=="}
