@@ -95,7 +95,14 @@ function volView(v){
   ${v.ready ? '' : '<p class="note">🚧 The activities for this volume are coming soon. · Las actividades de este volumen vienen muy pronto.</p>'}</div>
   <p class="foot">Funny Reading with Mama · © 2026 Mercedes Moronta · Hadash Academy</p></main>`;
 }
+/* Sección solo para la maestra */
+function isTeacher(){ try { return JSON.parse(localStorage.getItem('hadash-access-ok') || '""') === 'teacher'; } catch (e) { return false; } }
 function render(){
+  if (!isTeacher()) {
+    $('#app').innerHTML = header('../', '← English Lab', '🔒', 'ENGLISH LAB', 'Funny Reading with Mama') +
+      `<main class="wrap"><div class="hero"><p style="margin:0"><b>Esta sección es solo para la maestra.</b> Pronto estará disponible para los estudiantes.</p></div></main>`;
+    return;
+  }
   const id = location.hash.slice(1), v = VOLS.find(x => x.id === id);
   $('#app').innerHTML = v ? volView(v) : home();
   scrollTo(0, 0);

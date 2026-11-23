@@ -208,7 +208,8 @@ function home(){
     <span class="bkic">${emoji}</span><span class="bklv">${lv}</span>
     <h2>${esc(name)}</h2><p class="bkage">${esc(age)}</p><p>${esc(desc)}</p>
     <span class="bkmeta">${meta}</span><span class="bkgo">Enter · Entrar →</span></a>`;
-  const cats = card('funny-reading/', '👩‍👧‍👦', 'Phonics', '#E8566C', 'Children', 'Funny Reading with Mama', 'Learn to read together, sound by sound: phonics books for little kids and their moms.', '4 volumes · coming soon')
+  const isTeacher = (() => { try { return JSON.parse(localStorage.getItem('hadash-access-ok') || '""') === 'teacher'; } catch (e) { return false; } })();
+  const cats = (isTeacher ? card('funny-reading/', '👩‍👧‍👦', 'Phonics', '#E8566C', 'Children', 'Funny Reading with Mama', 'Learn to read together, sound by sound: phonics books for little kids and their moms.', '🔒 Solo maestra · 4 volumes') : '')
     + card('#kids', '🧒', 'A1 · A2', '#F26B00', 'Junior', 'My English Adventure · Book 1 (A1) · Junior (A2)', 'Listenings, conversations and workbook practice for kids.', `${Object.keys(BOOKS).length} books · Student’s Book &amp; Workbook`)
     + card('teen/', '🎓', 'B1', '#7C3AED', 'Teen', 'My English Adventure · Teen Edition (B1)', 'Talk, read and write: 25 B1 units, Workbook, Sounds lab and tricky words.', 'B1 open · Book &amp; Workbook');
   return `<header class="top"><div class="wrap"><div class="brand"><span class="logo">🦉</span><div><small>MY ENGLISH ADVENTURE · HADASH ACADEMY</small><h1>English Lab</h1></div></div>
