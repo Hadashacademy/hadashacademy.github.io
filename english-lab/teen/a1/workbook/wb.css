@@ -7,3 +7,5 @@
 .fin .big{font:700 28px Poppins;color:var(--teal);margin:4px 0}
 .card{--acc:var(--teal)}
 .lvc.wbk .bd{background:#13a08c}
+
+.gap.mc{min-width:0;width:auto;cursor:pointer;padding:4px 6px;font-weight:600;appearance:auto}

@@ -27,6 +27,36 @@ function sayLines(list,i,done,hl){
   })(i||0);
 }
 function stop(){tok++;S&&S.cancel()}
+
+/* Selección múltiple (A2): cada respuesta corta se elige entre 3 opciones */
+function frRand(seed){return function(){seed=(seed*9301+49297)%233280;return seed/233280}}
+function frShuffle(a,r){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function frFirst(a){return String(a).split(' / ')[0].trim()}
+var FR_NAMES=['Martínez','Medina','Méndez','Mejía','Morales','Pérez','Peña','Reyes','Rosario','Santos','Sánchez','García','Gómez','Díaz','Durán','Castillo','Cruz','Jiménez','Herrera','Hernández','Ramírez','Rodríguez','Torres','Vargas','Nina','Maya','Leo','Omar','Sofía','Ana','Luis','Carlos','Rosa','Lucía'];
+var FR_MONTHS=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function frOrd(n){return n+(n%100>=11&&n%100<=13?'th':['th','st','nd','rd'][n%10]||'th')}
+// opciones parecidas a la respuesta correcta (otra hora, otro número, otra fecha, otro apellido)
+function frVariants(a){
+  var m, v=[];
+  if((m=a.match(/^(\d{1,2}):(\d{2})(.*)$/))){var h=+m[1],mi=+m[2];v=[(h)+':'+(mi>=30?'00':(mi+30)),(h%12+1)+':'+m[2],(h)+':'+String((mi+15)%60).padStart(2,'0')].map(function(x){return x+m[3]})}
+  else if((m=a.match(/^(\w+) (\d{1,2})(st|nd|rd|th)$/))&&FR_MONTHS.indexOf(m[1])>=0){var d=+m[2],mo=FR_MONTHS.indexOf(m[1]);v=[m[1]+' '+frOrd(d+1),m[1]+' '+frOrd(d+10),FR_MONTHS[(mo+1)%12]+' '+frOrd(d)]}
+  else if((m=a.match(/^(\d+)(.*)$/))){var n=+m[1];v=[n+1,n>1?n-1:n+2,n+10].map(function(x){return x+m[2]})}
+  else if(/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+$/.test(a)){var same=FR_NAMES.filter(function(x){return x!==a&&x[0]===a[0]});v=same.length>=2?same:same.concat(FR_NAMES.filter(function(x){return x!==a}))}
+  return v.map(String);
+}
+function frSelect(rows,i,ti){
+  var ans=frFirst(rows[i][1]), alts=rows[i][1].split(' / ').map(function(x){return norm(x)}), r=frRand((D.n||1)*101+ti*31+i*7+3);
+  var isNum=/^\d/.test(ans), pool=[];
+  (D.tasks||[]).forEach(function(t){if(t.type==='form')t.rows.forEach(function(x){var a=frFirst(x[1]);if(alts.indexOf(norm(a))<0&&pool.map(norm).indexOf(norm(a))<0)pool.push(a)})});
+  var same=rows.map(function(x){return frFirst(x[1])}).filter(function(a){return alts.indexOf(norm(a))<0});
+  var picks=[];function add(l){frShuffle(l,r).forEach(function(x){if(picks.length<2&&picks.map(norm).indexOf(norm(x))<0&&alts.indexOf(norm(x))<0)picks.push(x)})}
+  add(frVariants(ans));
+  add(same.filter(function(x){return /^\d/.test(x)===isNum}));add(pool.filter(function(x){return /^\d/.test(x)===isNum}));
+  if(picks.length<2&&isNum){var n=parseInt(ans,10);add([String(n+1),String(n+2),String(n-1),String(n+10)].filter(function(x){return +x>0}))}
+  add(pool);add(['yes','no','red','blue','Monday','Saturday']);
+  var ops=frShuffle([ans].concat(picks),r);
+  return '<select data-a="'+esc(rows[i][1])+'" aria-label="Choose the answer"><option value="">Choose… ▾</option>'+ops.map(function(o,k){return '<option value="'+esc(o)+'">'+'abc'[k]+') '+esc(o)+'</option>'}).join('')+'</select>';
+}
 var L=D.lines;
 var tasks='';
 (D.tasks||[]).forEach(function(t,ti){
@@ -34,7 +64,7 @@ var tasks='';
     tasks+='<div class="card"><div class="h"><span class="n">'+(ti+1)+'</span> '+esc(t.title)+'</div>'+t.qs.map(function(q,i){
       return '<div class="mcq" data-c="'+q.c+'"><p><b>'+(i+1)+'.</b> '+esc(q.q)+'</p><div class="opts">'+q.o.map(function(o,j){return '<button class="opt" data-j="'+j+'">'+(q.e?'<span class="emo">'+q.e[j]+'</span>':'')+'<b>'+'ABC'[j]+'</b> '+esc(o)+'</button>'}).join('')+'</div></div>'}).join('')+'<p class="score" hidden></p></div>';
   } else if(t.type==='form'){
-    tasks+='<div class="card"><div class="h"><span class="n">'+(ti+1)+'</span> '+esc(t.title)+'</div>'+t.rows.map(function(r,i){return '<label class="fr"><span>'+esc(r[0])+'</span><input data-a="'+esc(r[1])+'" autocomplete="off"></label>'}).join('')+'<button class="btn chk">Check</button><p class="score" hidden></p></div>';
+    tasks+='<div class="card"><div class="h"><span class="n">'+(ti+1)+'</span> '+esc(t.title)+'</div>'+t.rows.map(function(r,i){return '<label class="fr"><span>'+esc(r[0])+'</span>'+frSelect(t.rows,i,ti)+'</label>'}).join('')+'<button class="btn chk">Check</button><p class="score" hidden></p></div>';
   } else if(t.type==='table'){
     tasks+='<div class="card"><div class="h"><span class="n">'+(ti+1)+'</span> '+esc(t.title)+'</div><div class="tw"><table class="lt"><tr>'+t.head.map(function(h){return '<th>'+esc(h)+'</th>'}).join('')+'</tr>'+t.rows.map(function(r){return '<tr>'+t.head.map(function(h,k){return '<td>'+(r[k]?'<b>'+esc(r[k])+'</b>':'<input autocomplete="off">')+'</td>'}).join('')+'</tr>'}).join('')+'</table></div>'+(t.extra?'<p>'+esc(t.extra)+'</p><input class="wide" autocomplete="off">':'')+'<button class="btn key">Show answers</button><p class="keyt" hidden><b>Answers:</b> '+esc(t.key)+'</p></div>';
   } else if(t.type==='chant'){
@@ -64,10 +94,10 @@ function norm(s){return s.toLowerCase().replace(/[’']/g,"'").replace(/[^a-z0-9
   }})
 });
 [].forEach.call(app.querySelectorAll('.chk'),function(b){b.onclick=function(){
-  var card=b.closest('.card'), ins=card.querySelectorAll('input[data-a]'), r=0;
-  [].forEach.call(ins,function(i){var ok=i.dataset.a.split(' / ').some(function(a){return norm(a)===norm(i.value)});i.classList.toggle('ok',ok);i.classList.toggle('bad',!ok);if(ok)r++;else i.title='Answer: '+i.dataset.a});
-  var p=card.querySelector('.score');p.hidden=false;p.textContent=(r===ins.length?'🌟 Perfect! ':'👍 ')+r+' / '+ins.length+(r<ins.length?' — tap a red box to see the answer.':'');
-  [].forEach.call(ins,function(i){if(i.classList.contains('bad'))i.onclick=function(){i.value=i.dataset.a}});
+  var card=b.closest('.card'), ins=card.querySelectorAll('[data-a]'), r=0;
+  [].forEach.call(card.querySelectorAll('.fa'),function(f){f.remove()});[].forEach.call(ins,function(i){var ok=i.dataset.a.split(' / ').some(function(a){return norm(a)===norm(i.value)});i.classList.toggle('ok',ok);i.classList.toggle('bad',!ok);if(ok)r++;else i.title='Answer: '+i.dataset.a});
+  var p=card.querySelector('.score');p.hidden=false;p.textContent=(r===ins.length?'🌟 Perfect! ':'👍 ')+r+' / '+ins.length+(r<ins.length?' — look at the green answers next to the red boxes.':'');
+  [].forEach.call(ins,function(i){if(i.classList.contains('bad')){if(i.tagName==='SELECT'){var f=i.parentNode.querySelector('.fa')||i.parentNode.appendChild(document.createElement('b'));f.className='fa';f.textContent='✔ '+frFirst(i.dataset.a)}else i.onclick=function(){i.value=i.dataset.a}}});
 }});
 [].forEach.call(app.querySelectorAll('.key'),function(b){b.onclick=function(){b.nextElementSibling.hidden=false}});
 })();

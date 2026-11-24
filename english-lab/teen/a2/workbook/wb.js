@@ -42,6 +42,24 @@ D.gaps.forEach(function(g){
 });
 GAPS.sort(function(a,b){return a.li-b.li||a.at-b.at;});
 
+
+/* ---------- multiple choice: each gap offers 3 answers (A1 / A2) ---------- */
+var MC_POOL=(function(){var seen={},o=[];(window.WB||[]).forEach(function(u){(u.gaps||[]).forEach(function(g){var n=norm(g);if(n&&!seen[n]){seen[n]=1;o.push(g);}});});return o;})();
+var MC_SYN=[['like','love','enjoy'],['likes','loves','enjoys'],['hi','hello','hey'],['big','large'],['small','little'],['mom','mother'],['dad','father'],['great','fine','good','ok'],['bye','goodbye']];
+function mcRand(seed){return function(){seed=(seed*9301+49297)%233280;return seed/233280;};}
+function mcShuffle(a,r){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+function mcCase(x,like){if(/^[A-Z]/.test(like))return x.charAt(0).toUpperCase()+x.slice(1);return x==='I'||/^I[ ’']/.test(x)?x:x.charAt(0).toLowerCase()+x.slice(1);}
+function mcOptions(g,gi){
+  var ans=g.ans, n0=norm(ans), r=mcRand(D.n*97+gi*13+7), wc=ans.split(/\s+/).length, isNum=/^\d/.test(ans), syn=[];
+  MC_SYN.forEach(function(gr){if(gr.indexOf(n0)>=0)syn=syn.concat(gr);});
+  var bad=function(x){var n=norm(x);return !n||n===n0||syn.indexOf(n)>=0;};
+  var unit=D.gaps.filter(function(x){return !bad(x);}), pool=MC_POOL.filter(function(x){return !bad(x)&&unit.indexOf(x)<0;});
+  var kind=function(x){return /^\d/.test(x)===isNum&&Math.abs(x.split(/\s+/).length-wc)<=1;};
+  var picks=[];function add(l){mcShuffle(l,r).forEach(function(x){if(picks.length<2&&picks.map(norm).indexOf(norm(x))<0)picks.push(x);});}
+  add(unit.filter(kind));add(pool.filter(kind));add(pool);
+  return mcShuffle([ans].concat(picks.map(function(x){return mcCase(x,ans);})),r);
+}
+
 function render(){
   stop();
   var best=store('u'+D.n)||0;
@@ -51,7 +69,7 @@ function render(){
   var qs=D.qs.map(function(q,qi){return '<div class="q"><b>'+(qi+1)+'.</b> '+esc(q.q)+'<div class="row">'+q.o.map(function(o,oi){return '<button class="ch" data-q="'+qi+'" data-o="'+oi+'">'+String.fromCharCode(97+oi)+') '+esc(o)+'</button>';}).join('')+'</div></div>';}).join('');
   var byLine={}; GAPS.forEach(function(g,gi){ (byLine[g.li]=byLine[g.li]||[]).push({g:g,gi:gi}); });
   var gl=Object.keys(byLine).map(Number).sort(function(a,b){return a-b;}).map(function(li){ var L=D.lines[li], s=L.text, pos=0, h='';
-    byLine[li].forEach(function(x){ h+=esc(s.slice(pos,x.g.at))+'<span class="gn">'+(x.gi+1)+'</span><input class="gap" data-g="'+x.gi+'" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Gap '+(x.gi+1)+'">'; pos=x.g.at+x.g.ans.length; });
+    byLine[li].forEach(function(x){ h+=esc(s.slice(pos,x.g.at))+'<span class="gn">'+(x.gi+1)+'</span><select class="gap mc" data-g="'+x.gi+'" aria-label="Gap '+(x.gi+1)+': choose the answer"><option value="">… ▾</option>'+mcOptions(x.g,x.gi).map(function(o,k){return '<option value="'+esc(o)+'">'+'abc'[k]+') '+esc(o)+'</option>';}).join('')+'</select>'; pos=x.g.at+x.g.ans.length; });
     return '<div class="ln"><b>'+esc(L.who)+'</b><span>'+h+esc(s.slice(pos))+'</span></div>'; }).join('');
   app.innerHTML='<header class="top wbtop"><div class="wrap"><nav class="crumbs"><a href="../../../">Teen Lab</a><a href="../../">A2 · Explorer</a><a href="../">Workbook</a>'+prev+next+'</nav>'+
     '<div class="kick">UNIT '+D.n+' · WORKBOOK LISTENING</div><h1>'+t+'</h1><p>'+esc(D.unit)+' · '+esc(D.theme)+'</p></div></header>'+
@@ -62,7 +80,7 @@ function render(){
       '<div class="speed">Speed <button data-r="0.8">Slow</button><button data-r="1" aria-pressed="true">Normal</button></div></div>'+
       '<div class="dlg" id="tr" hidden>'+tr+'</div></div>'+
     '<div class="card"><div class="h"><span class="n">1</span>Listen and choose the correct answer<small id="s1"></small></div>'+qs+'</div>'+
-    '<div class="card"><div class="h"><span class="n">2</span>Listen again and complete<small id="s2"></small></div><p class="hint" style="margin-top:0">Write the missing words. Then press <b>Check</b>.</p><div class="dlg">'+gl+'</div>'+
+    '<div class="card"><div class="h"><span class="n">2</span>Listen again and complete<small id="s2"></small></div><p class="hint" style="margin-top:0">Choose the missing words. Then press <b>Check</b>.</p><div class="dlg">'+gl+'</div>'+
       '<div class="ctrl"><button class="btn" id="chk">✓ Check</button><button class="btn ghost sm" id="ans">Show answers</button></div></div>'+
     '<div class="card wbnote">📒 <b>In your Workbook:</b> page '+D.page+', exercise 4. Write your answers there too!</div>'+
     (synth?'':'<div class="card">🔇 Your browser can’t read aloud. Try Chrome, Edge or Safari.</div>')+
@@ -87,9 +105,9 @@ function bind(){
     root.querySelector('#s1').textContent=good+' / '+D.qs.length;
     if(n===D.qs.length) finish(); }; });
   root.querySelector('#chk').onclick=function(){
-    var good=0; root.querySelectorAll('input.gap').forEach(function(inp){ var g=GAPS[+inp.dataset.g]; var ok=norm(inp.value)===norm(g.ans); inp.classList.toggle('ok',ok); inp.classList.toggle('no',!ok); if(ok) good++; });
+    var good=0; root.querySelectorAll('.gap[data-g]').forEach(function(inp){ var g=GAPS[+inp.dataset.g]; var ok=norm(inp.value)===norm(g.ans); inp.classList.toggle('ok',ok); inp.classList.toggle('no',!ok); if(ok) good++; });
     res2=good; root.querySelector('#s2').textContent=good+' / '+GAPS.length; finish(); };
-  root.querySelector('#ans').onclick=function(){ root.querySelectorAll('input.gap').forEach(function(inp){ var g=GAPS[+inp.dataset.g]; if(!inp.classList.contains('ok')){ inp.value=g.ans; inp.classList.remove('no'); inp.classList.add('shown'); } }); };
+  root.querySelector('#ans').onclick=function(){ root.querySelectorAll('.gap[data-g]').forEach(function(inp){ var g=GAPS[+inp.dataset.g]; if(!inp.classList.contains('ok')){ inp.value=g.ans; inp.classList.remove('no'); inp.classList.add('shown'); } }); };
 }
 function finish(){
   if(Object.keys(res1).length<D.qs.length || res2===null) return;
