@@ -36,6 +36,29 @@ function say1(text, who){ return new Promise(function(res){
 function speedCtl(){ return '<div class="speed">Speed <button data-r="0.8">Slow</button><button data-r="1" aria-pressed="true">Normal</button></div>'; }
 function bindSpeed(root){ root.querySelectorAll('.speed button').forEach(function(b){ b.onclick=function(){ rate=+b.dataset.r; root.querySelectorAll('.speed button').forEach(function(x){x.setAttribute('aria-pressed', x===b);}); }; }); }
 
+
+/* ---------- multiple choice (A1 / A2): each gap is a choice of 3 answers ---------- */
+var MC_POOL = (function(){ var seen={}, out=[]; (window.B1||[]).forEach(function(u){ Object.keys(u.ansT||{}).forEach(function(k){ var a=first(u.ansT[k]); var n=norm(a); if(a && !seen[n]){ seen[n]=1; out.push(a); } }); }); return out; })();
+var MC_FALLBACK = ['is','are','am','do','does','my','your','his','her','this','that','these','those','can','has','have','like','likes','there is','there are'];
+function mcRand(seed){ return function(){ seed=(seed*9301+49297)%233280; return seed/233280; }; }
+function mcShuffle(a, r){ a=a.slice(); for(var i=a.length-1;i>0;i--){ var j=Math.floor(r()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; } return a; }
+function mcCase(x, like){ if(/^[A-Z]/.test(like)) return x.charAt(0).toUpperCase()+x.slice(1); return x==='I'||/^I[ ’']/.test(x) ? x : x.charAt(0).toLowerCase()+x.slice(1); }
+function mcOptions(g, gi){
+  var ans=first(D.ansT[g.num]||''); if(!ans) return [];
+  var ok=alts(D.ansT[g.num]); var r=mcRand(D.n*97+gi*13+7);
+  var h=String(g.hint||'').replace(/[…\.]/g,'').trim().toLowerCase();
+  var wc=ans.split(/\s+/).length;
+  var SYN=[['like','love','enjoy'],['likes','loves','enjoys'],['hi','hello','hey'],['big','large'],['small','little'],['mom','mother'],['dad','father'],['great','fine','good','ok'],['bye','goodbye']];
+  var syn=[]; SYN.forEach(function(gr){ if(ok.some(function(o){ return gr.indexOf(o)>=0; })) syn=syn.concat(gr); });
+  var bad=function(x){ var n=norm(x); return !n || ok.indexOf(n)>=0 || ok.indexOf(n.replace(/'/g,''))>=0 || syn.indexOf(n)>=0; };
+  var pool=MC_POOL.filter(function(x){ return !bad(x); });
+  var same=pool.filter(function(x){ return h && x.toLowerCase().indexOf(h)===0 && Math.abs(x.split(/\s+/).length-wc)<=1; });
+  var near=pool.filter(function(x){ return same.indexOf(x)<0 && Math.abs(x.split(/\s+/).length-wc)<=1; });
+  var picks=[], add=function(list){ mcShuffle(list,r).forEach(function(x){ if(picks.length<2 && picks.map(norm).indexOf(norm(x))<0 && norm(x)!==norm(ans)) picks.push(x); }); };
+  add(same); add(near); add(MC_FALLBACK.filter(function(x){ return !bad(x); }));
+  return mcShuffle([ans].concat(picks.map(function(x){ return mcCase(x, ans); })), r);
+}
+
 /* ---------- talk ---------- */
 function gapsIn(){ var out=[], cur=null;
   D.lines.forEach(function(l,li){ l.parts.forEach(function(p){ if(typeof p!=='object'||!p) return; if(p.num) cur=p.num; if('gap' in p){ out.push({li:li,num:cur||String(out.length+1),hint:p.gap}); cur=null; } }); });
@@ -52,7 +75,9 @@ function talkHTML(){
     var html=l.parts.map(function(p){
       if(typeof p==='string') return esc(p);
       if(p.num) return '<span class="num">('+esc(p.num)+')</span> ';
-      var g=GAPS[gi++]; return '<input class="gap" data-i="'+(gi-1)+'" placeholder="'+esc(g.hint||'…')+'" aria-label="Gap '+esc(g.num)+(g.hint?' ('+esc(g.hint)+')':'')+'" autocomplete="off" autocapitalize="off" spellcheck="false">';
+      var g=GAPS[gi++], ops=mcOptions(g, gi-1);
+      if(ops.length) return '<select class="gap mc" data-i="'+(gi-1)+'" aria-label="Gap '+esc(g.num)+': choose the answer"><option value="">'+esc(g.hint||'…')+' ▾</option>'+ops.map(function(o,k){ return '<option value="'+esc(o)+'">'+'abc'[k]+') '+esc(o)+'</option>'; }).join('')+'</select>';
+      return '<input class="gap" data-i="'+(gi-1)+'" placeholder="'+esc(g.hint||'…')+'" aria-label="Gap '+esc(g.num)+(g.hint?' ('+esc(g.hint)+')':'')+'" autocomplete="off" autocapitalize="off" spellcheck="false">';
     }).join('');
     var fc=(window.LAB_FACES||{})[l.who]; var av=fc?'<span class="jav">'+fc+'</span>':'<span class="jav jl">'+esc(l.who.charAt(0))+'</span>';
     return '<div class="ln" data-l="'+li+'">'+av+'<b>'+esc(l.who)+'</b><span>'+html+'</span></div>';

@@ -138,3 +138,6 @@ mark sup{font:700 9px Poppins;margin-left:1px}
 button.chipw{cursor:pointer;background:var(--card)}
 .out{margin-top:10px;font-size:15px;min-height:1em}
 .out small{color:var(--mut)}
+
+.gap.mc{min-width:0;width:auto;cursor:pointer;padding:4px 6px;font-weight:600;appearance:auto}
+.ln>span{min-width:0;flex:1 1 auto}
