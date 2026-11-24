@@ -4,7 +4,8 @@
    Niveles A1 a C1. Sunny conversa, corrige con cariño y, al final, da consejos. */
 (function () {
   const SUNNY_URL = 'https://hadash-sunny.dream-inenglish25.workers.dev/';
-  const CODE_KEY = 'hadash-sunny-code', LEVEL_KEY = 'hadash-lab-level';
+  const CODE_KEY = 'hadash-sunny-code', LEVEL_KEY = 'hadash-lab-level', TIP_KEY = 'hadash-sunny-tip', PAUSE_KEY = 'hadash-sunny-pause', VOICE_KEY = 'hadash-sunny-voice';
+  const PAUSES = [2, 3, 5]; // segundos de silencio antes de enviar lo que dijo el estudiante
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
@@ -12,11 +13,11 @@
   };
 
   const LEVELS = [
-    { id: 'A1', es: 'Principiante', rule: 'Level A1 (beginner). Use very simple, common words and the present tense. Sentences of 5 to 8 words. Ask easy yes/no or one-word questions. Give corrections in very simple Spanish.' },
-    { id: 'A2', es: 'Básico', rule: 'Level A2 (elementary). Use everyday words, present, simple past and "going to". Short sentences. Ask simple open questions. Give corrections in simple Spanish.' },
-    { id: 'B1', es: 'Intermedio', rule: 'Level B1 (intermediate). Talk naturally about experiences, plans and opinions. You may use a common idiom and explain it simply. Give corrections in simple English, with a short Spanish hint if needed.' },
-    { id: 'B2', es: 'Intermedio alto', rule: 'Level B2 (upper intermediate). Talk naturally with richer vocabulary, phrasal verbs and some idioms. Encourage longer answers and opinions with reasons. Give corrections in English.' },
-    { id: 'C1', es: 'Avanzado', rule: 'Level C1 (advanced). Speak like a natural American English speaker: idioms, collocations, nuance, some everyday slang (explain it). Challenge the student to be precise and fluent. Give corrections in English, including more natural ways to say things.' }
+    { id: 'A1', es: 'Principiante', rule: 'Level A1 (beginner). Use very simple, common words and the present tense. Sentences of 5 to 8 words. Ask easy yes/no or one-word questions. ' },
+    { id: 'A2', es: 'Básico', rule: 'Level A2 (elementary). Use everyday words, present, simple past and "going to". Short sentences. Ask simple open questions. ' },
+    { id: 'B1', es: 'Intermedio', rule: 'Level B1 (intermediate). Talk naturally about experiences, plans and opinions. You may use a common idiom and explain it simply. ' },
+    { id: 'B2', es: 'Intermedio alto', rule: 'Level B2 (upper intermediate). Talk naturally with richer vocabulary, phrasal verbs and some idioms. Encourage longer answers and opinions with reasons. ' },
+    { id: 'C1', es: 'Avanzado', rule: 'Level C1 (advanced). Speak like a natural American English speaker: idioms, collocations, nuance, some everyday slang (explain it). Challenge the student to be precise and fluent. In corrections, include more natural ways to say things.' }
   ];
 
   function defaultLevel() {
@@ -43,8 +44,18 @@ Before you correct anything, check that the student's sentence is really wrong. 
 When you correct, give the most natural way a native speaker would say it, for example "I'd like to go to the supermarket" or "I would like to go", never "I'm going to like to go". To talk about wishes use "I'd like to" or "I want to"; use "going to" only for plans.
 After a correction, do not repeat the student's sentence as if it were about you; react to what they said (for example "That sounds fun!") and continue. Choose the correction that fits your question: if you asked "What would you like to do?", the natural answer uses "I'd like to".
 Never ask the student to repeat or build a sentence that is incorrect or that a native speaker would not say. If the speech recognition text looks strange or incomplete, ask the student to say it again instead of correcting it.
-Rules: Keep each answer short (2 to 4 sentences) because it will be read aloud. If the student makes a mistake, first say the correct sentence, then explain briefly inside parentheses, and invite them to say it again. Praise good answers. Always end with one question. Plain text only: no lists, no markdown, no emojis. Never discuss romantic, sexual, violent or adult topics.
-Now start: greet the student, say you are Sunny, and ask your first easy question.`;
+Reply format. Write your answer in these labeled lines, each label at the start of its own line:
+FIX: only if the student made a real mistake: the full correct sentence, in natural English. Leave this line out if there was no mistake.
+TIP: only together with FIX: one short explanation of the mistake. ${tipRule(li)}
+SAY: what you say to continue the conversation, in English only: react to what the student said, praise good answers, and end with exactly one question. Keep it to 1 to 3 short sentences because it will be read aloud.
+${li < 2 ? 'OPTIONS: three short possible answers to your question, separated by " | ". All three must be correct, natural English that a student at this level can say, and different from each other. Do not number them.\n' : ''}Never mix Spanish and English in the same line. Correct only one thing per turn. Plain text only: no lists, no markdown, no emojis. Never discuss romantic, sexual, violent or adult topics.
+Now start: greet the student, say you are Sunny, and ask your first easy question (use the SAY line).`;
+  }
+  function tipLang(li) { const t = store.get(TIP_KEY, null); return t || (li < 2 ? 'es' : 'en'); }
+  function tipRule(li) {
+    return tipLang(li) === 'es'
+      ? 'Write the TIP completely in simple Spanish, without any English words (the FIX line already shows the English), for example: "En pasado, el verbo cambia de forma."'
+      : 'Write the TIP in very simple English, for example: "For the past, we say went, not go."';
   }
 
   /* ---------- estilos ---------- */
@@ -71,6 +82,13 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
   .sn-in{flex:1 1 160px;min-width:0;font:inherit;font-size:16px;border:2px solid #DDE3F0;border-radius:12px;padding:9px 11px}
   .sn-btn{border:0;border-radius:24px;padding:9px 15px;font:700 15px 'Nunito',sans-serif;cursor:pointer;background:#EEF2FA;color:#14213D}
   .sn-pri{background:#1673E6;color:#fff}.sn-mic{background:#E53935;color:#fff}.sn-mic[aria-pressed="true"]{background:#1E9E45}
+  .sn-fix{background:#E8F7EC;border-left:5px solid #1E9E45;align-self:stretch;max-width:100%}
+  .sn-fix b{color:#1E7A38}.sn-tip{display:block;margin-top:4px;color:#465375;font-size:15px}
+  .sn-opts{display:flex;flex-direction:column;gap:6px;align-self:stretch}
+  .sn-opt{text-align:left;border:2px solid #1673E6;background:#fff;color:#0B4FB3;border-radius:14px;padding:8px 12px;font:700 15px 'Nunito',sans-serif;cursor:pointer}
+  .sn-opt:hover,.sn-opt:focus-visible{background:#EAF2FF}
+  .sn-opt span{display:inline-block;min-width:22px;color:#14213D}
+  .sn-set{display:flex;gap:6px;flex-wrap:wrap}.sn-set .sn-btn{padding:6px 11px;font-size:13px}
   @media print{.sn-fab,.sn-dlg{display:none!important}}`;
   document.head.appendChild(css);
 
@@ -115,11 +133,16 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
        <div class="sn-row"><button class="sn-btn sn-mic" type="button" id="sn-mic" aria-pressed="false">🎤 Speak</button>
        <button class="sn-btn" type="button" id="sn-rep">🔁 Again</button>
        <button class="sn-btn" type="button" id="sn-fin">⭐ Tips · Consejos</button>
-       <button class="sn-btn" type="button" id="sn-new">↺ New</button></div>`);
+       <button class="sn-btn" type="button" id="sn-new">↺ New</button></div>
+       <div class="sn-set"><button class="sn-btn" type="button" id="sn-tipl"></button><button class="sn-btn" type="button" id="sn-pause"></button><button class="sn-btn" type="button" id="sn-voice"></button></div>`);
+    dlg.querySelector('#sn-tipl').onclick = () => { store.set(TIP_KEY, tipLang(level) === 'es' ? 'en' : 'es'); drawSet(); start(); };
+    dlg.querySelector('#sn-pause').onclick = () => { const i = (PAUSES.indexOf(pauseS()) + 1) % PAUSES.length; store.set(PAUSE_KEY, PAUSES[i]); drawSet(); };
+    dlg.querySelector('#sn-voice').onclick = nextVoice;
+    drawSet();
     dlg.querySelectorAll('[data-l]').forEach(b => b.onclick = () => { level = +b.dataset.l; store.set(LEVEL_KEY, level); start(); });
     dlg.querySelector('#sn-tf').onsubmit = e => { e.preventDefault(); const i = dlg.querySelector('#sn-typed'); const v = i.value.trim(); if (!v) return; i.value = ''; student(v); };
     dlg.querySelector('#sn-mic').onclick = toggleMic;
-    dlg.querySelector('#sn-rep').onclick = () => { const a = [...turns].reverse().find(t => t.role === 'assistant'); if (a) speak(a.content); };
+    dlg.querySelector('#sn-rep').onclick = () => { const a = [...turns].reverse().find(t => t.role === 'assistant'); if (a) speakReply(parseReply(a.content)); };
     dlg.querySelector('#sn-fin').onclick = tips;
     dlg.querySelector('#sn-new').onclick = start;
     if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
@@ -128,6 +151,14 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
     start();
   }
 
+  function pauseS() { const v = store.get(PAUSE_KEY, 3); return PAUSES.includes(v) ? v : 3; }
+  function drawSet() {
+    const t = dlg.querySelector('#sn-tipl'), p = dlg.querySelector('#sn-pause'), v = dlg.querySelector('#sn-voice'); if (!t) return;
+    t.textContent = tipLang(level) === 'es' ? '💡 Explicaciones: Español' : '💡 Explanations: English';
+    p.textContent = '⏱ Pausa para pensar: ' + pauseS() + ' s';
+    const en = bestVoice('en'); v.textContent = '🔊 Voz: ' + (en ? en.name.replace(/Microsoft |Google |Online|\(Natural\)|- English.*$/g, '').trim().slice(0, 22) : 'del navegador');
+    v.title = 'Cambia la voz de Sunny. Las voces más naturales están en Microsoft Edge ("Natural").';
+  }
   function status(t, err) { const s = dlg.querySelector('#sn-st'); if (s) { s.textContent = t; s.classList.toggle('sn-err', !!err); } }
   function bubble(who, text) {
     const bd = dlg.querySelector('#sn-bd'); if (!bd) return;
@@ -167,15 +198,54 @@ Now start: greet the student, say you are Sunny, and ask your first easy questio
     busy = true; status('Sunny está pensando...');
     try {
       const t = await ask([turns[0], ...turns.slice(1).slice(-16)]);
-      turns.push({ role: 'assistant', content: t }); bubble('ai', t);
-      status('Presiona 🎤 Speak o escribe tu respuesta.');
-      speak(t);
+      turns.push({ role: 'assistant', content: t });
+      const r = parseReply(t); show(r);
+      status(r.options.length ? 'Toca una respuesta, dila con 🎤 Speak o escribe la tuya.' : 'Presiona 🎤 Speak o escribe tu respuesta.');
+      speakReply(r);
     } catch (e) { fail(e); }
     busy = false;
   }
+  /* Respuesta con etiquetas: FIX (corrección en inglés), TIP (explicación), SAY (conversación), OPTIONS (A1 y A2). */
+  function parseReply(t) {
+    const r = { fix: '', tip: '', say: '', options: [] }; let cur = null;
+    t.split(/\n+/).forEach(line => {
+      const m = line.match(/^\s*(FIX|TIP|SAY|OPTIONS)\s*:\s*(.*)$/i);
+      if (m) { cur = m[1].toUpperCase(); line = m[2]; }
+      line = line.trim(); if (!line) return;
+      if (cur === 'FIX') r.fix += (r.fix ? ' ' : '') + line;
+      else if (cur === 'TIP') r.tip += (r.tip ? ' ' : '') + line;
+      else if (cur === 'OPTIONS') r.options.push(...line.split('|').map(x => x.replace(/^\s*([a-c1-3][.)]|[-•])\s*/i, '').trim()).filter(Boolean));
+      else r.say += (r.say ? ' ' : '') + line;
+    });
+    r.fix = r.fix.replace(/^["“]|["”]$/g, ''); r.options = r.options.slice(0, 3);
+    if (!r.say && !r.fix) r.say = t;
+    return r;
+  }
+  function show(r) {
+    const bd = dlg.querySelector('#sn-bd'), st = dlg.querySelector('#sn-st'); if (!bd) return;
+    dlg.querySelectorAll('.sn-opts').forEach(o => o.remove());
+    if (r.fix) {
+      const d = document.createElement('div'); d.className = 'sn-msg sn-fix';
+      d.innerHTML = '✅ <b lang="en">' + esc(r.fix) + '</b>' + (r.tip ? '<span class="sn-tip" lang="' + tipLang(level) + '">💡 ' + esc(r.tip) + '</span>' : '');
+      bd.insertBefore(d, st);
+    }
+    if (r.say) bubble('ai', r.say);
+    if (r.options.length) {
+      const box = document.createElement('div'); box.className = 'sn-opts'; box.setAttribute('role', 'group'); box.setAttribute('aria-label', 'Elige una respuesta');
+      r.options.forEach((o, i) => {
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'sn-opt'; b.lang = 'en';
+        b.innerHTML = '<span>' + 'ABC'[i] + '.</span> ' + esc(o);
+        b.onclick = () => student(o);
+        box.appendChild(b);
+      });
+      bd.insertBefore(box, st);
+    }
+    st && st.scrollIntoView({ block: 'nearest' });
+  }
   function student(text) {
     if (busy) return;
-    stopSpeak(); bubble('me', text); turns.push({ role: 'user', content: text }); reply();
+    if (listening || rec) stopMic();
+    stopSpeak(); dlg.querySelectorAll('.sn-opts').forEach(o => o.remove()); bubble('me', text); turns.push({ role: 'user', content: text }); reply();
   }
   async function tips() {
     const said = turns.filter(t => t.role === 'user').length - 1;
@@ -190,14 +260,15 @@ ${transcript}`;
     try {
       const t = await ask([{ role: 'user', content: prompt }]);
       bubble('ai', t); status('Estos son tus consejos. Presiona ↺ New para otra conversación.');
-      speak(t, 'es');
+      speakChunks(t.split(/("[^"]*"|“[^”]*”)/).filter(x => x.trim()).map(x => /^["“]/.test(x) ? [x.slice(1, -1), 'en'] : [x, 'es']));
     } catch (e) { fail(e); }
     busy = false;
   }
 
   /* ---------- voz ---------- */
-  /* Voces: se escoge la más natural disponible (Edge: "Online (Natural)"; Chrome: "Google");
-     el español entre paréntesis se lee con voz en español y el inglés entre comillas, con voz en inglés. */
+  /* Se usa la voz más natural del equipo (en Edge, las "Natural"; en Chrome, las de Google).
+     La estudiante puede cambiarla con 🔊 Voz. Cada parte (corrección, explicación, conversación)
+     se lee completa con una sola voz: nunca se cambia de idioma a mitad de una oración. */
   function vq(v) {
     const n = v.name + ' ' + (v.voiceURI || ''), l = (v.lang || '').replace('_', '-').toLowerCase();
     let s = 1;
@@ -210,48 +281,100 @@ ${transcript}`;
     if (['en-us', 'es-us', 'es-mx', 'es-419', 'es-do'].includes(l)) s += 0.5;
     return s;
   }
+  function voicesFor(lang) {
+    return (speechSynthesis.getVoices() || []).filter(v => (v.lang || '').toLowerCase().startsWith(lang)).sort((a, b) => vq(b) - vq(a));
+  }
   function bestVoice(lang) {
-    const vs = (speechSynthesis.getVoices() || []).filter(v => (v.lang || '').toLowerCase().startsWith(lang));
-    return vs.sort((a, b) => vq(b) - vq(a))[0] || null;
+    const vs = voicesFor(lang); if (!vs.length) return null;
+    if (lang === 'en') { const want = store.get(VOICE_KEY, ''); const v = want && vs.find(x => x.name === want); if (v) return v; }
+    return vs[0];
   }
-  function parts(text, base) {
-    const out = [], push = (t, l) => { t = t.replace(/[*_#>`]/g, '').trim(); if (t && /[a-z0-9áéíóúñ]/i.test(t)) out.push([t, l]); };
-    const inner = (seg, l) => { if (l === 'es') seg.split(/("[^"]*"|“[^”]*”)/).forEach(x => /^["“]/.test(x) ? push(x.slice(1, -1), 'en') : push(x, 'es')); else push(seg, 'en'); };
-    if (base === 'es') { inner(text, 'es'); return out; }
-    text.split(/(\([^)]*\))/).forEach(x => { if (!x.trim()) return; x.startsWith('(') ? inner(x.slice(1, -1), 'es') : inner(x, 'en'); });
-    return out;
+  function nextVoice() {
+    const vs = voicesFor('en').filter(v => vq(v) >= 3).slice(0, 8); const all = vs.length ? vs : voicesFor('en').slice(0, 8);
+    if (!all.length) return;
+    const cur = bestVoice('en'), i = all.findIndex(v => cur && v.name === cur.name);
+    const nx = all[(i + 1) % all.length]; store.set(VOICE_KEY, nx.name); drawSet();
+    speakChunks([['Hi! I am Sunny. Do you like this voice?', 'en']]);
   }
-  function speak(text, lang) {
+  try { speechSynthesis.onvoiceschanged = () => drawSet(); } catch (e) {}
+  // junta oraciones en bloques de hasta ~180 letras: suena más fluido y Chrome no corta textos largos
+  function chunks(t) {
+    const out = []; let cur = '';
+    (t.match(/[^.!?]+[.!?]*/g) || [t]).forEach(x => { x = x.trim(); if (!x) return; if ((cur + ' ' + x).length > 180 && cur) { out.push(cur); cur = x; } else cur = cur ? cur + ' ' + x : x; });
+    if (cur) out.push(cur); return out;
+  }
+  function speakChunks(list) {
     try {
       speechSynthesis.cancel();
       const en = bestVoice('en'), es = bestVoice('es');
-      parts(text, lang && lang.startsWith('es') ? 'es' : 'en').forEach(([t, l]) => {
-        // frases cortas: suenan más naturales y Chrome no corta los textos largos
-        (t.match(/[^.!?]+[.!?]*/g) || [t]).forEach(sent => {
-          if (!sent.trim()) return;
-          const u = new SpeechSynthesisUtterance(sent.trim());
-          u.lang = l === 'en' ? 'en-US' : 'es-US';
-          const v = l === 'en' ? en : es; if (v) u.voice = v;
-          const natural = v && vq(v) >= 4;
-          u.rate = l === 'en' ? (level < 2 ? 0.9 : 1) * (natural ? 1 : 0.95) : 1;
-          speechSynthesis.speak(u);
-        });
-      });
+      list.forEach(([t, l]) => chunks(t.replace(/[*_#>`"“”]/g, '')).forEach(c => {
+        const u = new SpeechSynthesisUtterance(c);
+        u.lang = l === 'en' ? 'en-US' : 'es-US';
+        const v = l === 'en' ? en : es; if (v) u.voice = v;
+        const natural = v && vq(v) >= 5;
+        u.rate = l === 'en' ? (level < 2 ? 0.92 : 1) * (natural ? 1 : 0.97) : 1;
+        u.pitch = 1;
+        speechSynthesis.speak(u);
+      }));
     } catch (e) {}
   }
+  function speakReply(r) {
+    const list = [];
+    if (r.fix) list.push(['You can say: ' + r.fix, 'en']);
+    if (r.tip) list.push([r.tip, tipLang(level)]);
+    if (r.say) list.push([r.say, 'en']);
+    speakChunks(list);
+  }
+  function speak(text, lang) { speakChunks([[text.replace(/[()]/g, ''), lang && lang.startsWith('es') ? 'es' : 'en']]); }
   function stopSpeak() { try { speechSynthesis.cancel(); } catch (e) {} }
-  function toggleMic() { listening ? stopMic() : startMic(); }
+
+  /* ---------- micrófono ---------- */
+  /* Escucha continua: no corta cuando el estudiante hace una pausa corta para pensar.
+     Envía cuando hay silencio por los segundos de "Pausa para pensar", o al presionar ⏹ Send. */
+  let heard = '', silenceT = null, sendOnEnd = false;
+  function toggleMic() { listening ? finishMic() : startMic(); }
+  function micBtn(on) { const m = dlg.querySelector('#sn-mic'); if (m) { m.setAttribute('aria-pressed', String(on)); m.textContent = on ? '⏹ Send · Enviar' : '🎤 Speak'; } }
   function startMic() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition; if (!SR || busy) return;
-    stopSpeak();
-    rec = new SR(); rec.lang = 'en-US'; rec.interimResults = false; rec.maxAlternatives = 1;
-    rec.onresult = e => { const t = e.results[0][0].transcript.trim(); if (t) student(t); };
-    rec.onerror = e => { if (e.error === 'not-allowed') status('Permite el micrófono en Chrome para hablar con Sunny.', true); };
-    rec.onend = () => { listening = false; const m = dlg.querySelector('#sn-mic'); if (m) { m.setAttribute('aria-pressed', 'false'); m.textContent = '🎤 Speak'; } };
-    try { rec.start(); listening = true; status('Te escucho... habla en inglés.');
-      const m = dlg.querySelector('#sn-mic'); m.setAttribute('aria-pressed', 'true'); m.textContent = '⏹ Stop'; } catch (e) {}
+    stopSpeak(); heard = ''; sendOnEnd = false; listening = true; micBtn(true);
+    status('Te escucho... habla en inglés. Puedes hacer pausas; envío cuando termines.');
+    runRec(SR);
   }
-  function stopMic() { try { rec && rec.abort(); } catch (e) {} rec = null; listening = false; }
+  function runRec(SR) {
+    const r = new SR(); rec = r;
+    r.lang = 'en-US'; r.continuous = true; r.interimResults = true; r.maxAlternatives = 1;
+    let base = heard;
+    r.onresult = e => {
+      let fin = '', mid = '';
+      for (let i = 0; i < e.results.length; i++) { const x = e.results[i][0].transcript; e.results[i].isFinal ? fin += x : mid += x; }
+      heard = (base + ' ' + fin).replace(/\s+/g, ' ').trim();
+      const show = (heard + ' ' + mid).trim(); const inp = dlg.querySelector('#sn-typed'); if (inp) inp.value = show;
+      if (show) status('Te escucho: "' + show + '"');
+      clearTimeout(silenceT); silenceT = setTimeout(() => { if (listening) finishMic(); }, pauseS() * 1000);
+    };
+    r.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { listening = false; micBtn(false); status('Permite el micrófono en el navegador para hablar con Sunny.', true); }
+    };
+    r.onend = () => {
+      if (rec !== r) return;
+      if (listening && !sendOnEnd) { try { runRec(SR); } catch (e) { finishMic(); } return; } // Chrome se detiene solo: seguimos escuchando
+      deliver();
+    };
+    try { r.start(); } catch (e) { listening = false; micBtn(false); }
+  }
+  function finishMic() {
+    clearTimeout(silenceT); if (!listening) return;
+    sendOnEnd = true; listening = false; micBtn(false);
+    try { rec && rec.stop(); } catch (e) { deliver(); }
+    setTimeout(() => { if (rec) deliver(); }, 1500);
+  }
+  function deliver() {
+    rec = null; const inp = dlg.querySelector('#sn-typed');
+    const t = (heard || (inp && inp.value) || '').trim(); heard = '';
+    if (inp) inp.value = '';
+    if (t) student(t); else status('No te escuché. Presiona 🎤 Speak y habla otra vez.', true);
+  }
+  function stopMic() { clearTimeout(silenceT); listening = false; sendOnEnd = false; heard = ''; const r = rec; rec = null; try { r && r.abort(); } catch (e) {} micBtn(false); }
 
   function open() {
     dlg.hidden = false; fab.hidden = true;

@@ -593,8 +593,8 @@ function convRules(li,ti){const L=CONV_LEVELS[li],T=TOPICS[ti];return `You are S
 ${L.rule}
 Topic: ${T.p}.
 Each reply: 1 to 3 short sentences in English, and always end with ONE question so the student keeps talking.
-Corrections: the student's words come from speech recognition, so ignore punctuation, capital letters and small transcription glitches. If the student makes a clear grammar or vocabulary mistake, start your reply with ONE short, kind tip in Spanish inside parentheses, writing the correct English words inside double quotes, for example: (Pequeño consejo: en pasado decimos "I went".) Then continue the conversation in English. Correct only one thing per reply and not every time; keep it encouraging.
-If the student answers in Spanish, says they don't understand, or seems lost, say it again more simply, and you may add a short Spanish hint in parentheses.
+Corrections: the student's words come from speech recognition, so ignore punctuation, capital letters and small transcription glitches. If the student makes a clear grammar or vocabulary mistake, start your reply with ONE short, kind tip inside parentheses, written completely in Spanish with no English words in it, for example: (Pequeño consejo: en pasado, el verbo cambia de forma.) Right after the parentheses, say in English: You can say, and then the full correct sentence. Then continue the conversation in English. Never put English words inside the parentheses and never put Spanish words outside them. Correct only one thing per reply and not every time; keep it encouraging.
+If the student answers in Spanish, says they don't understand, or seems lost, say it again more simply, and you may add a short hint in parentheses, written only in Spanish.
 Language quality: you are a real American English teacher. Every English sentence you write, especially corrections and example sentences, must be correct and sound natural to a native speaker from the United States. Use everyday American words and spelling (apartment, vacation, cell phone, color).
 Before you correct anything, check that the student's sentence is really wrong. If it is correct and natural, do not correct it: praise it. Never "fix" correct English and never suggest awkward or unnatural sentences.
 When you correct, give the most natural way a native speaker would say it, for example "I'd like to go to the supermarket" or "I would like to go", never "I'm going to like to go". To talk about wishes use "I'd like to" or "I want to"; use "going to" only for plans.
@@ -617,7 +617,7 @@ function speakThen(parts,onEnd,g){
   try{parts.forEach(([text,lang],i)=>{
     const u=new SpeechSynthesisUtterance(forSpeech(text));
     u.lang=lang==="en"?"en-US":"es-ES";const pg=g&&lang==="en"?pickG("en",g,0):null;const v=pg?pg.v:pick(lang);if(v)u.voice=v;if(pg)u.pitch=pg.p;
-    u.rate=(lang==="en"?.86:1)*(view.slow?.75:1);
+    u.rate=(lang==="en"?.93:1)*(view.slow?.75:1);
     if(i===parts.length-1){u.onend=end;u.onerror=end}
     speechSynthesis.speak(u)});
     const words=parts.reduce((a,[t])=>a+t.split(/\s+/).length,0);
@@ -748,22 +748,28 @@ function listen(){
   const v=view;if(v.name!=="talk")return;
   if(v.retry){v.retry=false;return askSunny()}
   if(v.state==="thinking")return;
-  if(v.state==="listening"){try{rec&&rec.stop()}catch(e){}return}
+  if(v.state==="listening"&&!v.restarting){if(rec){rec.done=true;try{rec.stop()}catch(e){}}return}
   stopAll()
   if(!SR||micBlocked){const m="En este navegador el micrófono no está disponible. Escribe tu respuesta en el cuadro y presiona Enter.";setStatus(m,true);say([[m,"es"]],{force:true});const t=document.getElementById("typed");if(t)t.focus();return}
   let r;try{r=new SR()}catch(e){micBlocked=true;return listen()}
-  rec=r;r.lang="en-US";r.interimResults=true;r.continuous=false;r.maxAlternatives=1;
-  let finalTxt="",interim="",failed=false;
-  v.state="listening";beep();setStatus("Te escucho... habla en inglés.");
-  r.onresult=e=>{interim="";for(let i=e.resultIndex;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)finalTxt+=t;else interim+=t}
-    setStatus("Te escucho: "+(finalTxt+interim).trim())};
-  r.onerror=e=>{failed=true;if(e.error==="aborted")return;
-    if(["not-allowed","service-not-allowed","audio-capture"].includes(e.error)){micBlocked=true;const m="No pude usar el micrófono. Escribe tu respuesta en el cuadro y presiona Enter.";setStatus(m,true);say([[m,"es"]],{force:true});v.state="idle";return}
-    v.state="idle";const m=e.error==="no-speech"?"No te escuché. Presiona Espacio y habla otra vez.":"Hubo un problema con el micrófono. Presiona Espacio para intentarlo otra vez.";setStatus(m,true);say([[m,"es"]],{force:true})};
-  r.onend=()=>{if(rec===r)rec=null;if(view!==v||failed)return;v.state="idle";
-    const said=(finalTxt||interim).trim();
+  rec=r;r.lang="en-US";r.interimResults=true;r.continuous=true;r.maxAlternatives=1;
+  /* Escucha continua: espera la "pausa para pensar" (3 s por defecto) antes de enviar; Espacio envía enseguida. */
+  const again=!!v.restarting;v.restarting=false;let finalTxt=again?(v.heard||""):"",interim="",failed=false,silT=null;const base=finalTxt;const pause=(store.get("hadash-sunny-pause",3)||3)*1000;
+  if(!again){v.heard="";v.state="listening";beep();setStatus("Te escucho... habla en inglés. Puedes hacer pausas; cuando termines, espera un momento o presiona Espacio.")}
+  r.onresult=e=>{let fin="";interim="";for(let i=0;i<e.results.length;i++){const t=e.results[i][0].transcript;if(e.results[i].isFinal)fin+=t+" ";else interim+=t}
+    finalTxt=(base+" "+fin).replace(/\s+/g," ").trim();v.heard=finalTxt;
+    setStatus("Te escucho: "+(finalTxt+" "+interim).trim());
+    clearTimeout(silT);silT=setTimeout(()=>{if(rec===r){r.done=true;try{r.stop()}catch(e){}}},pause)};
+  r.onerror=e=>{if(e.error==="aborted"||e.error==="no-speech")return;failed=true;
+    if(["not-allowed","service-not-allowed","audio-capture"].includes(e.error)){micBlocked=true;const m="No pude usar el micrófono. Escribe tu respuesta en el cuadro y presiona Enter.";setStatus(m,true);say([[m,"es"]],{force:true});v.state="idle";v.heard="";return}
+    v.state="idle";v.heard="";const m="Hubo un problema con el micrófono. Presiona Espacio para intentarlo otra vez.";setStatus(m,true);say([[m,"es"]],{force:true})};
+  r.onend=()=>{clearTimeout(silT);if(rec!==r&&!r.done)return;if(view!==v||failed)return;
+    const said=(finalTxt+" "+interim).trim();
+    if(!r.done&&v.state==="listening"&&(Date.now()-(v.micStart||0))<60000){rec=null;v.restarting=true;return listen()} // Chrome se detuvo solo: seguimos escuchando
+    rec=null;v.state="idle";v.heard="";
     if(!said){const m="No te escuché. Presiona Espacio y habla otra vez.";setStatus(m,true);say([[m,"es"]],{force:true});return}
     sendStudent(said)};
+  if(!again)v.micStart=Date.now();
   try{r.start()}catch(e){micBlocked=true;v.state="idle";listen()}
 }
 function sendStudent(text){
