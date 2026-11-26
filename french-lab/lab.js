@@ -166,9 +166,10 @@
     var s = u.sound;
     return '<section class="card" id="sound"><h2>🔤 Le son ' + s.letters.map(function (l) { return '« ' + l + ' »'; }).join(' ') + ' <small>Sound and read</small></h2>' +
       '<div class="sbig">' + s.letters.map(function (l) { return '<button class="L" type="button" data-say="' + l + '">' + l + '</button>'; }).join('') + '<p style="flex:1;min-width:220px;margin:0">' + esc(s.tip) + '</p></div>' +
-      '<h3 style="margin-top:14px">1 · Syllables</h3><div class="syl">' + s.syllables.map(function (x) { return '<button type="button" data-say="' + x + '">' + x + '</button>'; }).join('') + '</div>' +
-      '<h3>2 · Words</h3><div class="sw">' + s.words.map(function (w) { return '<button type="button" data-say="' + esc(w.w) + '">' + pic(w.pic) + '<b>' + hl(w.w, s.letters) + '</b></button>'; }).join('') + '</div>' +
-      '<h3 style="margin-top:14px">3 · Sentences</h3><ul class="sent">' + s.sentences.map(function (x) { return '<li>' + spkBtn(x) + '<span>' + frT(x) + '</span></li>'; }).join('') + '</ul>' +
+      '<p class="hint rdhint">🎤 <b>Now you read!</b> Tap <b>🎤 Je lis</b>, read out loud, and see the words you said well in green.</p>' +
+      '<h3 style="margin-top:14px">1 · Syllables</h3><div class="syl">' + s.syllables.map(function (x) { return '<button type="button" data-say="' + x + '">' + x + '</button>'; }).join('') + '</div>' + micBtn(s.syllables.join(' ')) +
+      '<h3>2 · Words</h3><div class="sw">' + s.words.map(function (w) { return '<button type="button" data-say="' + esc(w.w) + '">' + pic(w.pic) + '<b>' + hl(w.w, s.letters) + '</b></button>'; }).join('') + '</div>' + micBtn(s.words.map(function (w) { return w.w; }).join(' ')) +
+      '<h3 style="margin-top:14px">3 · Sentences</h3><ul class="sent">' + s.sentences.map(function (x) { return '<li>' + spkBtn(x) + '<span>' + frT(x) + '</span>' + micBtn(x, 1) + '</li>'; }).join('') + '</ul>' +
       '<h3>4 · Find the sound</h3><p class="hint">Tap a picture to hear the word. Do you hear the sound? Tap ✔ on the pictures that have it.</p>' +
       '<div class="find">' + s.find.map(function (f, i) { return '<button type="button" data-i="' + i + '" aria-label="' + esc(f.w) + '">' + pic(f.pic) + '</button>'; }).join('') + '</div>' +
       '<p><button class="btn ghost" id="fcheck">✔ Check</button> <span class="score" id="fscore"></span></p></section>';
@@ -236,7 +237,7 @@
   function readSec(u) {
     var R = u.reading;
     return '<section class="card" id="read"><h2>📚 Lis et réponds <small>Read: vrai or faux?</small></h2>' +
-      '<div class="rtext">' + spkBtn(R.text) + '<span>' + frT(R.text) + '</span></div><ul class="vf">' +
+      '<div class="rtext">' + spkBtn(R.text) + '<span>' + frT(R.text) + '</span></div>' + micBtn(R.text) + '<ul class="vf">' +
       R.q.map(function (q, i) { return '<li><span>' + frT(q[0]) + '</span>' + spkBtn(q[0]) + '<button type="button" data-i="' + i + '" data-v="1">vrai</button><button type="button" data-i="' + i + '" data-v="0">faux</button></li>'; }).join('') + '</ul></section>';
   }
   function bindRead(u) {
@@ -248,6 +249,92 @@
       };
     });
   }
+
+  /* ---------- "Now you read!": la niña lee en voz alta, el lab marca las palabras ---------- */
+  function micBtn(text, small) { return '<button class="mic' + (small ? ' sm' : '') + '" type="button" data-read="' + esc(text) + '">🎤' + (small ? '' : ' Je lis') + '</button>'; }
+  function phon(w) {
+    w = norm(String(w).replace(/ç/gi, 's')).replace(/\s/g, '');
+    w = w.replace(/eaux?$/, 'o').replace(/eau/g, 'o').replace(/au/g, 'o').replace(/ph/g, 'f').replace(/qu/g, 'k').replace(/c([aou])/g, 'k$1').replace(/ss/g, 's');
+    w = w.replace(/([a-z])\1+/g, '$1');
+    for (var i = 0; i < 3 && w.length > 2; i++) w = w.replace(/(e|s|t|x|d|z|p)$/, '');
+    return w.replace(/h/g, '');
+  }
+  function lev(a, b) {
+    var m = [], i, j; for (i = 0; i <= b.length; i++) m[i] = [i];
+    for (j = 0; j <= a.length; j++) m[0][j] = j;
+    for (i = 1; i <= b.length; i++) for (j = 1; j <= a.length; j++) m[i][j] = Math.min(m[i - 1][j] + 1, m[i][j - 1] + 1, m[i - 1][j - 1] + (b[i - 1] === a[j - 1] ? 0 : 1));
+    return m[b.length][a.length];
+  }
+  function heardIt(word, said) {
+    var p = phon(word); if (!p) return true;
+    var toks = said.map(phon), joined = toks.join('');
+    if (toks.indexOf(p) >= 0) return true;
+    if (p.length <= 3) return joined.indexOf(p) >= 0;             /* sílabas: "la li ma" a veces sale "lali ma" */
+    return toks.some(function (t) { return t && lev(p, t) <= (p.length >= 6 ? 2 : 1); });
+  }
+  var REC = null;
+  function closeReader() { if (REC) { try { REC.stop(); } catch (e) {} REC = null; } var o = $('.reader'); if (o) o.remove(); }
+  function reader(btn, text) {
+    closeReader(); stop();
+    var words = text.replace(/[’']/g, '’ ').split(/\s+/).map(function (w) { return w.replace(/^[«»“”"—\-:;,.!?…]+|[«»“”"—\-:;,.!?…]+$/g, ''); }).filter(Boolean);
+    var host = btn.closest('li') || btn;
+    var box = document.createElement('div'); box.className = 'reader';
+    box.innerHTML = '<div class="rwords">' + words.map(function (w, i) { return '<span data-i="' + i + '">' + esc(w) + '</span>'; }).join(' ') + '</div>' +
+      '<div class="rstat" aria-live="polite"></div><div class="rbtns"></div>';
+    host.parentNode.insertBefore(box, host.nextSibling);
+    var stat = $('.rstat', box), btns = $('.rbtns', box);
+    if (!SR) { stat.innerHTML = 'To read with the microphone, open this page in <b>Chrome</b> or <b>Edge</b>. You can still listen: tap 🔊.'; btns.innerHTML = '<button class="btn ghost" type="button" data-say="' + esc(text) + '">🔊 Modèle</button>'; return; }
+    var said = [], interim = '', chunks = [], rec = null, url = null, t0 = Date.now(), quiet = null, done = false;
+    var mr = null, stream = null;
+    try {
+      if (navigator.mediaDevices && window.MediaRecorder) navigator.mediaDevices.getUserMedia({ audio: true }).then(function (st) {
+        if (done) { st.getTracks().forEach(function (t) { t.stop(); }); return; }
+        stream = st; mr = new MediaRecorder(st); mr.ondataavailable = function (e) { if (e.data && e.data.size) chunks.push(e.data); };
+        mr.onstop = function () { st.getTracks().forEach(function (t) { t.stop(); }); if (chunks.length) { url = URL.createObjectURL(new Blob(chunks, { type: mr.mimeType || 'audio/webm' })); var b = $('.myvoice', box); if (b) b.hidden = false; } };
+        mr.start();
+      }).catch(function () {});
+    } catch (e) {}
+    rec = new SR(); REC = rec; rec.lang = 'fr-FR'; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+    stat.innerHTML = '🎤 <b>Je t’écoute…</b> Read out loud. <button class="btn ghost" type="button" id="rfin">⏹ J’ai fini</button>';
+    $('#rfin', box).onclick = function () { try { rec.stop(); } catch (e) {} };
+    function live() {
+      var all = said.concat(interim.split(/\s+/));
+      $$('.rwords span', box).forEach(function (sp, i) { if (heardIt(words[i], all)) sp.className = 'ok'; });
+    }
+    function arm() { clearTimeout(quiet); quiet = setTimeout(function () { try { rec.stop(); } catch (e) {} }, 2600); }
+    rec.onresult = function (e) {
+      interim = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        var t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) said = said.concat(t.split(/\s+/)); else interim += ' ' + t;
+      }
+      live(); arm();
+    };
+    rec.onerror = function (e) { if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { done = true; stat.innerHTML = 'Please allow the microphone (tap the 🔒 next to the address), then try again.'; } };
+    rec.onend = function () {
+      if (done) return;
+      if (!said.length && !interim.trim() && Date.now() - t0 < 9000) { try { rec.start(); return; } catch (e) {} }   /* el navegador cortó antes de que hablara */
+      done = true; clearTimeout(quiet); REC = null;
+      try { if (mr && mr.state !== 'inactive') mr.stop(); else if (stream) stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) {}
+      var all = said.concat(interim.split(/\s+/)).filter(Boolean), good = 0, miss = [];
+      $$('.rwords span', box).forEach(function (sp, i) { var ok = heardIt(words[i], all); sp.className = ok ? 'ok' : 'try'; if (ok) good++; else if (miss.indexOf(words[i]) < 0) miss.push(words[i]); });
+      var ratio = words.length ? good / words.length : 0, stars = !all.length ? 0 : ratio >= 0.9 ? 3 : ratio >= 0.6 ? 2 : 1;
+      var msg = stars === 3 ? 'Parfait ! Bravo !' : stars === 2 ? 'Très bien !' : stars === 1 ? 'Bien essayé ! Encore une fois !' : 'Je n’ai rien entendu. Encore une fois !';
+      stat.innerHTML = '<span class="rstars">' + [1, 2, 3].map(function (k) { return '<b class="' + (k <= stars ? 'on' : '') + '">★</b>'; }).join('') + '</span> <b>' + msg + '</b>' +
+        (miss.length ? '<div class="rmiss">Practice these words (tap to listen, 🎤 to try again):' + miss.map(function (w) { return '<span class="rm"><button type="button" class="rw" data-say="' + esc(w) + '">🔊 ' + esc(w) + '</button><button type="button" class="mic sm" data-read="' + esc(w) + '">🎤</button></span>'; }).join('') + '</div>' : '');
+      btns.innerHTML = '<button class="btn ghost myvoice" type="button" ' + (url ? '' : 'hidden') + '>▶ Ma voix</button><button class="btn ghost" type="button" data-say="' + esc(text) + '">🔊 Modèle</button><button class="btn" type="button" data-read="' + esc(text) + '">🎤 Encore</button>';
+      $('.myvoice', box).onclick = function () { if (url) { stop(); new Audio(url).play(); } };
+      speak(msg);
+    };
+    setTimeout(function () { if (!done) try { rec.stop(); } catch (e) {} }, 40000);
+    try { rec.start(); } catch (e) { stat.textContent = 'The microphone is busy. Try again.'; }
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-read]'); if (!b) return;
+    var inReader = b.closest('.reader');
+    if (inReader) { reader(inReader.previousElementSibling || b, b.getAttribute('data-read')); return; }
+    reader(b, b.getAttribute('data-read'));
+  });
 
   /* hablar: diálogo con mamá y micrófono en francés */
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -414,7 +501,7 @@
   var DELF_PICS = [{ emo: '🍌', k: 3 }, { img: 'dog', k: 2 }, { img: 'eli', kid: 1, k: 1 }, { img: 'cake', k: 4 }, { img: 'bed', k: 5 }];
   var DELF_Q = [['Inès a six ans.', false], ['Inès a un chat.', true], ['Inès aime les fraises.', true], ['Inès aime le lait.', false]];
   function delfSec() {
-    var text = 'Je m’appelle Inès. J’ai sept ans. J’habite à Santo Domingo. J’ai un frère et un chat. J’aime le jaune et les fraises. Je n’aime pas le lait.';
+    var text = 'Je m’appelle Inès. J’ai sept ans. J’ai un frère et un chat. J’aime le jaune et les fraises. Je n’aime pas le lait.';
     return '<section class="card" id="delf"><h2>🏅 Mon petit DELF <small>My first French test (like DELF Prim A1.1)</small></h2>' +
       '<h3>🎧 Part 1 · Listening</h3><p class="hint">Press ▶ and tap the right picture.</p><p><button class="btn" id="dplay">▶ <span id="dnum">1</span> · Écouter</button> <span class="score" id="dscore"></span></p>' +
       '<div class="lst" style="grid-template-columns:repeat(5,1fr)">' + DELF_PICS.map(function (p, i) { return '<button type="button" data-i="' + i + '">' + pic(p) + '<span class="tag"></span></button>'; }).join('') + '</div>' +
