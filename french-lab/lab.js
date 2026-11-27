@@ -92,14 +92,178 @@
     document.documentElement.style.setProperty('--c', u.color); document.documentElement.style.setProperty('--s', u.soft);
     document.title = 'Unité ' + N + ' · ' + u.fr + ' — French Lab';
     var h = topbar('<div class="hero"><div class="unum"><small>Unité</small><b>' + N + '</b></div><div><h1>' + frT(u.fr) + '</h1><p>' + esc(u.en) + ' · ' + frT(u.story_title) + '</p></div></div>');
-    h += '<main class="wrap"><nav class="jump" aria-label="Sections">' +
-      [['story', '📖 Story'], ['vocab', '🖼️ Words'], ['game', '🎲 Game'], ['sound', '🔤 Sound'], ['listen', '🎧 Listen'], ['read', '📚 Read'], ['talk', '🗣️ Talk'], ['sunny', '☀️ Sunny'], ['video', '🎵 Video'], ['review', '⭐ Stars']]
-        .map(function (x) { return '<a href="#' + x[0] + '">' + x[1] + '</a>'; }).join('') + '</nav>';
-    h += storySec(u) + vocabSec(u) + gameSec(u) + soundSec(u) + listenSec(u) + readSec(u) + talkSec(u) + sunnySec(u) + videoSec(u) + reviewSec(u);
+    h += '<main class="wrap"><nav class="tabs" role="tablist" aria-label="Skills">' + TABS.map(function (t) {
+      return '<button type="button" role="tab" data-tab="' + t[0] + '" aria-selected="false"><span class="ti">' + t[1] + '</span><b>' + t[2] + '</b><small>' + t[3] + '</small></button>'; }).join('') + '</nav>';
+    h += '<div class="tabpane" data-pane="ecouter">' + storySec(u) + vocabSec(u) + gameSec(u) + listenSec(u) + videoSec(u) + '</div>' +
+      '<div class="tabpane" data-pane="lire">' + soundSec(u) + readSec(u) + '</div>' +
+      '<div class="tabpane" data-pane="ecrire">' + traceSec(u) + orderSec(u) + '</div>' +
+      '<div class="tabpane" data-pane="parler">' + jelisSec(u) + talkSec(u) + sunnySec(u) + '</div>' + reviewSec(u);
     var prev = N > 1 ? '<a class="btn ghost" href="../unit-' + (N - 1) + '/">← Unité ' + (N - 1) + '</a>' : '';
     var next = N < 6 ? '<a class="btn" href="../unit-' + (N + 1) + '/">Unité ' + (N + 1) + ' →</a>' : '<a class="btn" href="../#delf">Mon petit DELF →</a>';
     h += '<div style="display:flex;justify-content:space-between;margin-top:22px">' + prev + next + '</div><footer>Lecture amusante avec Maman · Volume 1 · Hadash Academy</footer></main>';
-    app.innerHTML = h; bindTop(); bindStory(u); bindGame(u); bindSound(u); bindListen(u); bindRead(u); bindTalk(u); bindSunny(u); bindReview(u);
+    app.innerHTML = h; bindTop(); bindStory(u); bindGame(u); bindSound(u); bindListen(u); bindRead(u); bindTrace(u); bindOrder(u); bindTalk(u); bindSunny(u); bindReview(u);
+    $$('.tabs [data-tab]').forEach(function (b) { b.onclick = function () { var t = b.getAttribute('data-tab'); if (history.replaceState) history.replaceState(null, '', '#' + t); showTab(t); window.scrollTo({ top: $('.tabs').offsetTop - 4, behavior: 'smooth' }); }; });
+    window.addEventListener('hashchange', goHash);
+  }
+
+  /* pestañas por habilidad (DELF Prim): Écouter · Lire · Écrire · Parler */
+  var TABS = [['ecouter', '👂', 'Écouter', 'Listen'], ['lire', '📖', 'Lire', 'Read'], ['ecrire', '✍️', 'Écrire', 'Write'], ['parler', '🗣️', 'Parler', 'Speak']];
+  function showTab(t) {
+    stop(); if (typeof closeReader === 'function') closeReader();
+    $$('.tabs [data-tab]').forEach(function (b) { b.setAttribute('aria-selected', b.getAttribute('data-tab') === t); });
+    $$('.tabpane').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== t; });
+    store('fl-tab-' + N, t);
+    var tr = $('.tabpane[data-pane="ecrire"]'); if (t === 'ecrire' && tr && tr._onshow) tr._onshow();
+  }
+  function goHash() {
+    var id = location.hash.slice(1);
+    if (!N) { var el = id && document.getElementById(id); if (el) el.scrollIntoView(); return; }
+    var tab = TABS.some(function (t) { return t[0] === id; }) ? id : null, el = null;
+    if (!tab && id) { el = document.getElementById(id); var pane = el && el.closest('.tabpane'); if (pane) tab = pane.getAttribute('data-pane'); }
+    showTab(tab || store('fl-tab-' + N) || 'ecouter');
+    if (el) setTimeout(function () { el.scrollIntoView(); }, 30);
+  }
+
+  /* ✍️ Écrire 1: trazar la palabra con el dedo, se pinta como un lápiz */
+  function traceWords(u) {
+    var out = [];
+    u.vocab.forEach(function (v) {
+      var w = v.w.replace(/\s*\(.*\)/, '').split(' / ')[0], bare = w.replace(/^(les |le |la |l’|l')/, '');
+      if (bare.length <= 10) out.push({ w: bare, say: w, pic: v.pic, en: v.en });
+    });
+    return out;
+  }
+  function traceSec(u) {
+    return '<section class="card" id="trace"><h2>✏️ Je trace <small>Trace the word</small></h2>' +
+      '<p class="hint">Trace the gray letters with your finger (or the mouse). Color all the letters to win a star!</p>' +
+      '<div class="trace"><div class="ttop"><button class="btn ghost" type="button" id="tprev" aria-label="Previous">◀</button>' +
+      '<span class="tpic" id="tpic"></span><button class="spk" type="button" id="tsay" aria-label="Listen">🔊</button>' +
+      '<span class="score" id="tscore"></span><button class="btn ghost" type="button" id="tnext" aria-label="Next">▶</button></div>' +
+      '<div class="tcan"><canvas id="tcv"></canvas><div class="tdone" id="tdone" hidden></div></div>' +
+      '<div class="tcolors">' + ['#EE4B3E', '#1E6FE0', '#2EAD4B', '#8E44AD', '#FF8A00', '#14244B'].map(function (c, i) { return '<button type="button" data-col="' + c + '" style="background:' + c + '" aria-label="Color" ' + (i ? '' : 'class="on"') + '></button>'; }).join('') +
+      '<button class="btn ghost" type="button" id="tclear">↺ Effacer</button></div></div></section>';
+  }
+  function bindTrace(u) {
+    var words = traceWords(u), key = 'fl-trace-' + N, won = store(key) || {}, k = 0, col = '#EE4B3E';
+    var cv = $('#tcv'), ctx = cv.getContext('2d'), mask = document.createElement('canvas'), mctx = mask.getContext('2d');
+    var W, H, dpr, fs, lw, drawing = false, last = null, glyph = null, finished = false;
+    function score() { var n = 0; for (var x in won) n++; $('#tscore').textContent = '⭐ ' + n + ' / ' + words.length; }
+    function font() { return '700 ' + fs + 'px Fredoka, Nunito, Arial, sans-serif'; }
+    function setup() {
+      var box = cv.parentNode.getBoundingClientRect(); if (!box.width) return;
+      dpr = window.devicePixelRatio || 1; W = Math.round(box.width); H = Math.max(150, Math.min(240, Math.round(W * 0.42)));
+      cv.width = mask.width = W * dpr; cv.height = mask.height = H * dpr; cv.style.height = H + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      var w = words[k].w; fs = H * 0.62;
+      mctx.font = font(); var tw = mctx.measureText(w).width; if (tw > W * 0.9) fs = fs * W * 0.9 / tw;
+      lw = Math.max(10, fs * 0.16);
+      mctx.clearRect(0, 0, W, H); mctx.font = font(); mctx.textAlign = 'center'; mctx.textBaseline = 'middle'; mctx.fillStyle = '#000'; mctx.fillText(w, W / 2, H * 0.54);
+      var d = mctx.getImageData(0, 0, mask.width, mask.height).data, step = Math.max(2, Math.round(3 * dpr)); glyph = [];
+      for (var y = 0; y < mask.height; y += step) for (var x = 0; x < mask.width; x += step) if (d[(y * mask.width + x) * 4 + 3] > 128) glyph.push((y * mask.width + x) * 4 + 3);
+      clear();
+    }
+    function guide() {
+      ctx.save(); ctx.font = font(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.strokeStyle = '#e7e2d4'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(10, H * 0.54 + fs * 0.36); ctx.lineTo(W - 10, H * 0.54 + fs * 0.36); ctx.stroke();
+      ctx.fillStyle = '#EEEAE0'; ctx.fillText(words[k].w, W / 2, H * 0.54);
+      ctx.setLineDash([5, 6]); ctx.lineWidth = 2; ctx.strokeStyle = '#B9B2A0'; ctx.strokeText(words[k].w, W / 2, H * 0.54); ctx.restore();
+    }
+    var ink;   /* lienzo aparte solo con lo que pinta la niña, para medir */
+    function clear() { finished = false; $('#tdone').hidden = true; ctx.clearRect(0, 0, W, H); guide(); ink = document.createElement('canvas'); ink.width = cv.width; ink.height = cv.height; ink.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0); }
+    function seg(a, b) {
+      [ctx, ink.getContext('2d')].forEach(function (c, i) {
+        c.lineCap = c.lineJoin = 'round';
+        if (i) { c.strokeStyle = '#000'; c.lineWidth = lw * 1.25; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke(); return; }
+        c.strokeStyle = col; c.globalAlpha = 0.85; c.lineWidth = lw; c.beginPath(); c.moveTo(a.x, a.y); c.lineTo(b.x, b.y); c.stroke();
+        c.globalAlpha = 0.35; c.lineWidth = Math.max(2, lw * 0.18);           /* textura de lápiz */
+        for (var j = 0; j < 3; j++) { var o = (Math.random() - 0.5) * lw * 0.8; c.beginPath(); c.moveTo(a.x + o, a.y - o); c.lineTo(b.x + o, b.y - o); c.stroke(); }
+        c.globalAlpha = 1;
+      });
+    }
+    function pos(e) { var r = cv.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+    cv.addEventListener('pointerdown', function (e) { if (finished) return; drawing = true; last = pos(e); seg(last, { x: last.x + 0.1, y: last.y }); try { cv.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); });
+    cv.addEventListener('pointermove', function (e) { if (!drawing) return; var p = pos(e); seg(last, p); last = p; e.preventDefault(); });
+    function up() { if (!drawing) return; drawing = false; check(); }
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up); cv.addEventListener('pointerleave', up);
+    function check() {
+      if (!glyph || !glyph.length) return;
+      var d = ink.getContext('2d').getImageData(0, 0, ink.width, ink.height).data, hit = 0;
+      glyph.forEach(function (i) { if (d[i] > 0) hit++; });
+      var inked = 0, step = Math.max(2, Math.round(3 * dpr));
+      for (var y = 0; y < ink.height; y += step) for (var x = 0; x < ink.width; x += step) if (d[(y * ink.width + x) * 4 + 3] > 0) inked++;
+      var cover = hit / glyph.length;
+      if (inked > glyph.length * 3.2 || (cover >= 0.7 && inked > glyph.length * 3)) { $('#tdone').hidden = false; $('#tdone').innerHTML = '🙂 Stay on the letters! <button class="btn" type="button" id="tagain">↺</button>'; $('#tagain').onclick = clear; return; }
+      if (cover >= 0.7) {
+        finished = true; won[words[k].w] = 1; store(key, won); score();
+        $('#tdone').hidden = false;
+        $('#tdone').innerHTML = pic(words[k].pic) + '<b>' + art(words[k].say) + '</b><span class="tstars">⭐</span><button class="btn" type="button" id="tgo">Suivant ▶</button>';
+        $('#tgo').onclick = function () { go(1); };
+        speak('Bravo ! ' + words[k].say);
+      }
+    }
+    function go(d) { k = (k + d + words.length) % words.length; show(); }
+    function show() { $('#tpic').innerHTML = pic(words[k].pic) + '<small>' + esc(words[k].en) + '</small>'; setup(); }
+    $('#tprev').onclick = function () { go(-1); }; $('#tnext').onclick = function () { go(1); };
+    $('#tsay').onclick = function () { speak(words[k].say); };
+    $('#tclear').onclick = clear;
+    $$('.tcolors [data-col]').forEach(function (b) { b.onclick = function () { col = b.getAttribute('data-col'); $$('.tcolors [data-col]').forEach(function (x) { x.classList.toggle('on', x === b); }); }; });
+    var shown = false;
+    $('.tabpane[data-pane="ecrire"]')._onshow = function () { if (!shown) { shown = true; (document.fonts && document.fonts.load ? document.fonts.load(font()) : Promise.resolve()).then(show, show); } else setup(); };
+    window.addEventListener('resize', function () { if (shown && !$('.tabpane[data-pane="ecrire"]').hidden) setup(); });
+    score();
+  }
+
+  /* ✍️ Écrire 2: ordenar la oración tocando las palabras (como Duolingo) */
+  function orderSentences(u) {
+    var out = [];
+    function add(t) { t = String(t).replace(/\s+/g, ' ').trim(); var n = t.split(' ').filter(function (x) { return !/^[!?;:.,]$/.test(x); }).length; if (n >= 2 && n <= 7 && !/_{2,}/.test(t) && out.indexOf(t) < 0) out.push(t); }
+    u.sound.sentences.forEach(add);
+    u.grammar.items.forEach(function (it, i) { if (u.grammar.answers[i]) add(it.replace(/_{2,}/, u.grammar.answers[i])); });
+    u.talk.lines.forEach(function (l) { if (l[0] === 'Moi') add(l[1]); });
+    (u.reading.text.match(/[^.!?]+[.!?]/g) || []).forEach(add);
+    return out.slice(0, 8);
+  }
+  function tokens(t) {
+    var out = []; t.split(' ').forEach(function (w) { if (/^[!?;:]$/.test(w) && out.length) out[out.length - 1] += '\u202f' + w; else out.push(w); });
+    return out;
+  }
+  function orderSec(u) {
+    return '<section class="card" id="order"><h2>🧩 J’écris la phrase <small>Put the words in order</small></h2>' +
+      '<p class="hint">Listen to the sentence 🔊. Then tap the words in the right order. Tap a word in the line to take it back.</p>' +
+      '<div class="order"><div class="qtop"><button class="btn" type="button" id="oplay">🔊 Écouter</button><span class="score" id="oscore"></span></div>' +
+      '<div class="oline" id="oline" aria-live="polite"></div><div class="obank" id="obank"></div>' +
+      '<div class="obtns"><button class="btn" type="button" id="ocheck">✔ Vérifier</button><button class="btn ghost" type="button" id="onext">Suivant ▶</button></div><div class="ofeed" id="ofeed"></div></div></section>';
+  }
+  function bindOrder(u) {
+    var list = orderSentences(u), key = 'fl-order-' + N, won = store(key) || {}, k = 0, toks, line;
+    function score() { var n = 0; for (var x in won) n++; $('#oscore').textContent = (k + 1) + ' / ' + list.length + ' · ⭐ ' + n; }
+    function draw() {
+      $('#oline').innerHTML = line.map(function (i, j) { return '<button type="button" class="tile in" data-j="' + j + '">' + frT(toks[i]) + '</button>'; }).join('') || '<span class="ohint">…</span>';
+      $('#obank').innerHTML = toks.map(function (t, i) { return '<button type="button" class="tile" data-i="' + i + '" ' + (line.indexOf(i) >= 0 ? 'disabled' : '') + '>' + frT(t) + '</button>'; }).join('');
+      $$('#obank .tile').forEach(function (b) { b.onclick = function () { var i = +b.getAttribute('data-i'); line.push(i); speak(toks[i].replace(/\u202f.*/, '')); $('#ofeed').textContent = ''; draw(); }; });
+      $$('#oline .tile').forEach(function (b) { b.onclick = function () { line.splice(+b.getAttribute('data-j'), 1); $('#ofeed').textContent = ''; draw(); }; });
+    }
+    function show() {
+      var t = tokens(list[k]); toks = t.slice(); var order;
+      do { order = shuffle(t.map(function (_, i) { return i; })); } while (t.length > 1 && order.every(function (v, i) { return v === i; }));
+      toks = order.map(function (i) { return t[i]; }); line = []; $('#ofeed').textContent = ''; $('#oline').classList.remove('ok', 'bad'); score(); draw();
+    }
+    $('#oplay').onclick = function () { speak(list[k]); };
+    $('#onext').onclick = function () { k = (k + 1) % list.length; show(); };
+    $('#ocheck').onclick = function () {
+      var said = line.map(function (i) { return toks[i]; }).join(' '), want = tokens(list[k]).join(' ');
+      if (said === want) { won[k] = 1; store(key, won); score(); $('#oline').classList.add('ok'); $('#ofeed').innerHTML = '⭐ <b>Bravo !</b>'; speak(list[k]); }
+      else { $('#oline').classList.add('bad'); setTimeout(function () { $('#oline').classList.remove('bad'); }, 700); $('#ofeed').textContent = line.length < toks.length ? 'Use all the words! 🙂' : 'Almost! Listen again 🔊 and try.'; }
+    };
+    show();
+  }
+
+  /* 🗣️ Parler: leer frases en voz alta con el micrófono */
+  function jelisSec(u) {
+    var list = u.sound.sentences.concat((u.reading.text.match(/[^.!?]+[.!?]/g) || []).map(function (x) { return x.trim(); }));
+    return '<section class="card" id="jelis"><h2>🎤 Je lis à voix haute <small>Now you read!</small></h2>' +
+      '<p class="hint">Listen 🔊, then tap 🎤 and read the sentence out loud. The words you say well turn green.</p>' +
+      '<ul class="sent">' + list.map(function (x) { return '<li>' + spkBtn(x) + '<span>' + frT(x) + '</span>' + micBtn(x, 1) + '</li>'; }).join('') + '</ul></section>';
   }
 
   function storySec(u) {
@@ -525,5 +689,5 @@
   }
 
   if (N) unitPage(); else home();
-  if (location.hash) setTimeout(function () { var t = document.getElementById(location.hash.slice(1)); if (t) t.scrollIntoView(); }, 60);
+  if (N) goHash(); else if (location.hash) setTimeout(goHash, 60);
 })();
