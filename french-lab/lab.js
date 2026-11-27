@@ -97,11 +97,11 @@
     h += '<div class="tabpane" data-pane="ecouter">' + storySec(u) + vocabSec(u) + gameSec(u) + listenSec(u) + videoSec(u) + '</div>' +
       '<div class="tabpane" data-pane="lire">' + soundSec(u) + readSec(u) + '</div>' +
       '<div class="tabpane" data-pane="ecrire">' + traceSec(u) + orderSec(u) + '</div>' +
-      '<div class="tabpane" data-pane="parler">' + jelisSec(u) + talkSec(u) + sunnySec(u) + '</div>' + reviewSec(u);
+      '<div class="tabpane" data-pane="parler">' + retellSec(u) + jelisSec(u) + talkSec(u) + sunnySec(u) + '</div>' + reviewSec(u);
     var prev = N > 1 ? '<a class="btn ghost" href="../unit-' + (N - 1) + '/">← Unité ' + (N - 1) + '</a>' : '';
     var next = N < 6 ? '<a class="btn" href="../unit-' + (N + 1) + '/">Unité ' + (N + 1) + ' →</a>' : '<a class="btn" href="../#delf">Mon petit DELF →</a>';
     h += '<div style="display:flex;justify-content:space-between;margin-top:22px">' + prev + next + '</div><footer>Lecture amusante avec Maman · Volume 1 · Hadash Academy</footer></main>';
-    app.innerHTML = h; bindTop(); bindStory(u); bindGame(u); bindSound(u); bindListen(u); bindRead(u); bindTrace(u); bindOrder(u); bindTalk(u); bindSunny(u); bindReview(u);
+    app.innerHTML = h; bindTop(); bindStory(u); bindGame(u); bindSound(u); bindListen(u); bindRead(u); bindTrace(u); bindOrder(u); bindRetell(u); bindTalk(u); bindSunny(u); bindReview(u);
     $$('.tabs [data-tab]').forEach(function (b) { b.onclick = function () { var t = b.getAttribute('data-tab'); if (history.replaceState) history.replaceState(null, '', '#' + t); showTab(t); window.scrollTo({ top: $('.tabs').offsetTop - 4, behavior: 'smooth' }); }; });
     window.addEventListener('hashchange', goHash);
   }
@@ -258,7 +258,58 @@
     show();
   }
 
-  /* 🗣️ Parler: leer frases en voz alta con el micrófono */
+  /* 🗣️ Parler 1: ordenar las escenas del cuento y contarlo con el micrófono */
+  function retellSec(u) {
+    return '<section class="card" id="retell"><h2>🎬 Raconte l’histoire <small>Put the story in order, then tell it!</small></h2>' +
+      '<p class="hint"><b>1.</b> Listen to the story first (tab 👂 Écouter). <b>2.</b> Tap the pictures in the right order: first, second, third… Tap 🔊 on a picture to hear it. <b>3.</b> Then tell the story: tap 🎤 and say each sentence.</p>' +
+      '<div class="rt"><div class="qtop"><span class="score" id="rtscore"></span><button class="btn ghost" type="button" id="rtnew">↺ Recommencer</button></div>' +
+      '<div class="rtline" id="rtline"></div><div class="rtbank" id="rtbank"></div>' +
+      '<div class="obtns"><button class="btn" type="button" id="rtcheck">✔ Vérifier</button></div><div class="ofeed" id="rtfeed"></div></div></section>';
+  }
+  function bindRetell(u) {
+    var n = u.story.length, key = 'fl-retell-' + N, line, bank, done;
+    function card(i, where, pos) {
+      var p = u.story[i];
+      return '<div class="rtc ' + where + '" data-i="' + i + '">' + (pos ? '<span class="rtn">' + pos + '</span>' : '') +
+        '<button type="button" class="rtpick" aria-label="Scene">' + scene(p.pics) + '</button>' +
+        '<div class="rtbar"><button class="spk" type="button" data-say="' + esc(p.fr) + '" aria-label="Écouter">🔊</button>' +
+        (done ? micBtn(p.fr, 1) : '') + '</div>' + (done ? '<p class="rtt">' + frT(p.fr).replace(/\n/g, '<br>') + '</p>' : '') + '</div>';
+    }
+    function score() { var st = store(key) || {}; $('#rtscore').textContent = done ? '🌟 ' + n + ' / ' + n : (line.length + ' / ' + n) + (st.ok ? ' · ⭐' : ''); }
+    function draw() {
+      closeReader();
+      var slots = ''; for (var k = 0; k < Math.min(n, line.length + 1); k++) slots += line[k] !== undefined ? card(line[k], 'in', k + 1) : '<div class="rtc slot"><span class="rtn">' + (k + 1) + '</span><small>?</small></div>';
+      $('#rtline').innerHTML = slots;
+      $('#rtbank').innerHTML = done ? '' : bank.map(function (i) { return card(i, 'out'); }).join('');
+      $('#rtcheck').hidden = done;
+      $$('#rtbank .rtpick').forEach(function (b) { b.onclick = function () { var i = +b.parentNode.getAttribute('data-i'); bank.splice(bank.indexOf(i), 1); line.push(i); $('#rtfeed').textContent = ''; draw(); }; });
+      $$('#rtline .rtc.in .rtpick').forEach(function (b) {
+        b.onclick = function () { if (done) { speak(u.story[+b.parentNode.getAttribute('data-i')].fr); return; } var i = +b.parentNode.getAttribute('data-i'); line.splice(line.indexOf(i), 1); bank.push(i); draw(); };
+      });
+      score();
+    }
+    function start() { done = false; line = []; var o; do { o = shuffle(u.story.map(function (_, i) { return i; })); } while (o.every(function (v, i) { return v === i; })); bank = o; $('#rtfeed').textContent = ''; draw(); }
+    $('#rtnew').onclick = start;
+    $('#rtcheck').onclick = function () {
+      if (line.length < n) { $('#rtfeed').textContent = 'Put all the pictures in the line! 🙂'; return; }
+      var bad = 0; line.forEach(function (v, k) { if (v !== k) bad++; });
+      if (!bad) {
+        done = true; var st = store(key) || {}; st.ok = 1; store(key, st); draw();
+        $('#rtfeed').innerHTML = '⭐ <b>Bravo !</b> Now tell the story: tap 🎤 on each picture and say the sentence.';
+        speak('Bravo ! Maintenant, raconte l’histoire !');
+        return;
+      }
+      /* las que están bien se quedan; las demás vuelven abajo */
+      var keep = [];
+      line.forEach(function (v, k) { if (v === k && keep.length === k) keep.push(v); });
+      line.slice(keep.length).forEach(function (v) { bank.push(v); }); line = keep;
+      draw(); $$('#rtline .rtc.in').forEach(function (c) { c.classList.add('good'); });
+      $('#rtfeed').textContent = 'Almost! The green ones are right. Listen again 🔊 and try the others.'; speak('Presque ! Essaie encore.');
+    };
+    start();
+  }
+
+  /* 🗣️ Parler 2: leer frases en voz alta con el micrófono */
   function jelisSec(u) {
     var list = u.sound.sentences.concat((u.reading.text.match(/[^.!?]+[.!?]/g) || []).map(function (x) { return x.trim(); }));
     return '<section class="card" id="jelis"><h2>🎤 Je lis à voix haute <small>Now you read!</small></h2>' +
@@ -441,7 +492,7 @@
   function reader(btn, text) {
     closeReader(); stop();
     var words = text.replace(/[’']/g, '’ ').split(/\s+/).map(function (w) { return w.replace(/^[«»“”"—\-:;,.!?…]+|[«»“”"—\-:;,.!?…]+$/g, ''); }).filter(Boolean);
-    var host = btn.closest('li') || btn;
+    var host = btn.closest('li, .rtc') || btn;
     var box = document.createElement('div'); box.className = 'reader';
     box.innerHTML = '<div class="rwords">' + words.map(function (w, i) { return '<span data-i="' + i + '">' + esc(w) + '</span>'; }).join(' ') + '</div>' +
       '<div class="rstat" aria-live="polite"></div><div class="rbtns"></div>';

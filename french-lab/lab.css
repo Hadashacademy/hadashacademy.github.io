@@ -170,3 +170,18 @@ nav.tabs button[aria-selected=true] small{color:#fff;opacity:.9}
 .obtns{display:flex;gap:10px;flex-wrap:wrap}.ofeed{margin-top:8px;font-size:18px;font-weight:700;min-height:24px}
 .tcan,.tile,nav.tabs{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 section.card{scroll-margin-top:110px}
+
+/* ordenar el cuento */
+.rtline,.rtbank{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:10px 0}
+.rtbank{padding-top:12px;border-top:3px dashed var(--line)}
+@media(max-width:620px){.rtline,.rtbank{grid-template-columns:repeat(2,1fr)}}
+.rtc{position:relative;background:#fff;border:2px solid var(--line);border-radius:16px;padding:6px;display:flex;flex-direction:column;gap:4px}
+.rtc.slot{min-height:120px;border-style:dashed;background:transparent;align-items:center;justify-content:center}
+.rtc.in{border-color:var(--c)}.rtc.good{border-color:var(--ok);background:#F0FBF3}
+.rtn{position:absolute;top:-8px;left:-8px;z-index:2;background:var(--c);color:#fff;font-weight:800;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.rtc.slot .rtn{position:static;background:var(--line);color:var(--muted)}
+.rtpick{border:0;background:none;padding:0;cursor:pointer;display:block;width:100%}
+.rtc .scene{height:100px;padding:4px}.rtc .scene .e{font-size:34px}
+.rtbar{display:flex;gap:6px;align-items:center}.rtbar .mic.sm{margin:0 0 0 auto}
+.rtt{margin:0;font-size:13px;font-weight:700;line-height:1.35}
+.rtline .reader,.rtbank .reader{grid-column:1/-1}
